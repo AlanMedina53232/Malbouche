@@ -1,3 +1,8 @@
 npm install @react-navigation/native
 npx expo install react-native-screens react-native-safe-area-context
 npm install @react-navigation/native-stack
+
+    // Se agregaron estas dependencias para darle diseño al reloj analógico
+npm install react-native-svg
+expo install react-native-svg
+

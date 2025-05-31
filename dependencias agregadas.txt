@@ -1,8 +1,12 @@
 npm install @react-navigation/native
 npx expo install react-native-screens react-native-safe-area-context
 npm install @react-navigation/native-stack
+npm install @react-navigation/bottom-tabs
 
     // Se agregaron estas dependencias para darle diseño al reloj analógico
 npm install react-native-svg
 expo install react-native-svg
 
+    //Permite mostrar un menú desplegable personalizado (dropdown), como el que se ve en tu pantalla para seleccionar el "Move Type"
+npm install @react-native-community/datetimepicker // muestra mensaje de actualización por compatibilidad, usar tambien el de abajo.
+npx expo install @react-native-community/datetimepicker

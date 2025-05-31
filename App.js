@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import BottomTabsNavigator from './navigation/bottomTabsNavigator';
+// import BottomTabsNavigator from './navigation/bottomTabsNavigator';
 import EventsScreen from './principals/eventsScreen';
 import NewEventScreen from './principals/newEventScreen';
 import Login from './principals/login';
@@ -15,11 +15,11 @@ export default function App() {
   return (
     <EventProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
+        <Stack.Navigator initialRouteName="NewEventScreen" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="EventsScreen" component={EventsScreen} />
           <Stack.Screen name="NewEventScreen" component={NewEventScreen} />
-          <Stack.Screen name="Home" component={BottomTabsNavigator} />
+          {/* <Stack.Screen name="Home" component={BottomTabsNavigator} /> */}
           <Stack.Screen name="Schedule" component={ScheduleScreen} />
         </Stack.Navigator>
         <StatusBar style="auto" />

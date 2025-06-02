@@ -2,45 +2,50 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
-export default function Login() {
+export default function Login({navigation}) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    // Aquí puedes integrar la lógica de autenticación
     if (email === '' || password === '') {
       Alert.alert('Error', 'Por favor, completa todos los campos.');
     } else {
-      // Simula autenticación
       Alert.alert('Inicio de sesión', `Bienvenido, ${email}`);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bienvenido a MalBouche</Text>
+      <View style={styles.loginBox}>
+        <Text style={styles.title}>Bienvenido a MalBouche</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Correo electrónico"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Correo electrónico"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          placeholderTextColor="#999"
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Contraseña"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          placeholderTextColor="#999"
+        />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Iniciar sesión</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('MainRestricted')}>
+          <Text style={styles.buttonText}>Iniciar sesión</Text>
+        </TouchableOpacity>
 
+         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Mainfree')}>
+          <Text style={styles.buttonText}>Continuar como invitado</Text>
+        </TouchableOpacity>
+      </View>
       <StatusBar style="auto" />
     </View>
   );
@@ -49,37 +54,50 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#f0f4f8',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
+  loginBox: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 8,
+  },
   title: {
-    fontSize: 24,
-    marginBottom: 30,
-    fontWeight: 'bold',
+    fontSize: 26,
+    marginBottom: 25,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: '#333',
   },
   input: {
-    width: '100%',
     height: 50,
-    borderColor: '#ccc',
+    borderColor: '#d1d5db',
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 8,
     marginBottom: 15,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     fontSize: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#f9fafb',
   },
   button: {
-    backgroundColor: '#007bff',
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 5,
-    width: '100%',
+    backgroundColor: '#5b21b6',
+    paddingVertical: 14,
+    borderRadius: 8,
     alignItems: 'center',
+    marginTop: 10,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 17,
+    fontWeight: '500',
   },
 });

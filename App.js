@@ -6,8 +6,9 @@ import EventsScreen from './principals/eventsScreen';
 import NewEventScreen from './principals/newEventScreen';
 import Login from './principals/login';
 import ScheduleScreen from './principals/scheduleScreen';
-import usersScreen from './principals/usersScreen';
 import { EventProvider } from './context/eventContext';
+import {usersScreen} from "./principals/usersScreen.js"
+
 
 
 const Stack = createNativeStackNavigator();
@@ -21,7 +22,7 @@ export default function App() {
           <Stack.Screen name="EventsScreen" component={EventsScreen} />
           <Stack.Screen name="NewEventScreen" component={NewEventScreen} />
           <Stack.Screen name="Schedule" component={ScheduleScreen} />
-          <Stack.Screen name="Users" component={UsersScreen} />
+          <Stack.Screen name="Users" component={usersScreen} />
         </Stack.Navigator>
         <StatusBar style="auto" />
       </NavigationContainer>

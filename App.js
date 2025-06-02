@@ -16,7 +16,7 @@ export default function App() {
   return (
     <EventProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="NewEventScreen" screenOptions={{ headerShown: false }}>
+        <Stack.Navigator initialRouteName=">Users" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="EventsScreen" component={EventsScreen} />
           <Stack.Screen name="NewEventScreen" component={NewEventScreen} />

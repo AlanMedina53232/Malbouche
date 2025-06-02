@@ -8,7 +8,9 @@ import NewEventScreen from './principals/newEventScreen';
 import Login from './principals/login';
 import ScheduleScreen from './principals/scheduleScreen'; 
 import { EventProvider } from './context/eventContext';
-import {usersScreen} from "./principals/usersScreen.js"
+import usersScreen from "./principals/usersScreen.js"
+import Mainfree from "./principals/free/main.js"
+import MainRest from "./principals/restricted/main.js"
 
 
 
@@ -18,7 +20,7 @@ export default function App() {
   return (
     <EventProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="NewEventScreen" screenOptions={{ headerShown: false }}>
+        <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Mainfree" component={Mainfree} />
           <Stack.Screen name='MainRestricted' component={MainRest} />

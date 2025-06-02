@@ -10,3 +10,6 @@ expo install react-native-svg
     //Permite mostrar un menú desplegable personalizado (dropdown), como el que se ve en tu pantalla para seleccionar el "Move Type"
 npm install @react-native-community/datetimepicker // muestra mensaje de actualización por compatibilidad, usar tambien el de abajo.
 npx expo install @react-native-community/datetimepicker
+
+    // Dependencia agregada por alan
+npm install @react-native-community/slider

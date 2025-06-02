@@ -6,8 +6,9 @@ import EventsScreen from './principals/eventsScreen';
 import NewEventScreen from './principals/newEventScreen';
 import Login from './principals/login';
 import ScheduleScreen from './principals/scheduleScreen';
-import UsersScreen from './principals/usersScreen';
+import usersScreen from './principals/usersScreen';
 import { EventProvider } from './context/eventContext';
+
 
 const Stack = createNativeStackNavigator();
 

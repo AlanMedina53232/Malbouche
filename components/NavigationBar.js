@@ -8,7 +8,7 @@ const NavigationBar = () => {
 const navItems = [
   { name: 'Schedule', icon: '🕐' },           // reemplaza 'Clock'
   { name: 'EventsScreen', icon: '📅' },       // reemplaza 'Events'
-  { name: 'MainRestricted', icon: '👥' },     // reemplaza 'Movements'
+  { name: 'MovementsScreen', icon: '👥' },     // reemplaza 'Movements'
   { name: 'Users', icon: '👤' },              // este ya existe
 ];
 

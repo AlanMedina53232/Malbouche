@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ffffff',
     paddingVertical: Platform.OS === 'ios' ? 20 : 10,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 10,
+    paddingBottom: Platform.OS === 'ios' ? 45 : 10, // Increased bottom padding
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
     position: 'absolute',
@@ -43,19 +43,29 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     width: '100%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
   },
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    paddingHorizontal: 10,
   },
   navIcon: {
-    fontSize: 20,
+    fontSize: 24,
     marginBottom: 4,
   },
   navText: {
     fontSize: 12,
     color: '#666666',
+    textAlign: 'center',
   },
 });
 

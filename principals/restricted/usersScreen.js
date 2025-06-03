@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import NavigationBar from '../../components/NavigationBar';
 
 const UsersScreen = ({ navigation }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [editedEmail, setEditedEmail] = useState('');
 
   const users = [
     { 
@@ -27,7 +29,14 @@ const UsersScreen = ({ navigation }) => {
 
   const openUserModal = (user) => {
     setSelectedUser(user);
+    setEditedName(user.name);
+    setEditedEmail(user.email);
     setModalVisible(true);
+  };
+
+  const handleSave = () => {
+    // Here you would implement the logic to save the changes
+    setModalVisible(false);
   };
 
   return (
@@ -36,7 +45,7 @@ const UsersScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
-        <Text style={styles.title}>USER</Text>
+        <Text style={styles.title}>USER MANAGEMENT</Text>
       </View>
 
       <ScrollView style={styles.userList}>
@@ -49,7 +58,11 @@ const UsersScreen = ({ navigation }) => {
             <View style={styles.avatar}>
               <Ionicons name="person" size={24} color="#666" />
             </View>
-            <Text style={styles.userName}>{user.name}</Text>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{user.name}</Text>
+              <Text style={styles.userEmail}>{user.email}</Text>
+            </View>
+            <Ionicons name="create-outline" size={20} color="#666" />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -65,6 +78,7 @@ const UsersScreen = ({ navigation }) => {
             {selectedUser && (
               <>
                 <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Edit User</Text>
                   <TouchableOpacity 
                     style={styles.closeButton}
                     onPress={() => setModalVisible(false)}
@@ -72,21 +86,41 @@ const UsersScreen = ({ navigation }) => {
                     <Ionicons name="close" size={24} color="#666" />
                   </TouchableOpacity>
                 </View>
+
                 <View style={styles.userInfo}>
                   <View style={styles.avatarLarge}>
                     <Ionicons name="person" size={50} color="#666" />
                   </View>
-                  <Text style={styles.modalName}>{selectedUser.name}</Text>
-                  <Text style={styles.modalEmail}>{selectedUser.email}</Text>
+                  
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Name</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={editedName}
+                      onChangeText={setEditedName}
+                      placeholder="Enter name"
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Email</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={editedEmail}
+                      onChangeText={setEditedEmail}
+                      placeholder="Enter email"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                  </View>
                 </View>
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Change Password</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.button, styles.logoutButton]}>
-                    <Text style={[styles.buttonText, styles.logoutText]}>Log out</Text>
-                  </TouchableOpacity>
-                </View>
+
+                <TouchableOpacity 
+                  style={styles.saveButton}
+                  onPress={handleSave}
+                >
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                </TouchableOpacity>
               </>
             )}
           </View>
@@ -136,9 +170,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 15,
   },
+  userInfo: {
+    flex: 1,
+  },
   userName: {
     fontSize: 16,
     color: '#333333',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#666666',
   },
   modalContainer: {
     flex: 1,
@@ -151,7 +193,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 20,
     padding: 20,
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -162,58 +203,56 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalHeader: {
-    width: '100%',
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
   },
   closeButton: {
     padding: 5,
   },
-  userInfo: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
   avatarLarge: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    alignSelf: 'center',
   },
-  modalName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  modalEmail: {
-    fontSize: 16,
-    color: '#666666',
-    marginBottom: 20,
-  },
-  actionButtons: {
+  inputContainer: {
+    marginBottom: 15,
     width: '100%',
-    gap: 15,
   },
-  button: {
-    backgroundColor: '#f0f0f0',
+  label: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  saveButton: {
+    backgroundColor: '#007AFF',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    width: '100%',
+    marginTop: 20,
   },
-  logoutButton: {
-    backgroundColor: '#fee2e2',
-  },
-  buttonText: {
+  saveButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-    color: '#333333',
-  },
-  logoutText: {
-    color: '#dc2626',
   },
 });
 

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import NavigationBar from '../../components/NavigationBar';
 
-export default function SimpleMessageScreen() {
+export default function Mainfree() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.message}>¡Hola! Este es el main free.</Text>

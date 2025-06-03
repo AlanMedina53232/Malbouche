@@ -5,12 +5,12 @@ import { useNavigation } from '@react-navigation/native';
 const NavigationBar = () => {
   const navigation = useNavigation();
 
-  const navItems = [
-    { name: 'Clock', icon: '🕐' },
-    { name: 'Events', icon: '📅' },
-    { name: 'Movements', icon: '👥' },
-    { name: 'Users', icon: '👤' }
-  ];
+const navItems = [
+  { name: 'Schedule', icon: '🕐' },           // reemplaza 'Clock'
+  { name: 'EventsScreen', icon: '📅' },       // reemplaza 'Events'
+  { name: 'MainRestricted', icon: '👥' },     // reemplaza 'Movements'
+  { name: 'Users', icon: '👤' },              // este ya existe
+];
 
   return (
     <View style={styles.navbar}>

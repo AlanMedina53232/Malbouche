@@ -4,21 +4,37 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   SafeAreaView,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import NavigationBar from "../../components/NavigationBar";
 import AnalogClock from "../../components/analogClock";
+import { Ionicons } from '@expo/vector-icons';
 
-const MainRest = () => {
+const MainRest = ({ navigation }) => {
   const [direction, setDirection] = useState("Right");
   const [mode, setMode] = useState("");
   const [speed, setSpeed] = useState(50);
 
+  const currentUser = {
+    id: 1,
+    name: 'Almendro Isaac Medina Ramírez',
+    email: 'AlmIsaMedRam@gmail.com'
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>MALBOUCHE</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>MALBOUCHE</Text>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+        >
+          <View style={styles.avatarSmall}>
+            <Ionicons name="person" size={20} color="#666" />
+          </View>
+        </TouchableOpacity>
+      </View>
 
       <AnalogClock/>
 
@@ -86,21 +102,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: 100,
-    alignItems: "center",
-    justifyContent: "flex-start",
+    paddingTop: 60,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 15,
   },
   title: {
     fontSize: 22,
     fontWeight: "700",
-    marginBottom: 15,
-    textAlign: "center",
   },
-  clockImage: {
-    width: 220,
-    height: 220,
-    resizeMode: "contain",
-    marginBottom: 30,
+  profileButton: {
+    padding: 4,
+  },
+  avatarSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   buttonRow: {
     flexDirection: "row",
@@ -135,6 +159,7 @@ const styles = StyleSheet.create({
     width: "85%",
     height: 40,
     marginVertical: 10,
+    alignSelf: "center",
   },
   turnOnButton: {
     backgroundColor: "#ddd",
@@ -143,6 +168,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 60,
     borderRadius: 25,
     alignItems: "center",
+    alignSelf: "center",
   },
   turnOnText: {
     fontWeight: "600",

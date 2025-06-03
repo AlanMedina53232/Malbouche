@@ -1,16 +1,16 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 const NavigationBar = () => {
   const navigation = useNavigation();
 
-const navItems = [
-  { name: 'Schedule', icon: '🕐' },           // reemplaza 'Clock'
-  { name: 'EventsScreen', icon: '📅' },       // reemplaza 'Events'
-  { name: 'MovementsScreen', icon: '👥' },     // reemplaza 'Movements'
-  { name: 'Users', icon: '👤' },              // este ya existe
-];
+  const navItems = [
+    { name: 'Schedule', icon: '🕐' },
+    { name: 'EventsScreen', icon: '📅' },
+    { name: 'MovementsScreen', icon: '👥' },
+    { name: 'Users', icon: '👤' },
+  ];
 
   return (
     <View style={styles.navbar}>
@@ -34,25 +34,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    paddingVertical: 10,
+    paddingVertical: Platform.OS === 'ios' ? 20 : 10,
+    paddingBottom: Platform.OS === 'ios' ? 45 : 10, // Increased bottom padding
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
   },
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
+    flex: 1,
+    paddingHorizontal: 10,
   },
   navIcon: {
-    fontSize: 20,
+    fontSize: 24,
     marginBottom: 4,
   },
   navText: {
     fontSize: 12,
     color: '#666666',
+    textAlign: 'center',
   },
 });
 

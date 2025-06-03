@@ -5,9 +5,21 @@ import NavigationBar from '../../components/NavigationBar';
 
 const UsersScreen = ({ navigation }) => {
   const users = [
-    { id: 1, name: 'Almendro Isaac Medina Ramírez' },
-    { id: 2, name: 'Pablo Jose Urbano' },
-    { id: 3, name: 'Angela María Rus' }
+    { 
+      id: 1, 
+      name: 'Almendro Isaac Medina Ramírez',
+      email: 'AlmIsaMedRam@gmail.com'
+    },
+    { 
+      id: 2, 
+      name: 'Pablo Jose Urbano',
+      email: 'PabloJU@gmail.com'
+    },
+    { 
+      id: 3, 
+      name: 'Angela María Rus',
+      email: 'AngelaMR@gmail.com'
+    }
   ];
 
   return (
@@ -21,12 +33,16 @@ const UsersScreen = ({ navigation }) => {
 
       <ScrollView style={styles.userList}>
         {users.map(user => (
-          <View key={user.id} style={styles.userItem}>
+          <TouchableOpacity
+            key={user.id}
+            style={styles.userItem}
+            onPress={() => navigation.navigate('UserDetail', { user })}
+          >
             <View style={styles.avatar}>
               <Ionicons name="person" size={24} color="#666" />
             </View>
             <Text style={styles.userName}>{user.name}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
 

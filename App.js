@@ -8,11 +8,10 @@ import Login from './principals/restricted/login.js';
 import ScheduleScreen from './principals/restricted/scheduleScreen'; 
 import { EventProvider } from './context/eventContext';
 import usersScreen from "./principals/restricted/usersScreen.js"
+import UserDetailScreen from "./principals/restricted/userDetailScreen.js"
 import Mainfree from "./principals/free/main.js"
 import MainRest from "./principals/restricted/main.js"
 import MovementsScreen from './principals/restricted/movementsScreen.js';
-
-
 
 const Stack = createNativeStackNavigator();
 
@@ -29,18 +28,10 @@ export default function App() {
           <Stack.Screen name="NewEventScreen" component={NewEventScreen} />
           <Stack.Screen name="Schedule" component={ScheduleScreen} />
           <Stack.Screen name="Users" component={usersScreen} />
+          <Stack.Screen name="UserDetail" component={UserDetailScreen} />
         </Stack.Navigator>
         <StatusBar style="auto" />
       </NavigationContainer>
     </EventProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

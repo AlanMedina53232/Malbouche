@@ -3,12 +3,12 @@ import { StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 // import BottomTabsNavigator from './navigation/bottomTabsNavigator';
-import EventsScreen from './principals/eventsScreen';
-import NewEventScreen from './principals/newEventScreen';
-import Login from './principals/login';
-import ScheduleScreen from './principals/scheduleScreen'; 
+import EventsScreen from './principals/restricted/eventsScreen';
+import NewEventScreen from './principals/restricted/newEventScreen';
+import Login from './principals/restricted/login.js';
+import ScheduleScreen from './principals/restricted/scheduleScreen'; 
 import { EventProvider } from './context/eventContext';
-import usersScreen from "./principals/usersScreen.js"
+import usersScreen from "./principals/restricted/usersScreen.js"
 import Mainfree from "./principals/free/main.js"
 import MainRest from "./principals/restricted/main.js"
 

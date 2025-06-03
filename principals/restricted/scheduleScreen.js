@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AnalogClock from '../components/analogClock';
+import AnalogClock from '../../components/analogClock';
 
 export default function ScheduleScreen({ navigation }) {
   const [selectedDays, setSelectedDays] = useState(['Th', 'F', 'S']);

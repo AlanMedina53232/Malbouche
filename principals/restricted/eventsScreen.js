@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Switch } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { EventContext } from '../context/eventContext';
+import { EventContext } from '../../context/eventContext';
 import { Ionicons } from '@expo/vector-icons';
 
 const EventsScreen = () => {

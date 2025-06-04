@@ -42,13 +42,30 @@ export default function ScheduleScreen({ navigation }) {
       <Text style={styles.dayText}>{day.label}</Text>
     </TouchableOpacity>
   );
+  const currentUser = {
+  id: 1,
+  name: 'Almendro Isaac Medina Ramírez',
+  email: 'AlmIsaMedRam@gmail.com'
+};
+
 
   return (
     <View style={styles.wrapper}>
       <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} />
-        </TouchableOpacity>
+        <View style={styles.header}>
+  <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+    <Ionicons name="arrow-back" size={24} />
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={styles.profileButton}
+    onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+  >
+    <View style={styles.avatarSmall}>
+      <Ionicons name="person" size={20} color="#666" />
+    </View>
+  </TouchableOpacity>
+</View>
 
         <AnalogClock hour={21} minute={0} />
 
@@ -173,4 +190,21 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: 'bold',
   },
+   profileButton: {
+    padding: 4,
+  },
+  avatarSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 10,
+},
 });

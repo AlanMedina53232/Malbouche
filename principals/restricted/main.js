@@ -12,8 +12,7 @@ import AnalogClock from "../../components/analogClock";
 import { Ionicons } from '@expo/vector-icons';
 
 const MainRest = ({ navigation }) => {
-  const [direction, setDirection] = useState("Right");
-  const [mode, setMode] = useState("");
+  const [selectedOption, setSelectedOption] = useState("");
   const [speed, setSpeed] = useState(50);
 
   const currentUser = {
@@ -21,6 +20,12 @@ const MainRest = ({ navigation }) => {
     name: 'Almendro Isaac Medina Ramírez',
     email: 'AlmIsaMedRam@gmail.com'
   };
+
+  const options = [
+    ["Left", "Right"],
+    ["Crazy", "Swing"],
+    ["Customized", "Normal"]
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -36,46 +41,28 @@ const MainRest = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <AnalogClock/>
+      <AnalogClock />
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          style={[styles.button, direction === "Left" && styles.activeButton]}
-          onPress={() => setDirection("Left")}
-        >
-          <Text style={styles.buttonText}>Left</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, direction === "Right" && styles.activeButton]}
-          onPress={() => setDirection("Right")}
-        >
-          <Text style={styles.buttonText}>Right</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.buttonRow}>
-        {["Crazy", "Swing"].map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[styles.button, mode === item && styles.activeButton]}
-            onPress={() => setMode(item)}
-          >
-            <Text style={styles.buttonText}>{item}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.buttonRow}>
-        {["Customized", "Normal"].map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[styles.button, mode === item && styles.activeButton]}
-            onPress={() => setMode(item)}
-          >
-            <Text style={styles.buttonText}>{item}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {options.map((row, index) => (
+        <View key={index} style={styles.buttonRow}>
+          {row.map((item) => (
+            <TouchableOpacity
+              key={item}
+              style={[styles.button, selectedOption === item && styles.activeButton]}
+              onPress={() => setSelectedOption(item)}
+            >
+              <Text
+                style={[
+                  styles.buttonText,
+                  selectedOption === item && { color: "#fff" },
+                ]}
+              >
+                {item}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ))}
 
       <Text style={styles.sliderLabel}>Speed</Text>
       <Slider
@@ -89,6 +76,7 @@ const MainRest = ({ navigation }) => {
         maximumTrackTintColor="#aaa"
         thumbTintColor="#333"
       />
+
       <TouchableOpacity style={styles.turnOnButton}>
         <Text style={styles.turnOnText}>Turn On</Text>
       </TouchableOpacity>

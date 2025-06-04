@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AnalogClock from '../../components/analogClock';
+import NavigationBar from '../../components/NavigationBar';
 
 export default function ScheduleScreen({ navigation }) {
   const [selectedDays, setSelectedDays] = useState(['Th', 'F', 'S']);
@@ -19,69 +27,89 @@ export default function ScheduleScreen({ navigation }) {
     { label: 'W', id: 'wed' },
     { label: 'Th', id: 'thu' },
     { label: 'F', id: 'fri' },
-    { label: 'S', id: 'sat' }, // misma letra, distinta clave
+    { label: 'S', id: 'sat' },
   ];
 
   const renderDayButton = (day) => (
     <TouchableOpacity
       key={day.id}
-      style={[styles.dayButton, selectedDays.includes(day.label) && styles.dayButtonSelected]}
+      style={[
+        styles.dayButton,
+        selectedDays.includes(day.label) && styles.dayButtonSelected
+      ]}
       onPress={() => toggleDay(day.label)}
     >
       <Text style={styles.dayText}>{day.label}</Text>
     </TouchableOpacity>
   );
+  const currentUser = {
+  id: 1,
+  name: 'Almendro Isaac Medina Ramírez',
+  email: 'AlmIsaMedRam@gmail.com'
+};
+
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-back" size={24} />
-      </TouchableOpacity>
+    <View style={styles.wrapper}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+  <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+    <Ionicons name="arrow-back" size={24} />
+  </TouchableOpacity>
 
-      {/* Placeholder for Clock */}
-      <AnalogClock hour={21} minute={0} />
+  <TouchableOpacity
+    style={styles.profileButton}
+    onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+  >
+    <View style={styles.avatarSmall}>
+      <Ionicons name="person" size={20} color="#666" />
+    </View>
+  </TouchableOpacity>
+</View>
 
-      {/* Time Range */}
-      <View style={styles.timeRange}>
-        <Text style={styles.timeText}>09:00 PM</Text>
-        <Text style={styles.timeText}>10:00 PM</Text>
-      </View>
+        <AnalogClock hour={21} minute={0} />
 
-      {/* Days of the Week */}
-      <View style={styles.daysContainer}>
-        {days.map(renderDayButton)}
-      </View>
-
-      {/* Event Info */}
-      <TextInput style={styles.input} placeholder="Event Name" />
-
-      {[1, 2].map((_, i) => (
-        <View key={i} style={styles.moveRow}>
-          <TextInput style={styles.inputSmall} placeholder="Move type" />
-          <TextInput style={styles.inputSmall} placeholder="Speed" keyboardType="numeric" />
-          <TextInput style={styles.inputSmall} placeholder="Time (seg)" keyboardType="numeric" />
+        <View style={styles.timeRange}>
+          <Text style={styles.timeText}>09:00 PM</Text>
+          <Text style={styles.timeText}>10:00 PM</Text>
         </View>
-      ))}
 
-      {/* Buttons */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.editButton}>
-          <Text style={styles.buttonText}>Edit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.deleteButton}>
-          <Text style={styles.buttonText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+        <View style={styles.daysContainer}>
+          {days.map(renderDayButton)}
+        </View>
+
+        <TextInput style={styles.input} placeholder="Event Name" />
+
+        {[1, 2].map((_, i) => (
+          <View key={i} style={styles.moveRow}>
+            <TextInput style={styles.inputSmall} placeholder="Move type" />
+            <TextInput style={styles.inputSmall} placeholder="Speed" keyboardType="numeric" />
+            <TextInput style={styles.inputSmall} placeholder="Time (seg)" keyboardType="numeric" />
+          </View>
+        ))}
+
+        <View style={styles.buttonRow}>
+          <TouchableOpacity style={styles.editButton}>
+            <Text style={styles.buttonText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.deleteButton}>
+            <Text style={styles.buttonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+      <NavigationBar />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     padding: 20,
     paddingTop: 60,
-    backgroundColor: '#fff',
     flexGrow: 1,
   },
   backButton: {
@@ -162,4 +190,21 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: 'bold',
   },
+   profileButton: {
+    padding: 4,
+  },
+  avatarSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 10,
+},
 });

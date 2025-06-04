@@ -1,8 +1,16 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Switch } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Switch
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { EventContext } from '../../context/eventContext';
 import { Ionicons } from '@expo/vector-icons';
+import NavigationBar from '../../components/NavigationBar';
 
 const EventsScreen = () => {
   const navigation = useNavigation();
@@ -23,28 +31,41 @@ const EventsScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Events</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('NewEventScreen')}>
-          <Ionicons name="add" size={28} color="black" />
-        </TouchableOpacity>
+    <View style={styles.wrapper}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Events</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('NewEventScreen')}>
+            <Ionicons name="add" size={28} color="black" />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.subtitle}>
+          {events[0] ? `The ${events[0].name} event is ongoing` : 'No ongoing event'}
+        </Text>
+
+        <FlatList
+          data={events}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        />
       </View>
-      <Text style={styles.subtitle}>{events[0] ? `The ${events[0].name} event is ongoing` : 'No ongoing event'}</Text>
-      <FlatList
-        data={events}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      />
+      <NavigationBar />
     </View>
   );
 };
 
+export default EventsScreen;
+
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  container: {
+    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 60,
   },
@@ -91,5 +112,3 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
-
-export default EventsScreen;

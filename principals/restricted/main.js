@@ -30,6 +30,16 @@ const MainRest = ({ navigation }) => {
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
   };
+    // Determina qué props enviar al AnalogClock basado en la selección
+  const getClockProps = () => {
+    const lowerOption = selectedOption.toLowerCase();
+    return {
+      direction: lowerOption === "left" ? "left" : lowerOption === "right" ? "right" : "normal",
+      isCrazy: lowerOption === "crazy",
+      isSwing: lowerOption === "swing",
+      speed: speed
+    };
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -45,20 +55,18 @@ const MainRest = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <AnalogClock 
-        direction={selectedOption === 'Left' ? 'left' : selectedOption === 'Right' ? 'right' : 'normal'}
-        speed={selectedOption === 'Left' || selectedOption === 'Right' ? speed / 10 : 1}
-        isCrazy={selectedOption === 'Crazy'}
-        isSwing={selectedOption === 'Swing'}
-      />
+       <AnalogClock {...getClockProps()} />
 
       {options.map((row, index) => (
         <View key={index} style={styles.buttonRow}>
           {row.map((item) => (
             <TouchableOpacity
               key={item}
-              style={[styles.button, selectedOption === item && styles.activeButton]}
-              onPress={() => handleOptionSelect(item)}
+              style={[
+                styles.button,
+                selectedOption === item && styles.activeButton,
+              ]}
+              onPress={() => setSelectedOption(item)}
             >
               <Text
                 style={[
@@ -85,6 +93,7 @@ const MainRest = ({ navigation }) => {
         maximumTrackTintColor="#aaa"
         thumbTintColor="#333"
       />
+
 
       <TouchableOpacity style={styles.turnOnButton}>
         <Text style={styles.turnOnText}>Turn On</Text>

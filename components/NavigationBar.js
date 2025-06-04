@@ -7,8 +7,8 @@ const NavigationBar = () => {
 
   const navItems = [
     { name: 'Schedule', icon: '🕐' },
-    { name: 'EventsScreen', icon: '📅' },
-    { name: 'MovementsScreen', icon: '👥' },
+    { name: 'Events', icon: '📅' },
+    { name: 'Movements', icon: '👥' },
     { name: 'Users', icon: '👤' },
   ];
 

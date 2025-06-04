@@ -23,10 +23,10 @@ export default function App() {
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Mainfree" component={Mainfree} />
           <Stack.Screen name='MainRestricted' component={MainRest} />
-          <Stack.Screen name="EventsScreen" component={EventsScreen} />
-          <Stack.Screen name="MovementsScreen" component={MovementsScreen} />
+          <Stack.Screen name="Events" component={EventsScreen} />
+          <Stack.Screen name="Movements" component={MovementsScreen} />
           <Stack.Screen name="NewEventScreen" component={NewEventScreen} />
-          <Stack.Screen name="Schedule" component={ScheduleScreen} />
+          <Stack.Screen name="Schedule" component={ScheduleScreen} /> 
           <Stack.Screen name="Users" component={usersScreen} />
           <Stack.Screen name="UserDetail" component={UserDetailScreen} />
         </Stack.Navigator>

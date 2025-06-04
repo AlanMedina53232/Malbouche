@@ -12,7 +12,7 @@ import AnalogClock from "../../components/analogClock";
 import { Ionicons } from '@expo/vector-icons';
 
 const MainRest = ({ navigation }) => {
-  const [selectedOption, setSelectedOption] = useState("");
+  const [selectedOption, setSelectedOption] = useState("normal");
   const [speed, setSpeed] = useState(50);
 
   const currentUser = {
@@ -26,6 +26,10 @@ const MainRest = ({ navigation }) => {
     ["Crazy", "Swing"],
     ["Customized", "Normal"]
   ];
+
+  const handleOptionSelect = (option) => {
+    setSelectedOption(option);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,7 +45,12 @@ const MainRest = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <AnalogClock />
+      <AnalogClock 
+        direction={selectedOption === 'Left' ? 'left' : selectedOption === 'Right' ? 'right' : 'normal'}
+        speed={selectedOption === 'Left' || selectedOption === 'Right' ? speed / 10 : 1}
+        isCrazy={selectedOption === 'Crazy'}
+        isSwing={selectedOption === 'Swing'}
+      />
 
       {options.map((row, index) => (
         <View key={index} style={styles.buttonRow}>
@@ -49,7 +58,7 @@ const MainRest = ({ navigation }) => {
             <TouchableOpacity
               key={item}
               style={[styles.button, selectedOption === item && styles.activeButton]}
-              onPress={() => setSelectedOption(item)}
+              onPress={() => handleOptionSelect(item)}
             >
               <Text
                 style={[
@@ -85,6 +94,8 @@ const MainRest = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
+// ... (los estilos permanecen igual)
 
 const styles = StyleSheet.create({
   container: {

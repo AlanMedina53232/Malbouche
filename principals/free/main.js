@@ -10,7 +10,7 @@ import Slider from "@react-native-community/slider";
 import AnalogClock from "../../components/analogClock";
 
 const Mainfree = () => {
-  const [selectedOption, setSelectedOption] = useState(""); // Solo una selección activa
+  const [selectedOption, setSelectedOption] = useState("normal");
   const [speed, setSpeed] = useState(50);
 
   const options = [
@@ -19,11 +19,22 @@ const Mainfree = () => {
     ["Customized", "Normal"],
   ];
 
+  // Determina qué props enviar al AnalogClock basado en la selección
+  const getClockProps = () => {
+    const lowerOption = selectedOption.toLowerCase();
+    return {
+      direction: lowerOption === "left" ? "left" : lowerOption === "right" ? "right" : "normal",
+      isCrazy: lowerOption === "crazy",
+      isSwing: lowerOption === "swing",
+      speed: speed
+    };
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>MALBOUCHE</Text>
 
-      <AnalogClock />
+      <AnalogClock {...getClockProps()} />
 
       {options.map((row, index) => (
         <View key={index} style={styles.buttonRow}>
@@ -69,6 +80,7 @@ const Mainfree = () => {
   );
 };
 
+// Los estilos permanecen EXACTAMENTE igual
 const styles = StyleSheet.create({
   container: {
     flex: 1,

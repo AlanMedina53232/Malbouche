@@ -15,6 +15,7 @@ import {
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import AnalogClock from "../../components/analogClock"
+import NavigationBar from "../../components/NavigationBar"
 
 const { height } = Dimensions.get("window")
 
@@ -150,6 +151,9 @@ const CreateMovementScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Add NavigationBar component */}
+        <NavigationBar />
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
@@ -178,6 +182,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingBottom: 80, // Add padding to avoid content being hidden by navigation bar
   },
   clockContainer: {
     alignItems: "center",

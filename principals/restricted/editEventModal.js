@@ -120,7 +120,7 @@ const EditEventModal = ({ visible, event, onClose, onUpdate, onDelete }) => {
 
   if (!event) return null
 
-  // Calculate larger, more comfortable dimensions
+  // Calculate dimensions for modal
   const isLandscape = screenData.width > screenData.height
   const availableHeight = screenData.height * (isLandscape ? 0.9 : 0.85)
   const modalWidth = Math.min(screenData.width * 0.92, 450)
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
   updateBtn: {
     flex: 1,
     backgroundColor: "#ddd",
-    paddingVertical: 16,
+    paddingVertical: 10,
     borderRadius: 12,
     alignItems: "center",
     shadowColor: "#000",
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   deleteBtn: {
     flex: 1,
     backgroundColor: "#ff6b6b",
-    paddingVertical: 16,
+    paddingVertical: 10,
     borderRadius: 12,
     alignItems: "center",
     shadowColor: "#000",

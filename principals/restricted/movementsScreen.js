@@ -1,10 +1,8 @@
 "use client"
-
-import React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import NavigationBar from "../../components/NavigationBar"
 
 const MovementsScreen = ({ navigation }) => {
   const [movements, setMovements] = useState([
@@ -37,7 +35,7 @@ const MovementsScreen = ({ navigation }) => {
   }
 
   // Register handlers with navigation
-  React.useEffect(() => {
+  useEffect(() => {
     navigation.setOptions({
       onMovementCreated: handleMovementCreated,
       onMovementUpdated: handleMovementUpdated,
@@ -75,6 +73,8 @@ const MovementsScreen = ({ navigation }) => {
       <TouchableOpacity style={styles.fab} onPress={handleCreateMovement}>
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
+
+      <NavigationBar />
     </View>
   )
 }
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 100, // Increased to make room for navigation bar
   },
   item: {
     paddingVertical: 20,
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 24,
-    bottom: 32,
+    bottom: 90, // Increased to position above navigation bar
     backgroundColor: "#333",
     borderRadius: 30,
     width: 56,

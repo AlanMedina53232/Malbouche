@@ -1,10 +1,12 @@
 "use client"
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native"
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 const MovementsScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets()
   const [movements, setMovements] = useState([
     { id: "1", name: "Left", speed: 50, time: 10, type: "Left" },
     { id: "2", name: "Right", speed: 75, time: 15, type: "Right" },
@@ -12,16 +14,13 @@ const MovementsScreen = ({ navigation }) => {
   ])
 
   const handleCreateMovement = () => {
-    // Navigate without passing callbacks in params
     navigation.navigate("CreateMovement")
   }
 
   const handleEditMovement = (movement) => {
-    // Navigate without passing callbacks in params
     navigation.navigate("EditMovement", { movementId: movement.id, movement })
   }
 
-  // Handlers to be called from other screens
   const handleMovementCreated = (newMovement) => {
     setMovements((prev) => [...prev, { ...newMovement, id: Date.now().toString() }])
   }
@@ -34,7 +33,6 @@ const MovementsScreen = ({ navigation }) => {
     setMovements((prev) => prev.filter((m) => m.id !== movementId))
   }
 
-  // Register handlers with navigation
   useEffect(() => {
     navigation.setOptions({
       onMovementCreated: handleMovementCreated,
@@ -55,7 +53,10 @@ const MovementsScreen = ({ navigation }) => {
   )
 
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      { paddingTop: insets.top }
+    ]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="black" />
@@ -67,10 +68,22 @@ const MovementsScreen = ({ navigation }) => {
         data={movements}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[
+          styles.list,
+          { paddingBottom: insets.bottom + 100 }
+        ]}
       />
 
-      <TouchableOpacity style={styles.fab} onPress={handleCreateMovement}>
+      <TouchableOpacity 
+        style={[
+          styles.fab,
+          { 
+            bottom: insets.bottom + 70,
+            right: 24 + insets.right
+          }
+        ]} 
+        onPress={handleCreateMovement}
+      >
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
@@ -79,18 +92,17 @@ const MovementsScreen = ({ navigation }) => {
   )
 }
 
-export default MovementsScreen
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    position: 'relative',
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 20 : 16,
     paddingBottom: 20,
   },
   title: {
@@ -100,7 +112,6 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 20,
-    paddingBottom: 100, // Increased to make room for navigation bar
   },
   item: {
     paddingVertical: 20,
@@ -125,8 +136,6 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    right: 24,
-    bottom: 90, // Increased to position above navigation bar
     backgroundColor: "#333",
     borderRadius: 30,
     width: 56,
@@ -143,3 +152,5 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
 })
+
+export default MovementsScreen

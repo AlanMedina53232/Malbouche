@@ -13,3 +13,6 @@ npx expo install @react-native-community/datetimepicker
 
     // Dependencia agregada por alan
 npm install @react-native-community/slider
+
+//Dependencia para arreglar la barra de navegacion
+npm install react-native-safe-area-context

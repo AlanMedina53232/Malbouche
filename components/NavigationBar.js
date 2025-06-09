@@ -1,8 +1,10 @@
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native"
 import { useNavigation } from "@react-navigation/native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 const NavigationBar = () => {
   const navigation = useNavigation()
+  const insets = useSafeAreaInsets()
 
   const navItems = [
     { name: "Schedule", icon: "🕐" },
@@ -12,7 +14,12 @@ const NavigationBar = () => {
   ]
 
   return (
-    <View style={styles.navbar}>
+    <View style={[
+      styles.navbar,
+      {
+        paddingBottom: Platform.OS === "ios" ? 34 + insets.bottom : 10 + insets.bottom
+      }
+    ]}>
       {navItems.map((item, index) => (
         <TouchableOpacity key={index} style={styles.navItem} onPress={() => navigation.navigate(item.name)}>
           <Text style={styles.navIcon}>{item.icon}</Text>
@@ -30,7 +37,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#ffffff",
     paddingVertical: Platform.OS === "ios" ? 12 : 10,
-    paddingBottom: Platform.OS === "ios" ? 34 : 10,
     borderTopWidth: 1,
     borderTopColor: "#e0e0e0",
     position: "absolute",

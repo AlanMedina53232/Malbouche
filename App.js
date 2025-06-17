@@ -1,7 +1,7 @@
 import { StatusBar } from "expo-status-bar"
 import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
-import { SafeAreaProvider } from "react-native-safe-area-context" // Importa SafeAreaProvider
+import { SafeAreaProvider } from "react-native-safe-area-context"
 import EventsScreen from "./principals/restricted/eventsScreen"
 import NewEventScreen from "./principals/restricted/newEventScreen"
 import Login from "./login.js"
@@ -43,3 +43,4 @@ export default function App() {
       </EventProvider>
   )
 }
+

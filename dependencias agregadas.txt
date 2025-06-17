@@ -16,3 +16,7 @@ npm install @react-native-community/slider
 
 //Dependencia para arreglar la barra de navegacion
 npm install react-native-safe-area-context
+
+
+//Para encriptar las contraseñas
+npm install crypto-js

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import CryptoJS from 'crypto-js';
 
@@ -12,20 +12,31 @@ const VALID_CREDENTIALS = {
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (email === '' || password === '') {
       Alert.alert('Error', 'Por favor, completa todos los campos.');
       return;
     }
 
-    const hashedPassword = CryptoJS.SHA256(password).toString(CryptoJS.enc.Hex);
+    setIsLoading(true); // Activar carga
 
-    if (email === VALID_CREDENTIALS.email && hashedPassword === VALID_CREDENTIALS.passwordHash) {
-      Alert.alert('Éxito', '¡Inicio de sesión correcto!');
-      navigation.navigate('MainRestricted');
-    } else {
-      Alert.alert('Error', `Credenciales incorrectas. Hash recibido: ${hashedPassword}`);
+    // Simulamos un pequeño retraso para la animación
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const hashedPassword = CryptoJS.SHA256(password).toString(CryptoJS.enc.Hex);
+
+      if (email === VALID_CREDENTIALS.email && hashedPassword === VALID_CREDENTIALS.passwordHash) {
+        navigation.navigate('MainRestricted');
+      } else {
+        Alert.alert('Error', 'Credenciales incorrectas');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Ocurrió un problema al iniciar sesión');
+    } finally {
+      setIsLoading(false); // Desactivar carga
     }
   };
 
@@ -53,11 +64,23 @@ export default function Login({ navigation }) {
           placeholderTextColor="#999"
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Iniciar sesión</Text>
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Iniciar sesión</Text>
+          )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Mainfree')}>
+        <TouchableOpacity 
+          style={[styles.button, styles.guestButton]} 
+          onPress={() => navigation.navigate('Mainfree')}
+          disabled={isLoading}
+        >
           <Text style={styles.buttonText}>Continuar como invitado</Text>
         </TouchableOpacity>
       </View>
@@ -109,6 +132,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
+    minHeight: 50,
+    justifyContent: 'center',
+  },
+  guestButton: {
+    backgroundColor: '#6b7280', // Color diferente para el botón de invitado
   },
   buttonText: {
     color: '#fff',

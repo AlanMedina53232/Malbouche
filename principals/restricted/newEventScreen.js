@@ -19,7 +19,7 @@ import AnalogClock from "../../components/analogClock"
 
 const { height } = Dimensions.get("window")
 
-const daysOfWeek = ["S", "M", "T", "W", "Th", "F", "S"]
+const daysOfWeek = ["Su", "M", "T", "W", "Th", "F", "Sa"]
 const moveOptions = ["Left", "Right", "Swings", "Crazy"]
 
 const NewEventScreen = ({ navigation }) => {
@@ -126,40 +126,30 @@ const NewEventScreen = ({ navigation }) => {
               />
             </View>
 
-            {movements.map((movement, index) => (
-              <View key={index} style={styles.movementRow}>
-                <View style={styles.movementType}>
-                  <Text style={styles.movementLabel}>Move type</Text>
-                  <Dropdown
-                    options={moveOptions}
-                    value={movement.type}
-                    onSelect={(value) => updateMovement(index, "type", value)}
-                  />
-                </View>
-                <View style={styles.inputGroup}>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Speed</Text>
-                    <TextInput
-                      style={styles.smallInput}
-                      placeholder="0-100"
-                      value={movement.speed}
-                      onChangeText={(value) => updateMovement(index, "speed", value)}
-                      keyboardType="numeric"
-                    />
-                  </View>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Time (seg)</Text>
-                    <TextInput
-                      style={styles.smallInput}
-                      placeholder="Seconds"
-                      value={movement.time}
-                      onChangeText={(value) => updateMovement(index, "time", value)}
-                      keyboardType="numeric"
-                    />
-                  </View>
-                </View>
-              </View>
-            ))}
+            <View style={styles.movementRow}>
+  <View style={styles.movementType}>
+    <Text style={styles.movementLabel}>Move type</Text>
+    <Dropdown
+      options={moveOptions}
+      value={movement.type}
+      onSelect={(value) => updateMovement("type", value)}
+    />
+  </View>
+
+  <View style={styles.inputGroup}>
+    <View style={styles.inputContainer}>
+      <Text style={styles.inputLabel}>Speed</Text>
+      <TextInput
+        style={styles.smallInput}
+        placeholder="0-100"
+        value={movement.speed}
+        onChangeText={(value) => updateMovement("speed", value)}
+        keyboardType="numeric"
+      />
+    </View>
+  </View>
+</View>
+
 
             <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
               <Text style={styles.createButtonText}>Create event</Text>

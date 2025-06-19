@@ -29,7 +29,7 @@ export default function Login({ navigation }) {
       const hashedPassword = CryptoJS.SHA256(password).toString(CryptoJS.enc.Hex);
 
       if (email === VALID_CREDENTIALS.email && hashedPassword === VALID_CREDENTIALS.passwordHash) {
-        navigation.navigate('MainRestricted');
+        navigation.replace('Home');
       } else {
         Alert.alert('Error', 'Credenciales incorrectas');
       }

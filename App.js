@@ -5,7 +5,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 import EventsScreen from "./principals/restricted/eventsScreen"
 import NewEventScreen from "./principals/restricted/newEventScreen"
 import Login from "./login.js"
-import ScheduleScreen from "./principals/restricted/scheduleScreen"
 import { EventProvider } from "./context/eventContext"
 import usersScreen from "./principals/restricted/usersScreen.js"
 import UserDetailScreen from "./principals/restricted/userDetailScreen.js"
@@ -24,13 +23,13 @@ export default function App() {
           
         <SafeAreaProvider>
           <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="Mainfree" component={Mainfree} />
-            <Stack.Screen name="MainRestricted" component={MainRest} />
-            <Stack.Screen name="Events" component={EventsScreen} />
+            
+          <Stack.Screen name="Login" component={Login} />
+            <Stack.Screen name="Mainfree" component={Mainfree}  />
+            <Stack.Screen name="Home" component={MainRest} />
+            <Stack.Screen name="Events" component={EventsScreen}  />
             <Stack.Screen name="Movements" component={MovementsScreen} />
-            <Stack.Screen name="NewEventScreen" component={NewEventScreen} />
-            <Stack.Screen name="Schedule" component={ScheduleScreen} />
+            <Stack.Screen name="NewEventScreen" component={NewEventScreen}/>
             <Stack.Screen name="Users" component={usersScreen} />
             <Stack.Screen name="UserDetail" component={UserDetailScreen} />
             <Stack.Screen name="CreateMovement" component={CreateMovementScreen} />

@@ -58,9 +58,7 @@ const MovementsScreen = ({ navigation }) => {
       { paddingTop: insets.top }
     ]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
-        </TouchableOpacity>
+        
         <Text style={styles.title}>Movements</Text>
       </View>
 

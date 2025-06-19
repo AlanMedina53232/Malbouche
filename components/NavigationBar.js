@@ -7,7 +7,7 @@ const NavigationBar = () => {
   const insets = useSafeAreaInsets()
 
   const navItems = [
-    { name: "Schedule", icon: "🕐" },
+    { name: "Home", icon: "🕐" },
     { name: "Events", icon: "📅" },
     { name: "Movements", icon: "👥" },
     { name: "Users", icon: "👤" },

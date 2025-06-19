@@ -131,7 +131,7 @@ const NewEventScreen = ({ navigation }) => {
     <Text style={styles.movementLabel}>Move type</Text>
     <Dropdown
       options={moveOptions}
-      value={movement.type}
+      value={movements.type}
       onSelect={(value) => updateMovement("type", value)}
     />
   </View>
@@ -142,7 +142,7 @@ const NewEventScreen = ({ navigation }) => {
       <TextInput
         style={styles.smallInput}
         placeholder="0-100"
-        value={movement.speed}
+        value={movements.speed}
         onChangeText={(value) => updateMovement("speed", value)}
         keyboardType="numeric"
       />

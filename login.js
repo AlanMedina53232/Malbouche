@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import CryptoJS from 'crypto-js';
 
-// Credenciales con hash CORRECTO (generado en tiempo real)
 const VALID_CREDENTIALS = {
   email: 'usuario@malbouche.com',
   passwordHash: CryptoJS.SHA256("Malbouche2025!").toString(CryptoJS.enc.Hex)
@@ -12,6 +12,7 @@ const VALID_CREDENTIALS = {
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -20,9 +21,8 @@ export default function Login({ navigation }) {
       return;
     }
 
-    setIsLoading(true); // Activar carga
+    setIsLoading(true);
 
-    // Simulamos un pequeño retraso para la animación
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
@@ -36,7 +36,7 @@ export default function Login({ navigation }) {
     } catch (error) {
       Alert.alert('Error', 'Ocurrió un problema al iniciar sesión');
     } finally {
-      setIsLoading(false); // Desactivar carga
+      setIsLoading(false);
     }
   };
 
@@ -55,17 +55,26 @@ export default function Login({ navigation }) {
           placeholderTextColor="#999"
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          placeholderTextColor="#999"
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Contraseña"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+            placeholderTextColor="#999"
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? 'eye-off' : 'eye'}
+              size={24}
+              color="#666"
+            />
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity 
-          style={styles.button} 
+        <TouchableOpacity
+          style={styles.button}
           onPress={handleLogin}
           disabled={isLoading}
         >
@@ -76,8 +85,8 @@ export default function Login({ navigation }) {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.button, styles.guestButton]} 
+        <TouchableOpacity
+          style={[styles.button, styles.guestButton]}
           onPress={() => navigation.navigate('Mainfree')}
           disabled={isLoading}
         >
@@ -126,6 +135,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#f9fafb',
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#d1d5db',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f9fafb',
+    height: 50,
+    marginBottom: 15,
+    justifyContent: 'space-between',
+  },
+  passwordInput: {
+    flex: 1,
+    fontSize: 16,
+  },
   button: {
     backgroundColor: '#5b21b6',
     paddingVertical: 14,
@@ -136,7 +161,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   guestButton: {
-    backgroundColor: '#6b7280', // Color diferente para el botón de invitado
+    backgroundColor: '#6b7280',
   },
   buttonText: {
     color: '#fff',

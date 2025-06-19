@@ -26,9 +26,17 @@ const UserDetailScreen = ({ route, navigation }) => {
           <Text style={styles.buttonText}>Change Password</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={[styles.button, styles.logoutButton]}>
-          <Text style={[styles.buttonText, styles.logoutText]}>Log out</Text>
-        </TouchableOpacity>
+        <TouchableOpacity
+  style={[styles.button, styles.logoutButton]}
+  onPress={() => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  }}
+>
+  <Text style={[styles.buttonText, styles.logoutText]}>Log out</Text>
+</TouchableOpacity>
       </View>
     </View>
   );

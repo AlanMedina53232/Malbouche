@@ -114,13 +114,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   item: {
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    backgroundColor: "#f9f9f9",
-    borderRadius: 4,
-    marginBottom: 8,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    
   },
   itemText: {
     fontSize: 16,

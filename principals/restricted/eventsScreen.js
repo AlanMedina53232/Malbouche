@@ -109,35 +109,43 @@ const EventsScreen = () => {
         <Switch
           value={item.enabled}
           onValueChange={() => toggleEventStatus(item.id)}
-          trackColor={{ false: "#e0e0e0", true: "#ff6b6b" }}
+          trackColor={{ false: "#e0e0e0", true: "#ffd474" }}
           thumbColor={item.enabled ? "#ffffff" : "#f4f3f4"}
           ios_backgroundColor="#e0e0e0"
         />
       </View>
     </TouchableOpacity>
   )
-
+////
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
+      </View>
+      <View style={styles.titleContainer}>
         <Text style={styles.title}>Events</Text>
+      </View>
+
+      <Text style={styles.subtitle}>{getOngoingEvent()}</Text>
+
+      <View style={styles.plus}>
         <TouchableOpacity onPress={() => navigation.navigate("NewEventScreen")}>
           <Ionicons name="add" size={28} color="black" />
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.subtitle}>{getOngoingEvent()}</Text>
-
-      <FlatList
-        data={localEvents}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.eventsList}
-        showsVerticalScrollIndicator={false}
-      />
+      <View style={styles.eventContainer}>
+        <FlatList
+          data={localEvents}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.eventsList}
+          showsVerticalScrollIndicator={false}
+       />
+      </View>
+      
 
       <EditEventModal
         visible={editModalVisible}
@@ -158,25 +166,34 @@ const EventsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#fdffff"
   },
   header: {
+   
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 45,
+  },
+  titleContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 15,
+    position: "relative",
+
   },
   title: {
-    fontSize: 22,
+    fontSize: 30,
     fontWeight: "bold",
     flex: 1,
     textAlign: "center",
     marginHorizontal: 20,
+    color: "#333",
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "500",
     textAlign: "center",
     marginBottom: 20,
@@ -186,6 +203,14 @@ const styles = StyleSheet.create({
   eventsList: {
     paddingHorizontal: 20,
     paddingBottom: 100,
+  },
+  plus: {
+    paddingTop: 40,
+    paddingRight: 26,
+    alignItems: "flex-end",
+  },
+  eventContainer:{
+    paddingTop: 15,
   },
   eventCard: {
     backgroundColor: "#fff",

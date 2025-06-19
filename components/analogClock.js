@@ -164,14 +164,14 @@ const AnalogClock = ({ direction = 'normal', speed = 50, isCrazy = false, isSwin
   return (
     <View style={styles.container}>
       <Svg width={CLOCK_SIZE} height={CLOCK_SIZE}>
-        <Circle cx={CENTER} cy={CENTER} r={RADIUS} stroke="black" strokeWidth="4" fill="white" />
+        <Circle cx={CENTER} cy={CENTER} r={RADIUS} stroke="white" strokeWidth="3" fill="white" />
         {renderNumbers()}
         <Line
           x1={CENTER}
           y1={CENTER}
           x2={hourHand.x}
           y2={hourHand.y}
-          stroke="black"
+          stroke="#8c0200"
           strokeWidth="6"
           strokeLinecap="round"
         />
@@ -180,11 +180,11 @@ const AnalogClock = ({ direction = 'normal', speed = 50, isCrazy = false, isSwin
           y1={CENTER}
           x2={minuteHand.x}
           y2={minuteHand.y}
-          stroke="blue"
+          stroke="#8c0200"
           strokeWidth="4"
-          strokeLinecap="round"
+          strokeLinecap="butt"
         />
-        <Circle cx={CENTER} cy={CENTER} r={5} fill="black" />
+        <Circle cx={CENTER} cy={CENTER} r={5} fill="#8c0200" />
       </Svg>
     </View>
   );
@@ -197,6 +197,7 @@ const styles = StyleSheet.create({
     marginTop: 25,
     marginBottom: 25,
   },
+
 });
 
 export default AnalogClock;

@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  ImageBackground
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import NavigationBar from "../../components/NavigationBar";
 import AnalogClock from "../../components/analogClock";
 import { Ionicons } from '@expo/vector-icons';
+import FrameImage from '../../assets/reloj.png';
 
 const MainRest = ({ navigation }) => {
   const [selectedOption, setSelectedOption] = useState("normal");
@@ -44,80 +46,83 @@ const MainRest = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-         <View style={styles.header}>
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>MALBOUCHE</Text>
-      </View>
-      <TouchableOpacity
-        style={styles.profileButton}
-        onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
-      >
-        <View style={styles.avatarSmall}>
-          <Ionicons name="person" size={20} color="#666" />
+      <View style={styles.header}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>MALBOUCHE</Text>
         </View>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+        >
+          <View style={styles.avatarSmall}>
+            <Ionicons name="person" size={20} color="#660154" />
+          </View>
+        </TouchableOpacity>
+      </View>
       <View style={styles.container}>
- 
-
         <ScrollView 
           contentContainerStyle={styles.scrollContainer} 
           showsVerticalScrollIndicator={false} 
         >   
-
-
-      <View style={styles.clockFrame}>
-        <AnalogClock {...getClockProps()} />
-      </View>
-
-      {options.map((row, index) => (
-        <View key={index} style={styles.buttonRow}>
-          {row.map((item) => (
-            <TouchableOpacity
-              key={item}
-              style={[
-                styles.button,
-                selectedOption === item && styles.activeButton,
-              ]}
-              onPress={() => setSelectedOption(item)}
+          <View style={styles.clockFrame}>
+            <ImageBackground
+              source={FrameImage} // Tu imagen de marco
+              style={styles.clockImageFrame}
+              resizeMode="contain" // Ajusta la imagen al contenedor
             >
-              <Text
-                style={[
-                  styles.buttonText,
-                  selectedOption === item && { color: "#fff" },
-                ]}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      ))}
-      <View style={styles.sliderContainer}>
-        <View style={styles.sliderBox}>
-          <Text style={styles.sliderLabel}>Speed</Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={1}
-              maximumValue={100}
-              step={1}
-              value={speed}
-              onSlidingComplete={setSpeed}
-              minimumTrackTintColor="#000"
-              maximumTrackTintColor="#aaa"
-              thumbTintColor="#8C0200"
-            />
-        </View> 
-      </View>
-     
-      <TouchableOpacity style={styles.turnOnButton}>
-        <Text style={styles.turnOnText}>Turn On</Text>
-      </TouchableOpacity>
-      </ScrollView>
-      <NavigationBar/>
-      </View>
-    
+            <View style={styles.clockInnerContainer}>
+              <AnalogClock {...getClockProps()} />
+            </View>
+            </ImageBackground>
+          </View>
 
+          {options.map((row, index) => (
+            <View key={index} style={styles.buttonRow}>
+              {row.map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={[
+                    styles.button,
+                    selectedOption === item && styles.activeButton,
+                  ]}
+                  onPress={() => setSelectedOption(item)}
+                >
+                  <Text
+                    style={[
+                      styles.buttonText,
+                      selectedOption === item && { color: "#fff" },
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+          <View style={styles.sliderContainer}>
+            <View style={styles.sliderBox}>
+              <Text style={styles.sliderLabel}>Speed</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={1}
+                  maximumValue={100}
+                  step={1}
+                  value={speed}
+                  onSlidingComplete={setSpeed}
+                  minimumTrackTintColor="#000"
+                  maximumTrackTintColor="#aaa"
+                  thumbTintColor="#660154"
+                />
+            </View> 
+          </View>
+      
+          <TouchableOpacity style={styles.turnOnButton}>
+            <Text style={styles.turnOnText}>ON</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      <NavigationBar/>
+    </View>
+    
     </SafeAreaView>
   );
 };
@@ -126,7 +131,7 @@ const MainRest = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-
+    backgroundColor: "#FAFAFA",
   },
   safeArea: {
     flex: 1,
@@ -138,7 +143,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 35, // Espacio superior para el header
-    backgroundColor: "#fdffff", // Mismo color que el fondo
+    backgroundColor: "#FAFAFA", // Mismo color que el fondo
     borderBottomWidth: 1, // Opcional: línea divisoria
     borderBottomColor: "#eee",
     zIndex: 100, // Asegura que esté por encima del contenido
@@ -165,9 +170,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   clockFrame: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: 5,
+
+    width: 300,
+    height: 300,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    
+  },
+  clockImageFrame: {
+    width: '94%',
+    height: '94%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 38, // Espacio superior para el marco
+    marginBottom: 20, // Espacio superior para el marco
+    marginTop: 20, // Espacio superior para el marco
+    overflow: 'hidden', // Asegura que el reloj no sobresalga del marco
+    
+  },
+  clockInnerContainer: {
+    width: '75%',            // Ajusta el tamaño del reloj visualmente
+    height: '75%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingRight: 34,   // Ajusta según el marco de la imagen
+    marginBottom: 15,    // Sube ligeramente el reloj
+
   },
   buttonRow: {
     flexDirection: "row",
@@ -178,7 +207,7 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
     button: {
-    borderWidth: 2,
+    backgroundColor: "#fff",
     flex: 1,
     borderRadius: 30,
     paddingVertical: 15,
@@ -186,12 +215,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minWidth: 100,
     minHeight: 20,
-    borderColor: "#e0e0e0",
     elevation: 2,
     overflow: "hidden",
   },
   activeButton: {
-  backgroundColor: "rgba(74, 127, 231, 0.5)",
+  backgroundColor: "#660154",
   },
   buttonText: {
     color: "#000",
@@ -204,12 +232,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sliderBox: {
-    backgroundColor: "rgba(254, 195, 59, 0.2)",
-    borderWidth: 2,
-    borderColor: "rgba(254, 195, 59, 0.3)",
+    backgroundColor: "#fff",
     width: "90%",
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#fff",
     marginTop: 20,
+    elevation: 2,
+    overflow: "hidden",
 
   },
   sliderLabel: {
@@ -221,13 +251,12 @@ const styles = StyleSheet.create({
   slider: {
     width: "85%",
     height: 30,
-    marginVertical: 10,
     alignSelf: "center",
   },
   turnOnButton: {
     width: "85%",
-    backgroundColor: "#8C0200",
-    marginTop: 20,
+    backgroundColor: "#660154",
+    marginTop: 35,
     paddingVertical: 10,
     borderRadius: 15,
     alignItems: "center",
@@ -242,11 +271,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 100, // Espacio para el NavigationBar
   },
-container: {
-  flex: 1,
-  backgroundColor: "#fdffff",
-},
-  
+
 });
 
 export default MainRest;

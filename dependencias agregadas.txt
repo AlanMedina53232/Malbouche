@@ -20,3 +20,6 @@ npm install react-native-safe-area-context
 
 //Para encriptar las contraseñas
 npm install crypto-js
+
+//Para el degradado del login
+npx expo install expo-linear-gradient

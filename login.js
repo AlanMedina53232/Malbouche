@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import CryptoJS from 'crypto-js';
+import reloj from './assets/reloje.png';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const VALID_CREDENTIALS = {
   email: 'usuario@malbouche.com',
@@ -40,111 +42,134 @@ export default function Login({ navigation }) {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.loginBox}>
-        <Text style={styles.title}>Bienvenido a MalBouche</Text>
+return (
+ <LinearGradient
+  colors={['rgba(51, 0, 42, 1)', 'rgba(254, 185, 220, 0.9)']}
+   start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 1 }}
+  style={styles.container}
+>
+  <View style={styles.loginBox}>
+    <Image
+      source={reloj}
+      style={styles.logo}
+    />
+    <Text style={styles.loginTitle}>Login</Text>
+    <Text style={styles.subtitle}>Enter your email and password to log in</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Correo electrónico"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          placeholderTextColor="#999"
+    <TextInput
+      style={styles.input}
+      placeholder="Email Address"
+      keyboardType="email-address"
+      value={email}
+      onChangeText={setEmail}
+      autoCapitalize="none"
+      placeholderTextColor="#999"
+    />
+
+    <View style={styles.passwordContainer}>
+      <TextInput
+        style={styles.passwordInput}
+        placeholder="Password"
+        secureTextEntry={!showPassword}
+        value={password}
+        onChangeText={setPassword}
+        placeholderTextColor="#999"
+      />
+      <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+        <Ionicons
+          name={showPassword ? 'eye-off' : 'eye'}
+          size={22}
+          color="#666"
         />
-
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Contraseña"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-            placeholderTextColor="#999"
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons
-              name={showPassword ? 'eye-off' : 'eye'}
-              size={24}
-              color="#666"
-            />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Iniciar sesión</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.guestButton]}
-          onPress={() => navigation.navigate('Mainfree')}
-          disabled={isLoading}
-        >
-          <Text style={styles.buttonText}>Continuar como invitado</Text>
-        </TouchableOpacity>
-      </View>
-      <StatusBar style="auto" />
+      </TouchableOpacity>
     </View>
+
+    <TouchableOpacity
+      style={styles.button}
+      onPress={handleLogin}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <ActivityIndicator size="small" color="#fff" />
+      ) : (
+        <Text style={styles.buttonText}>Log In</Text>
+      )}
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      onPress={() => navigation.navigate('Mainfree')}
+      disabled={isLoading}
+    >
+      <Text style={styles.guestText}>or continue as a guest</Text>
+    </TouchableOpacity>
+  </View>
+  <StatusBar style="dark" />
+</LinearGradient>
+
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+   container: {
     flex: 1,
-    backgroundColor: '#f0f4f8',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
   loginBox: {
     width: '100%',
-    maxWidth: 340,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 25,
+    maxWidth: 360,
+    backgroundColor: 'rgba(245, 245, 245, 1)',
+    borderRadius: 18,
+    padding: 24,
+    paddingBottom: 50,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
-    elevation: 8,
+    elevation: 10,
   },
-  title: {
-    fontSize: 26,
-    marginBottom: 25,
-    fontWeight: '600',
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 10,
+    resizeMode: 'contain',
+  },
+  loginTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 20,
+    color: '#111',
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 20,
     textAlign: 'center',
-    color: '#333',
   },
   input: {
-    height: 50,
-    borderColor: '#d1d5db',
+    width: '100%',
+    height: 48,
+    borderColor: 'rgba(204, 204, 204, 0.6)',
     borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingHorizontal: 12,
-    fontSize: 16,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    marginBottom: 20,
     backgroundColor: '#f9fafb',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderColor: '#d1d5db',
+    width: '100%',
+    borderColor: 'rgba(204, 204, 204, 0.6)',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderRadius: 10,
+    paddingHorizontal: 14,
     backgroundColor: '#f9fafb',
-    height: 50,
-    marginBottom: 15,
+    height: 48,
+    marginBottom: 20,
     justifyContent: 'space-between',
   },
   passwordInput: {
@@ -152,20 +177,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#5b21b6',
-    paddingVertical: 14,
-    borderRadius: 8,
+    backgroundColor: '#660154',
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10,
-    minHeight: 50,
-    justifyContent: 'center',
-  },
-  guestButton: {
-    backgroundColor: '#6b7280',
+    width: '100%',
+    marginBottom: 14,
   },
   buttonText: {
     color: '#fff',
     fontSize: 17,
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  guestText: {
+    fontSize: 14,
+    color: '#3b82f6',
+    marginTop: 5,
   },
 });

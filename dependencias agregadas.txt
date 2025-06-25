@@ -20,3 +20,10 @@ npm install react-native-safe-area-context
 
 //Para encriptar las contraseñas
 npm install crypto-js
+
+//Para el degradado del login
+npx expo install expo-linear-gradient
+
+// para los iconos
+npm install react-native-vector-icons
+npm install react-native-vector-icons @fortawesome/fontawesome-svg-core @fortawesome/free-solid-svg-icons @fortawesome/free-regular-svg-icons @fortawesome/free-brands-svg-icons @fortawesome/react-native-fontawesome

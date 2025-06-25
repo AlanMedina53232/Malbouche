@@ -116,9 +116,7 @@ const MainRest = ({ navigation }) => {
             </View> 
           </View>
       
-          <TouchableOpacity style={styles.turnOnButton}>
-            <Text style={styles.turnOnText}>ON</Text>
-          </TouchableOpacity>
+         
         </ScrollView>
       <NavigationBar/>
     </View>

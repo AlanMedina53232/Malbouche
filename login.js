@@ -6,10 +6,6 @@ import CryptoJS from 'crypto-js';
 import reloj from './assets/reloje.png';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const VALID_CREDENTIALS = {
-  email: 'usuario@malbouche.com',
-  passwordHash: CryptoJS.SHA256("Malbouche2025!").toString(CryptoJS.enc.Hex)
-};
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
@@ -25,18 +21,39 @@ export default function Login({ navigation }) {
 
     setIsLoading(true);
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
     try {
-      const hashedPassword = CryptoJS.SHA256(password).toString(CryptoJS.enc.Hex);
+      // Cambia la URL por la de tu backend si es diferente
+      const response = await fetch('https://malbouche-backend.onrender.com/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          correo: email,
+          password: password,
+        }),
+      });
 
-      if (email === VALID_CREDENTIALS.email && hashedPassword === VALID_CREDENTIALS.passwordHash) {
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Login error response:', errorText);
+        Alert.alert('Error', `Error en el servidor: ${errorText}`);
+        setIsLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.data && data.data.token) {
+        // Guarda el token para futuras peticiones
+        await AsyncStorage.setItem('token', data.data.token);
         navigation.replace('Home');
       } else {
-        Alert.alert('Error', 'Credenciales incorrectas');
+        Alert.alert('Error', data.error || 'Credenciales incorrectas');
       }
     } catch (error) {
-      Alert.alert('Error', 'Ocurrió un problema al iniciar sesión');
+      console.error('Fetch login error:', error);
+      Alert.alert('Error', `Ocurrió un problema al iniciar sesión: ${error.message}`);
     } finally {
       setIsLoading(false);
     }

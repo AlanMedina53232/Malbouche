@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import CryptoJS from 'crypto-js';
+import reloj from './assets/reloje.png';
+import { LinearGradient } from 'expo-linear-gradient';
+
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
@@ -31,9 +34,17 @@ export default function Login({ navigation }) {
         }),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Login error response:', errorText);
+        Alert.alert('Error', `Error en el servidor: ${errorText}`);
+        setIsLoading(false);
+        return;
+      }
+
       const data = await response.json();
 
-      if (response.ok && data.data && data.data.token) {
+      if (data.data && data.data.token) {
         // Guarda el token para futuras peticiones
         await AsyncStorage.setItem('token', data.data.token);
         navigation.replace('Home');
@@ -41,7 +52,8 @@ export default function Login({ navigation }) {
         Alert.alert('Error', data.error || 'Credenciales incorrectas');
       }
     } catch (error) {
-      Alert.alert('Error', 'Ocurrió un problema al iniciar sesión');
+      console.error('Fetch login error:', error);
+      Alert.alert('Error', `Ocurrió un problema al iniciar sesión: ${error.message}`);
     } finally {
       setIsLoading(false);
     }

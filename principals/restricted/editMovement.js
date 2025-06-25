@@ -16,17 +16,22 @@ import {
 import { Ionicons } from "@expo/vector-icons"
 import AnalogClock from "../../components/analogClock"
 import NavigationBar from "../../components/NavigationBar"
+import Slider from "@react-native-community/slider"
 
 const { height } = Dimensions.get("window")
+
+const MOVE_TYPES = [
+  { label: "Left", value: "Left" },
+  { label: "Right", value: "Right" },
+]
 
 const EditMovementScreen = ({ navigation, route }) => {
   const { movement } = route.params || {}
 
   const [moveName, setMoveName] = useState("")
   const [movements, setMovements] = useState([
-    { type: "Left", speed: "", time: "" },
-    { type: "Right", speed: "", time: "" },
-    { type: "Swing", speed: "", time: "" },
+    { type: "Left", speed: "", showDropdown: false },
+    { type: "Right", speed: "", showDropdown: false },
   ])
   const [moveType, setMoveType] = useState("")
 
@@ -60,7 +65,6 @@ const EditMovementScreen = ({ navigation, route }) => {
           return {
             ...m,
             speed: movement.speed?.toString() || "",
-            time: movement.time?.toString() || "",
           }
         }
         return m
@@ -81,19 +85,18 @@ const EditMovementScreen = ({ navigation, route }) => {
       return
     }
 
-    const hasValidMovement = movements.some((m) => m.speed && m.time)
+    const hasValidMovement = movements.some((m) => m.speed)
     if (!hasValidMovement) {
-      Alert.alert("Error", "Please fill at least one movement with speed and time")
+      Alert.alert("Error", "Please fill at least one movement with speed")
       return
     }
 
     const updatedMovement = {
       ...movement,
       name: moveName,
-      movements: movements.filter((m) => m.speed && m.time),
-      type: moveType || movements.find((m) => m.speed && m.time)?.type || "Custom",
+      movements: movements.filter((m) => m.speed),
+      type: moveType || movements.find((m) => m.speed)?.type || "Custom",
       speed: movements.find((m) => m.speed)?.speed || "0",
-      time: movements.find((m) => m.time)?.time || "0",
     }
 
     if (handlers.onMovementUpdated) {
@@ -132,77 +135,76 @@ const EditMovementScreen = ({ navigation, route }) => {
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
-          <Text style={styles.title}>Edit Movement</Text>
         </View>
-
-        <View style={styles.content}>
-          <View style={[styles.clockContainer, { height: clockSize }]}>
-            <AnalogClock />
-          </View>
-
-          <View style={styles.formContainer}>
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Move Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter movement name"
-                value={moveName}
-                onChangeText={setMoveName}
-              />
-            </View>
-
-            {movements.map((movement, index) => (
-              <View key={index} style={styles.movementRow}>
-                <View style={styles.movementType}>
-                  <Text style={styles.movementLabel}>{movement.type}</Text>
+        <Text style={styles.title}>Edit Movement</Text>
+        <View style={styles.clockContainer}>
+          <AnalogClock />
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.formContainer}>
+          <Text style={styles.sectionTitle}>Move Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter movement name"
+            value={moveName}
+            onChangeText={setMoveName}
+          />
+          {/* Movement controls */}
+          {movements.map((movement, index) => (
+            <View key={index} style={styles.movementBox}>
+              <Text style={styles.movementLabel}>Move type for the {movement.type.toLowerCase()}</Text>
+              <View style={styles.dropdownRow}>
+                <View style={styles.dropdownContainer}>
+                  <TouchableOpacity
+                    style={styles.dropdown}
+                    onPress={() => updateMovement(index, "showDropdown", !movement.showDropdown)}
+                  >
+                    <Text style={styles.dropdownText}>{MOVE_TYPES.find((t) => t.value === movement.type)?.label || movement.type}</Text>
+                  </TouchableOpacity>
+                  {movement.showDropdown && (
+                    <View style={styles.dropdownList}>
+                      {MOVE_TYPES.map((type) => (
+                        <TouchableOpacity
+                          key={type.value}
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            updateMovement(index, "type", type.value)
+                            updateMovement(index, "showDropdown", false)
+                          }}
+                        >
+                          <Text style={styles.dropdownText}>{type.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
-                <View style={styles.inputGroup}>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Speed</Text>
-                    <TextInput
-                      style={styles.smallInput}
-                      placeholder="0-100"
-                      value={movement.speed}
-                      onChangeText={(value) => updateMovement(index, "speed", value)}
-                      keyboardType="numeric"
-                    />
-                  </View>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Time (seg)</Text>
-                    <TextInput
-                      style={styles.smallInput}
-                      placeholder="Seconds"
-                      value={movement.time}
-                      onChangeText={(value) => updateMovement(index, "time", value)}
-                      keyboardType="numeric"
-                    />
-                  </View>
+                <View style={styles.sliderContainer}>
+                  <Text style={styles.sliderLabel}>Speed</Text>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={1}
+                    maximumValue={100}
+                    step={1}
+                    value={movement.speed ? Number(movement.speed) : 1}
+                    onValueChange={(value) => updateMovement(index, "speed", String(value))}
+                    minimumTrackTintColor="#8c0200"
+                    maximumTrackTintColor="#ddd"
+                    thumbTintColor="#8c0200"
+                  />
+                  <Text style={styles.sliderValue}>{movement.speed || 1}</Text>
                 </View>
               </View>
-            ))}
-
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Move type</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter move type"
-                value={moveType}
-                onChangeText={setMoveType}
-              />
             </View>
-
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-                <Text style={styles.editButtonText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-                <Text style={styles.deleteButtonText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
+          ))}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        {/* Add NavigationBar component */}
         <NavigationBar />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -267,28 +269,75 @@ const styles = StyleSheet.create({
     width: 60,
   },
   movementLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "500",
+    marginBottom: 10,
     color: "#333",
   },
-  inputGroup: {
-    flex: 1,
+  dropdownRow: {
     flexDirection: "row",
-    gap: 15,
+    alignItems: "center",
+    gap: 12,
   },
-  inputContainer: {
+  dropdownContainer: {
     flex: 1,
+    position: "relative",
+    zIndex: 2,
   },
-  inputLabel: {
-    fontSize: 12,
+  dropdown: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 6,
+    padding: 10,
+    backgroundColor: "#fff",
+    minWidth: 90,
+  },
+  dropdownText: {
+    fontSize: 15,
+    color: "#333",
+  },
+  dropdownList: {
+    position: "absolute",
+    top: 44,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 6,
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  dropdownItem: {
+    padding: 12,
+  },
+  sliderContainer: {
+    flex: 2,
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginLeft: 10,
+  },
+  sliderLabel: {
+    fontSize: 13,
     color: "#666",
-    marginBottom: 2,
+    marginRight: 5,
   },
-  smallInput: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    paddingVertical: 4,
-    fontSize: 14,
+  slider: {
+    flex: 1,
+    height: 30,
+    marginHorizontal: 6,
+  },
+  sliderValue: {
+    width: 32,
+    textAlign: "center",
+    fontSize: 15,
+    color: "#333",
+    marginLeft: 4,
   },
   buttonContainer: {
     flexDirection: "row",
@@ -319,6 +368,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#333",
+  },
+  divider: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+    marginVertical: 16,
+  },
+  movementBox: {
+    backgroundColor: "#fafafa",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: "#eee",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
 })
 

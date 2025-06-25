@@ -65,9 +65,10 @@ const AnalogClock = ({ direction = 'normal', speed = 50, isCrazy = false, isSwin
 
       if (!isSwing) {
         if (isCrazy) {
+          const speedFactor = 0.5 + (speed / 50) * 3; // Rango de 0.5 a 3.5
           setPendulum(prev => ({
-            hour: { ...prev.hour, angle: (prev.hour.angle + 150 * deltaTime) % 360 },
-            minute: { ...prev.minute, angle: (prev.minute.angle - 180 * deltaTime) % 360 }
+            hour: { ...prev.hour, angle: (prev.hour.angle + 150 * speedFactor * deltaTime) % 360 },
+            minute: { ...prev.minute, angle: (prev.minute.angle - 180 * speedFactor * deltaTime) % 360 }
           }));
         } else if (direction === 'left') {
           const speedFactor = 0.5 + (speed / 50) * 3; // Rango de 0.5 a 3.5

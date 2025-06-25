@@ -45,6 +45,7 @@ const MainRest = ({ navigation }) => {
   };
 
   return (
+    
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
@@ -59,6 +60,7 @@ const MainRest = ({ navigation }) => {
           </View>
         </TouchableOpacity>
       </View>
+
       <View style={styles.container}>
         <ScrollView 
           contentContainerStyle={styles.scrollContainer} 
@@ -129,18 +131,18 @@ const MainRest = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#f4f4f4",
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "#fdffff",
+    backgroundColor: "#f4f4f4",
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between', // Título a la izquierda, botón a la derecha
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 35, // Espacio superior para el header
+    paddingTop: 30, // Espacio superior para el header
     backgroundColor: "#FAFAFA", // Mismo color que el fondo
     borderBottomWidth: 1, // Opcional: línea divisoria
     borderBottomColor: "#eee",
@@ -199,16 +201,16 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 15,
+    marginBottom: 18,
     paddingHorizontal: 45,
     gap: 18,
     zIndex: 0,
   },
-    button: {
+  button: {
     backgroundColor: "#fff",
     flex: 1,
     borderRadius: 30,
-    paddingVertical: 15,
+    paddingVertical: 16,
     justifyContent: "center",
     alignItems: "center",
     minWidth: 100,
@@ -235,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#fff",
-    marginTop: 20,
+    marginTop: 45,
     elevation: 2,
     overflow: "hidden",
 
@@ -251,23 +253,9 @@ const styles = StyleSheet.create({
     height: 30,
     alignSelf: "center",
   },
-  turnOnButton: {
-    width: "85%",
-    backgroundColor: "#660154",
-    marginTop: 35,
-    paddingVertical: 10,
-    borderRadius: 15,
-    alignItems: "center",
-    alignSelf: "center",
-  },
-  turnOnText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: 100, // Espacio para el NavigationBar
+    paddingBottom: 80, // Espacio para el NavigationBar
   },
 
 });

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList, SafeAreaView } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
 
@@ -10,22 +10,33 @@ const UsersScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false)
   const [editedName, setEditedName] = useState("")
   const [editedEmail, setEditedEmail] = useState("")
+  const [editedRol, setEditedRol] = useState("")
+
+    const currentUser = {
+    id: 1,
+    name: 'Almendro Isaac Medina Ramírez',
+    email: 'AlmIsaMedRam@gmail.com'
+  };
 
   const users = [
     {
       id: 1,
       name: "Almendro Isaac Medina Ramírez",
       email: "AlmIsaMedRam@gmail.com",
+      Rol: "Administrator",
+
     },
     {
       id: 2,
       name: "Pablo Jose Urbano",
       email: "PabloJU@gmail.com",
+      Rol: "VIP",
     },
     {
       id: 3,
       name: "Angela María Rus",
       email: "AngelaMR@gmail.com",
+      Rol: "VIP",
     },
   ]
 
@@ -33,6 +44,7 @@ const UsersScreen = ({ navigation }) => {
     setSelectedUser(user)
     setEditedName(user.name)
     setEditedEmail(user.email)
+    setEditedRol(user.Rol)
     setModalVisible(true)
   }
 
@@ -41,27 +53,55 @@ const UsersScreen = ({ navigation }) => {
     setModalVisible(false)
   }
 
+    const renderItem = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.userCard} 
+      onPress={() => openUserModal(item)}
+    >
+      <View style={styles.avatar}>
+        <Ionicons name="person" size={24} color="#666" />
+      </View>
+      <View style={styles.userInfo}>
+        <Text style={styles.userName}>{item.name}</Text>
+        <Text style={styles.userEmail}>{item.email}</Text>
+        <Text style={styles.userRol}>{item.Rol}</Text>
+      </View>
+      <Ionicons name="create-outline" size={20} color="#666" />
+    </TouchableOpacity>
+  )
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+  <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>USER MANAGEMENT</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>USERS</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+        >
+          <View style={styles.avatarSmall}>
+            <Ionicons name="person" size={20} color="#660154" />
+          </View>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.userList}>
-        {users.map((user) => (
-          <TouchableOpacity key={user.id} style={styles.userItem} onPress={() => openUserModal(user)}>
-            <View style={styles.avatar}>
-              <Ionicons name="person" size={24} color="#666" />
-            </View>
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>{user.name}</Text>
-              <Text style={styles.userEmail}>{user.email}</Text>
-            </View>
-            <Ionicons name="create-outline" size={20} color="#666" />
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <FlatList
+        data={users}
+        renderItem={renderItem}
+        keyExtractor={item => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        style={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+      />
+      <TouchableOpacity 
+        style={styles.fab} 
+      >
+        <Ionicons name="add" size={28} color="white" />
+      </TouchableOpacity>
 
+      {/* MODAAAAAAAAAAAAAAAAL */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -114,26 +154,51 @@ const UsersScreen = ({ navigation }) => {
 
       <NavigationBar />
     </View>
+    </SafeAreaView>
+  
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#f4f4f4",
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f4f4f4",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    backgroundColor: "#ffffff",
+    paddingTop: 30, 
+    backgroundColor: "#FAFAFA",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    zIndex: 100,
+  },
+
+  profileButton: {
+    marginLeft: 10,
+    marginBottom: 10,
+  },
+    avatarSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  titleContainer: {
+    flex: 1,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginLeft: 20,
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#333",
   },
   userList: {
     flex: 1,
@@ -155,17 +220,48 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 15,
   },
-  userInfo: {
+    listContainer: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: 15,
+    paddingBottom: 20,
+  },
+  userCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 15,
+    marginVertical: 8,
+    marginHorizontal: 5,
+ /*    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2, */
+  },
+   userInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 16,
-    color: "#333333",
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
-    color: "#666666",
+    color: "#666",
+    marginBottom: 2,
+  },
+  userRol: {
+    fontSize: 14,
+    color: "#660154",
+    fontWeight: "500",
   },
   modalOverlay: {
     flex: 1,
@@ -244,6 +340,23 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 80, // Ajusta según la altura de tu NavigationBar
+    backgroundColor: "#400135", // Color que coincide con tu tema
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5, 
+    zIndex: 10, // Asegura que esté por encima de otros elementos
   },
 })
 

@@ -1,18 +1,25 @@
 "use client"
 
 import { useState, useContext } from "react"
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Switch, Alert } from "react-native"
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Switch, Alert, SafeAreaView } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { EventContext } from "../../context/eventContext"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
 import EditEventModal from "./editEventModal"
 
+
 const EventsScreen = () => {
   const navigation = useNavigation()
   const { events, setEvents } = useContext(EventContext)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState(null)
+
+   const currentUser = {
+    id: 1,
+    name: 'Almendro Isaac Medina Ramírez',
+    email: 'AlmIsaMedRam@gmail.com'
+  };
 
   // Sample events data matching the mockup
   const [localEvents, setLocalEvents] = useState([
@@ -52,6 +59,42 @@ const EventsScreen = () => {
         { type: "Right", speed: "55", time: "18" },
       ],
     },
+    {
+      id: 4,
+      name: "Good Time",
+      startTime: "09:00 PM",
+      endTime: "10:00 PM",
+      days: ["All week"],
+      enabled: false,
+      movements: [
+        { type: "Left", speed: "40", time: "12" },
+        { type: "Right", speed: "55", time: "18" },
+      ],
+    },
+    {
+      id: 5,
+      name: "Good Time",
+      startTime: "09:00 PM",
+      endTime: "10:00 PM",
+      days: ["All week"],
+      enabled: false,
+      movements: [
+        { type: "Left", speed: "40", time: "12" },
+        { type: "Right", speed: "55", time: "18" },
+      ],
+    },
+    {
+      id: 6,
+      name: "Good Time",
+      startTime: "09:00 PM",
+      endTime: "10:00 PM",
+      days: ["All week"],
+      enabled: false,
+      movements: [
+        { type: "Left", speed: "40", time: "12" },
+        { type: "Right", speed: "55", time: "18" },
+      ],
+    },
   ])
 
   const toggleEventStatus = (eventId) => {
@@ -60,7 +103,7 @@ const EventsScreen = () => {
     )
   }
 
-  const handleLongPress = (event) => {
+  const handlePress = (event) => {
     setSelectedEvent(event)
     setEditModalVisible(true)
   }
@@ -94,7 +137,7 @@ const EventsScreen = () => {
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.eventCard}
-      onLongPress={() => handleLongPress(item)}
+      onPress={() => handlePress(item)}
       delayLongPress={500}
       activeOpacity={0.7}
     >
@@ -109,41 +152,51 @@ const EventsScreen = () => {
         <Switch
           value={item.enabled}
           onValueChange={() => toggleEventStatus(item.id)}
-          trackColor={{ false: "#e0e0e0", true: "#ffd474" }}
-          thumbColor={item.enabled ? "#ffffff" : "#f4f3f4"}
+          trackColor={{ false: "#e0e0e0", true: "#660154" }}
+          thumbColor={item.enabled ? "#ffffff" : "#660154"}
           ios_backgroundColor="#e0e0e0"
         />
       </View>
     </TouchableOpacity>
   )
 ////
-  return (
+return (
+  <SafeAreaView style={styles.safeArea}>
     <View style={styles.container}>
       <View style={styles.header}>
-       
-      </View>
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>Events</Text>
-      </View>
-
-      <Text style={styles.subtitle}>{getOngoingEvent()}</Text>
-
-      <View style={styles.plus}>
-        <TouchableOpacity onPress={() => navigation.navigate("NewEventScreen")}>
-          <Ionicons name="add" size={28} color="black" />
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>EVENTS</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+        >
+          <View style={styles.avatarSmall}>
+            <Ionicons name="person" size={20} color="#660154" />
+          </View>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.eventContainer}>
-        <FlatList
-          data={localEvents}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.eventsList}
-          showsVerticalScrollIndicator={false}
-       />
-      </View>
-      
+      <FlatList
+        data={localEvents}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={
+          <>
+            <Text style={styles.subtitle}>{getOngoingEvent()}</Text>
+          </>
+        }
+        contentContainerStyle={styles.eventsList}
+        style={styles.eventContainer}
+        showsVerticalScrollIndicator={false}
+      />
+
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={() => navigation.navigate("NewEventScreen")}
+      >
+        <Ionicons name="add" size={28} color="white" />
+      </TouchableOpacity>
 
       <EditEventModal
         visible={editModalVisible}
@@ -155,52 +208,65 @@ const EventsScreen = () => {
         onUpdate={handleUpdateEvent}
         onDelete={handleDeleteEvent}
       />
-
       <NavigationBar />
     </View>
-  )
+  </SafeAreaView>
+)
 }
 
 const styles = StyleSheet.create({
-  container: {
+container: {
     flex: 1,
-    backgroundColor: "#fdffff"
+    backgroundColor: "#f4f4f4",
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f4f4f4",
   },
   header: {
-   
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 45,
+    paddingTop: 30, 
+    backgroundColor: "#FAFAFA",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    zIndex: 100,
+  },
+
+  profileButton: {
+    marginLeft: 10,
+    marginBottom: 10,
+  },
+  avatarSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   titleContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 15,
-    position: "relative",
-
+    flex: 1,
   },
   title: {
-    fontSize: 30,
-    fontWeight: "bold",
-    flex: 1,
-    textAlign: "center",
-    marginHorizontal: 20,
+    fontSize: 22,
+    fontWeight: "700",
     color: "#333",
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 25,
     fontWeight: "500",
     textAlign: "center",
-    marginBottom: 20,
+    marginTop: 30,
+    marginBottom: 30,
     paddingHorizontal: 20,
-    color: "#333",
+    color: "#400135",
   },
   eventsList: {
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
   plus: {
     paddingTop: 40,
@@ -208,15 +274,15 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   eventContainer:{
-    paddingTop: 15,
+    paddingTop: 10,
   },
   eventCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
+   /*     borderWidth: 0.5,
+    borderColor: ",rgba(204, 204, 204, 0.3)",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -224,7 +290,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 2, */
   },
   eventHeader: {
     flexDirection: "row",
@@ -248,6 +314,23 @@ const styles = StyleSheet.create({
   eventDays: {
     fontSize: 14,
     color: "#666",
+  },
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 80, // Ajusta según la altura de tu NavigationBar
+    backgroundColor: "#400135", // Color que coincide con tu tema
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5, 
+    zIndex: 10, // Asegura que esté por encima de otros elementos
   },
 })
 

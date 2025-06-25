@@ -1,9 +1,15 @@
 "use client"
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Platform } from "react-native"
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView,Platform } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+
+  const currentUser = {
+    id: 1,
+    name: 'Almendro Isaac Medina Ramírez',
+    email: 'AlmIsaMedRam@gmail.com'
+  };
 
 const MovementsScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets()
@@ -53,71 +59,113 @@ const MovementsScreen = ({ navigation }) => {
   )
 
   return (
-    <View style={[
-      styles.container,
-      { paddingTop: insets.top }
-    ]}>
-      <View style={styles.header}>
-        
-        <Text style={styles.title}>Movements</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+       <View style={styles.header}>
+         <View style={styles.titleContainer}>
+           <Text style={styles.title}>MOVEMENTS</Text>
+         </View>
+         <TouchableOpacity
+           style={styles.profileButton}
+           onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+         >
+           <View style={styles.avatarSmall}>
+             <Ionicons name="person" size={20} color="#660154" />
+           </View>
+         </TouchableOpacity>
+       </View>
 
       <FlatList
         data={movements}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <Text style={styles.subtitle}>Create a new movement...</Text>
+        }
         contentContainerStyle={[
           styles.list,
           { paddingBottom: insets.bottom + 100 }
         ]}
+      
       />
 
       <TouchableOpacity 
-        style={[
-          styles.fab,
-          { 
-            bottom: insets.bottom + 70,
-            right: 24 + insets.right
-          }
-        ]} 
+        style={styles.fab} 
         onPress={handleCreateMovement}
       >
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name="add" size={28} color="white" />
       </TouchableOpacity>
 
       <NavigationBar />
     </View>
+    </SafeAreaView>
+   
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    position: 'relative',
+    backgroundColor: "#f4f4f4",
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f4f4f4",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'ios' ? 20 : 16,
-    paddingBottom: 20,
+    paddingTop: 30, 
+    backgroundColor: "#FAFAFA",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    zIndex: 100,
+  },
+
+  profileButton: {
+    marginLeft: 10,
+    marginBottom: 10,
+  },
+    avatarSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  titleContainer: {
+    flex: 1,
   },
   title: {
     fontSize: 22,
-    fontWeight: "bold",
-    marginLeft: 20,
+    fontWeight: "700",
+    color: "#333",
+  },
+  subtitle: {
+    fontSize: 25,
+    fontWeight: "500",
+    textAlign: "center",
+    marginTop: 10,
+    marginBottom: 30,
+    paddingHorizontal: 20,
+    color: "#400135",
   },
   list: {
+    paddingTop: 20,
+    flexGrow: 1, 
     paddingHorizontal: 20,
+    paddingBottom: 110,
   },
   item: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
+/*     borderWidth: 0.5,
+    borderColor: ",rgba(204, 204, 204, 0.3)",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -125,7 +173,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 2, */
     
   },
   itemText: {
@@ -142,20 +190,20 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    backgroundColor: "#333",
+    right: 20,
+    bottom: 80, // Ajusta según la altura de tu NavigationBar
+    backgroundColor: "#400135", // Color que coincide con tu tema
+    width: 60,
+    height: 60,
     borderRadius: 30,
-    width: 56,
-    height: 56,
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowRadius: 5, 
+    zIndex: 10, // Asegura que esté por encima de otros elementos
   },
 })
 

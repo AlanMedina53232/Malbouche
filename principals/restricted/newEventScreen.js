@@ -17,6 +17,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker"
 import { Ionicons } from "@expo/vector-icons"
 import AnalogClock from "../../components/analogClock"
+import Slider from "@react-native-community/slider"
 
 const { height } = Dimensions.get("window")
 
@@ -29,8 +30,8 @@ const NewEventScreen = ({ navigation }) => {
   const [endTime, setEndTime] = useState(new Date())
   const [selectedDays, setSelectedDays] = useState([])
   const [movements, setMovements] = useState([
-    { type: "Left", speed: "", time: "" },
-    { type: "Right", speed: "", time: "" },
+    { type: "Left", speed: 50, time: "" },
+    { type: "Right", speed: 50, time: "" },
   ])
 
   const [showStartPicker, setShowStartPicker] = useState(false)
@@ -63,7 +64,7 @@ const NewEventScreen = ({ navigation }) => {
       startTime: startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       endTime: endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       days: selectedDays,
-      movements: movements.filter((m) => m.speed && m.time),
+      movements: movements.filter((m) => m.speed !== undefined && m.time).map(m => ({...m, speed: m.speed.toString()})),
       enabled: true,
     }
 
@@ -149,13 +150,23 @@ const NewEventScreen = ({ navigation }) => {
 
               <View style={styles.formColumn}>
                 <Text style={styles.inputLabel}>Speed</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="0-100"
-                  value={movements[0].speed}
-                  onChangeText={(value) => updateMovement(0, "speed", value)}
-                  keyboardType="numeric"
-                />
+                <View style={styles.sliderContainer}>
+                  <View style={styles.sliderBox}>
+                    <Text style={styles.sliderLabel}>Speed</Text>
+                    <Slider
+                      style={styles.slider}
+                      minimumValue={1}
+                      maximumValue={100}
+                      step={1}
+                      value={movements[0].speed}
+                      onSlidingComplete={(value) => updateMovement(0, "speed", value)}
+                      minimumTrackTintColor="#000"
+                      maximumTrackTintColor="#aaa"
+                      thumbTintColor="#660154"
+                    />
+                    <Text style={{textAlign: 'center', fontWeight: 'bold'}}>{movements[0].speed}</Text>
+                  </View>
+                </View>
               </View>
 
             </View>
@@ -389,6 +400,31 @@ createButtonText: {
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
+  },
+  sliderContainer: {
+    width: "100%",
+    alignItems: "center",
+  },
+  sliderBox: {
+    backgroundColor: "#fff",
+    width: "90%",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#fff",
+    marginTop: 10,
+    elevation: 2,
+    overflow: "hidden",
+  },
+  sliderLabel: {
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  slider: {
+    width: "85%",
+    height: 30,
+    alignSelf: "center",
   },
 })
 

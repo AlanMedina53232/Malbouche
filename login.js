@@ -24,7 +24,8 @@ export default function Login({ navigation }) {
 
     try {
       // Cambia la URL por la de tu backend si es diferente
-      const response = await fetch('https://malbouche-backend.onrender.com/api/auth/login', {
+      const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
+      const response = await fetch(`${BACKEND_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

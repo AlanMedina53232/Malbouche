@@ -13,6 +13,7 @@ import MainRest from "./principals/restricted/main.js"
 import MovementsScreen from "./principals/restricted/movementsScreen.js"
 import CreateMovementScreen from "./principals/restricted/createMovement.js"
 import EditMovementScreen from "./principals/restricted/editMovement.js"
+import CreateUsers from "./principals/restricted/createUsers.js"
 
 const Stack = createNativeStackNavigator()
 
@@ -24,7 +25,7 @@ export default function App() {
         <SafeAreaProvider>
           <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, animation:'none' }}>
             
-          <Stack.Screen name="Login" component={Login} />
+            <Stack.Screen name="Login" component={Login} />
             <Stack.Screen name="Mainfree" component={Mainfree}  />
             <Stack.Screen name="Home" component={MainRest} />
             <Stack.Screen name="Events" component={EventsScreen}  />
@@ -34,6 +35,7 @@ export default function App() {
             <Stack.Screen name="UserDetail" component={UserDetailScreen} />
             <Stack.Screen name="CreateMovement" component={CreateMovementScreen} />
             <Stack.Screen name="EditMovement" component={EditMovementScreen} />
+            <Stack.Screen name="CreateUsers" component={CreateUsers} />
           </Stack.Navigator>
           <StatusBar style="auto" />
           
@@ -42,4 +44,3 @@ export default function App() {
       </EventProvider>
   )
 }
-

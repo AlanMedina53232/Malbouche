@@ -319,7 +319,7 @@ container: {
     position: "absolute",
     right: 20,
     bottom: 80, // Ajusta según la altura de tu NavigationBar
-    backgroundColor: "#400135", // Color que coincide con tu tema
+    backgroundColor: "#400135",
     width: 60,
     height: 60,
     borderRadius: 30,

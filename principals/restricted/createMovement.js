@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useLayoutEffect } from "react"
 import {
   View,
@@ -12,6 +11,7 @@ import {
   Platform,
   Dimensions,
   SafeAreaView,
+  ScrollView
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import AnalogClock from "../../components/analogClock"
@@ -88,76 +88,96 @@ const CreateMovementScreen = ({ navigation }) => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="black" />
+          <TouchableOpacity 
+            style={styles.arrowButton}
+            onPress={() => navigation.goBack()}>
+            <View style={styles.iconSmall}>
+              <Ionicons name="arrow-back" size={24} color="black" />
+            </View>
           </TouchableOpacity>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>MOVEMENT CREATION</Text>
+          </View>
         </View>
-        <Text style={styles.title}>Create a new move</Text>
+
         <View style={styles.clockContainer}>
           <AnalogClock />
         </View>
         <View style={styles.divider} />
-        <View style={styles.formContainer}>
-          <Text style={styles.sectionTitle}>Move Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter movement name"
-            value={moveName}
-            onChangeText={setMoveName}
-          />
-          {/* Movement controls */}
-          {movements.map((movement, index) => (
-            <View key={index} style={styles.movementBox}>
-              <Text style={styles.movementLabel}>Move type for the {movement.type.toLowerCase()}</Text>
-              <View style={styles.dropdownRow}>
-                <View style={styles.dropdownContainer}>
-                  <TouchableOpacity
-                    style={styles.dropdown}
-                    onPress={() => updateMovement(index, "showDropdown", !movement.showDropdown)}
-                  >
-                    <Text style={styles.dropdownText}>{MOVE_TYPES.find((t) => t.value === movement.type)?.label || movement.type}</Text>
-                  </TouchableOpacity>
-                  {movement.showDropdown && (
-                    <View style={styles.dropdownList}>
-                      {MOVE_TYPES.map((type) => (
-                        <TouchableOpacity
-                          key={type.value}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            updateMovement(index, "type", type.value)
-                            updateMovement(index, "showDropdown", false)
-                          }}
-                        >
-                          <Text style={styles.dropdownText}>{type.label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-                </View>
-                <View style={styles.sliderContainer}>
-                  <Text style={styles.sliderLabel}>Speed</Text>
-                  <Slider
-                    style={styles.slider}
-                    minimumValue={1}
-                    maximumValue={100}
-                    step={1}
-                    value={movement.speed ? Number(movement.speed) : 1}
-                    onValueChange={(value) => updateMovement(index, "speed", String(value))}
-                    minimumTrackTintColor="#8c0200"
-                    maximumTrackTintColor="#ddd"
-                    thumbTintColor="#8c0200"
-                  />
-                  <Text style={styles.sliderValue}>{movement.speed || 1}</Text>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+          scrollEnabled={true}
+          >
+          <View style={styles.formContainer}>
+            <Text style={styles.sectionTitle}>Move Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter movement name"
+              value={moveName}
+              onChangeText={setMoveName}
+            />
+            {/* Movement controls */}
+            {movements.map((movement, index) => (
+              <View key={index} style={styles.movementBox}>
+                <Text style={styles.movementLabel}>Move type for hour</Text>
+                <View style={styles.dropdownRow}>
+                  <View style={styles.dropdownContainer}>
+                    <TouchableOpacity
+                      style={styles.dropdown}
+                      onPress={() => updateMovement(index, "showDropdown", !movement.showDropdown)}
+                    >
+                      <Text style={styles.dropdownText}>{MOVE_TYPES.find((t) => t.value === movement.type)?.label || movement.type}</Text>
+                    </TouchableOpacity>
+
+                    {movement.showDropdown && (
+                      <View style={styles.dropdownList}>
+                        {MOVE_TYPES.map((type) => (
+                          <TouchableOpacity
+                            key={type.value}
+                            style={styles.dropdownItem}
+                            onPress={() => {
+                              updateMovement(index, "type", type.value)
+                              updateMovement(index, "showDropdown", false)
+                            }
+                          }
+                          >
+                            <Text style={styles.dropdownText}>{type.label}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+
+                  <View pointerEvents="box-only" style={styles.sliderContainer}>
+                    <Text style={styles.sliderLabel}>Speed</Text>
+                    <Slider 
+                      style={styles.slider}
+                      minimumValue={1}
+                      maximumValue={100}
+                      step={1}
+                      value={movement.speed ? Number(movement.speed) : 1}
+                      onValueChange={(value) => updateMovement(index, "speed", String(value))}
+                      minimumTrackTintColor="#660154"
+                      maximumTrackTintColor="#ddd"
+                      thumbTintColor="#660154"
+                    />
+                    <Text style={styles.sliderValue}>{movement.speed || 1}</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          ))}
-          <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
-            <Text style={styles.createButtonText}>Create</Text>
-          </TouchableOpacity>
-        </View>
-        <NavigationBar />
+            ))}
+
+            <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
+              <Text style={styles.createButtonText}>Create</Text>
+            </TouchableOpacity>
+
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
+      <NavigationBar />
     </SafeAreaView>
   )
 }
@@ -165,44 +185,59 @@ const CreateMovementScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f4f4f4",
   },
   container: {
     flex: 1,
+    backgroundColor: "#f4f4f4",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 10 : 60,
-    paddingBottom: 0,
-    justifyContent: "flex-start",
+    paddingTop: 30, 
+    backgroundColor: "#FAFAFA",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    zIndex: 100,
+  },
+   arrowButton: {
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  iconSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+   titleContainer: {
+    flex: 1,
   },
   title: {
     fontSize: 22,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 10,
-    marginBottom: 10,
-    marginLeft: 0,
-    color: "#111",
+    fontWeight: "700",
+    color: "#333",
   },
   clockContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 18,
     marginTop: 5,
   },
   divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    marginVertical: 16,
+    borderBottomWidth: 0.6,
+    borderBottomColor: '#ddd', 
   },
   formContainer: {
     flex: 1,
     justifyContent: "flex-start",
-    paddingHorizontal: 2,
-    paddingBottom: 10,
+    backgroundColor: "#f4f4f4",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 30,
+   
   },
   sectionTitle: {
     fontSize: 16,
@@ -212,24 +247,24 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   input: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    paddingVertical: 15,
     fontSize: 16,
     marginBottom: 18,
   },
   movementBox: {
-    backgroundColor: "#fafafa",
-    borderRadius: 12,
+    backgroundColor: "#FFF",
+    borderRadius: 10,
     padding: 14,
     marginBottom: 18,
-    borderWidth: 1,
+/*  borderWidth: 0.5,
     borderColor: "#eee",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 2,
-    elevation: 1,
+    elevation: 1, */
   },
   movementLabel: {
     fontSize: 15,
@@ -245,15 +280,15 @@ const styles = StyleSheet.create({
   dropdownContainer: {
     flex: 1,
     position: "relative",
-    zIndex: 2,
   },
   dropdown: {
-    borderWidth: 1,
-    borderColor: "#ddd",
+    borderWidth: 0.8,
+    borderColor: "rgba(204, 204, 204, 0.8)",
     borderRadius: 6,
     padding: 10,
     backgroundColor: "#fff",
     minWidth: 90,
+    zIndex: 2,
   },
   dropdownText: {
     fontSize: 15,
@@ -265,15 +300,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 6,
+    borderWidth: 0.8,
+    borderColor: "rgba(204, 204, 204, 0.8)",
+    borderRadius: 5,
     zIndex: 10,
-    shadowColor: "#000",
+ /*    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 2, */
   },
   dropdownItem: {
     padding: 12,
@@ -303,17 +338,13 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   createButton: {
-    backgroundColor: "#8c0200",
-    paddingVertical: 16,
+    backgroundColor: "#400135",
+    paddingVertical: 13,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: 18,
+    marginTop: 10,
     marginBottom: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+
   },
   createButtonText: {
     fontSize: 17,

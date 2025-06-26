@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   Dimensions,
   Alert,
+  ScrollView
 } from "react-native"
 import DateTimePicker from "@react-native-community/datetimepicker"
 import { Ionicons } from "@expo/vector-icons"
@@ -79,17 +80,23 @@ const NewEventScreen = ({ navigation }) => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="black" />
+          <TouchableOpacity 
+            style={styles.arrowButton}
+            onPress={() => navigation.goBack()}>
+            <View style={styles.iconSmall}>
+              <Ionicons name="arrow-back" size={24} color="black" />
+            </View>
           </TouchableOpacity>
-          <Text style={styles.title}>Create Event</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>NEW EVENT</Text>
+          </View>
         </View>
 
         <View style={styles.content}>
           <View style={[styles.clockContainer, { height: clockSize }]}>
             <AnalogClock />
           </View>
-
+        
           <View style={styles.timeRow}>
             <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.timeButton}>
               <Text style={styles.timeText}>
@@ -114,47 +121,51 @@ const NewEventScreen = ({ navigation }) => {
               </TouchableOpacity>
             ))}
           </View>
-
+          <ScrollView 
+            contentContainerStyle={styles.scrollContainer} 
+            showsVerticalScrollIndicator={false} 
+          >
           <View style={styles.formContainer}>
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Event Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter event name"
-                value={eventName}
-                onChangeText={setEventName}
-              />
+            <View style={styles.formGroup}>
+              <Text style={styles.formGroupLabel}>Event Details</Text>
+              <View style={styles.formColumn}>
+                <Text style={styles.inputLabel}>Event Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter event name"
+                  value={eventName}
+                  onChangeText={setEventName}
+                />
+              </View>
+
+              <View style={styles.formColumn}>
+                <Text style={styles.inputLabel}>Move Type</Text>
+                <Dropdown
+                  options={moveOptions}
+                  value={movements[0].type}
+                  onSelect={(value) => updateMovement(0, "type", value)}
+                />
+              </View>
+
+              <View style={styles.formColumn}>
+                <Text style={styles.inputLabel}>Speed</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="0-100"
+                  value={movements[0].speed}
+                  onChangeText={(value) => updateMovement(0, "speed", value)}
+                  keyboardType="numeric"
+                />
+              </View>
+
             </View>
-
-            <View style={styles.movementRow}>
-  <View style={styles.movementType}>
-    <Text style={styles.movementLabel}>Move type</Text>
-    <Dropdown
-      options={moveOptions}
-      value={movements.type}
-      onSelect={(value) => updateMovement("type", value)}
-    />
-  </View>
-
-  <View style={styles.inputGroup}>
-    <View style={styles.inputContainer}>
-      <Text style={styles.inputLabel}>Speed</Text>
-      <TextInput
-        style={styles.smallInput}
-        placeholder="0-100"
-        value={movements.speed}
-        onChangeText={(value) => updateMovement("speed", value)}
-        keyboardType="numeric"
-      />
-    </View>
-  </View>
-</View>
-
 
             <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
               <Text style={styles.createButtonText}>Create event</Text>
             </TouchableOpacity>
           </View>
+          </ScrollView>
+
         </View>
 
         {showStartPicker && (
@@ -193,7 +204,6 @@ const Dropdown = ({ options, value, onSelect }) => {
     <View style={styles.dropdownContainer}>
       <TouchableOpacity onPress={() => setVisible(!visible)} style={styles.dropdown}>
         <Text style={styles.dropdownText}>{value}</Text>
-        <Ionicons name="chevron-down" size={16} color="#666" />
       </TouchableOpacity>
       {visible && (
         <View style={styles.dropdownList}>
@@ -222,18 +232,36 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    backgroundColor: "#f4f4f4",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 10 : 60,
-    paddingBottom: 15,
+    paddingTop: 30, 
+    backgroundColor: "#FAFAFA",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    zIndex: 100,
+  },
+   arrowButton: {
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  iconSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+   titleContainer: {
+    flex: 1,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginLeft: 20,
+    fontSize: 22,
+    fontWeight: "700",
     color: "#333",
   },
   content: {
@@ -271,13 +299,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "rgba(64, 1, 53, 0.2)",
   },
   daySelected: {
-    backgroundColor: "#333",
+    backgroundColor: "#400135",
   },
   dayText: {
-    color: "#666",
+    color: "#400135",
     fontWeight: "600",
     fontSize: 14,
   },
@@ -287,62 +315,25 @@ const styles = StyleSheet.create({
   formContainer: {
     flex: 1,
     justifyContent: "space-between",
+    paddingBottom: 10,
   },
-  formSection: {
-    marginBottom: 15,
-  },
-  sectionTitle: {
+ input: {
+    borderRadius: 6,
+    backgroundColor: "#fff",
+    paddingVertical: 15,
     fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-    color: "#333",
-  },
-  input: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    paddingVertical: 8,
-    fontSize: 16,
-  },
-  movementRow: {
-    marginBottom: 15,
-  },
-  movementType: {
-    marginBottom: 8,
-  },
-  movementLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#333",
     marginBottom: 5,
-  },
-  inputGroup: {
-    flexDirection: "row",
-    gap: 15,
-  },
-  inputContainer: {
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 3,
-  },
-  smallInput: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    paddingVertical: 6,
-    fontSize: 14,
   },
   dropdownContainer: {
     position: "relative",
   },
   dropdown: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    paddingVertical: 8,
+    borderRadius: 6,
+    paddingVertical: 15,
+    paddingHorizontal: 5,
+    backgroundColor: "#fff",
+    minWidth: 90,
+    zIndex: 2,
   },
   dropdownText: {
     fontSize: 16,
@@ -354,11 +345,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: "#fff",
-    borderWidth: 1,
+  /*   borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 8,
+    elevation: 2, */
     zIndex: 1000,
-    elevation: 5,
   },
   dropdownItem: {
     padding: 12,
@@ -369,18 +360,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
-  createButton: {
-    backgroundColor: "#ddd",
+  formGroup: {
+  marginBottom: 20,
+},
+formGroupLabel: {
+  fontSize: 16,
+  fontWeight: "600",
+  marginBottom: 10,
+  color: "#333",
+},
+formColumn: {
+  marginBottom: 15,
+},
+inputLabel: {
+  fontSize: 14,
+  color: "#666",
+  marginBottom: 6,
+},
+createButton: {
+    backgroundColor: "#400135",
     paddingVertical: 15,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 15,
-    marginBottom: 20,
+
+    marginBottom: 5,
   },
-  createButtonText: {
+createButtonText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: "#fff",
   },
 })
 

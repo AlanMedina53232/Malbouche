@@ -207,7 +207,7 @@ const EditMovementScreen = () => {
                       maximumValue={100}
                       step={1}
                       value={movementItem.speed ? parseInt(movementItem.speed) : 1}
-                      onValueChange={(value) => updateMovement(index, "speed", String(value))}
+                      onSlidingComplete={(value) => updateMovement(index, "speed", String(value))}
                       minimumTrackTintColor="#660154"
                       maximumTrackTintColor="#ddd"
                       thumbTintColor="#660154"

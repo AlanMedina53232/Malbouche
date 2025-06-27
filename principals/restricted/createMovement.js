@@ -32,6 +32,10 @@ const CreateMovementScreen = ({ navigation }) => {
   { hand: "Minute", type: "Right", speed: "", showDropdown: false },
 ])
 
+const eventInfo = {
+  
+}
+
   const [moveType, setMoveType] = useState("")
 
   // Get the callback from navigation options instead of route.params
@@ -162,7 +166,7 @@ const CreateMovementScreen = ({ navigation }) => {
           maximumValue={100}
           step={1}
           value={movement.speed ? Number(movement.speed) : 1}
-          onValueChange={(value) => updateMovement(index, "speed", String(value))}
+          onSlidingComplete={(value) => updateMovement(index, "speed", String(value))}
           minimumTrackTintColor="#660154"
           maximumTrackTintColor="#ddd"
           thumbTintColor="#660154"

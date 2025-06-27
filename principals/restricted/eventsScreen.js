@@ -330,7 +330,7 @@ container: {
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 5, 
-    zIndex: 10, // Asegura que esté por encima de otros elementos
+    zIndex: 10, 
   },
 })
 

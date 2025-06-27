@@ -37,7 +37,3 @@ This guide explains how to deploy the Malbouche backend to Render using a monore
    - Update your frontend app to use the Render backend URL instead of your local IP.
 
 ---
-
-If you want, I can help you prepare any configuration files or scripts needed for this deployment.
-
-Feel free to ask for detailed help on any of these steps.

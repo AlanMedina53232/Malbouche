@@ -49,6 +49,10 @@ export default function Login({ navigation }) {
       if (data.data && data.data.token) {
         // Guarda el token para futuras peticiones
         await AsyncStorage.setItem('token', data.data.token);
+        // Save the user ID for current user info
+        if (data.data && data.data.id) {
+          await AsyncStorage.setItem('currentUserId', data.data.id);
+        }
         navigation.replace('Home');
       } else {
         Alert.alert('Error', data.error || 'Credenciales incorrectas');

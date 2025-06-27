@@ -36,7 +36,7 @@ const CreateUsers = ({ navigation }) => {
 
   const handleCreateUser = async () => {
     if (!nombre.trim() || !apellidos.trim() || !correo.trim()) {
-      Alert.alert("Error", "Por favor complete los campos obligatorios: Nombre, Apellidos y Correo")
+      Alert.alert("Error", "Please complete the required fields: Name, Last Name and Email")
       return
     }
 
@@ -241,8 +241,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
+    /* borderWidth: 1,
+    borderColor: "#ddd", */
     borderRadius: 8,
     padding: 12,
     fontSize: 16,

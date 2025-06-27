@@ -1,26 +1,17 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
   StyleSheet, 
   FlatList, 
   TouchableOpacity, 
-  SafeAreaView, 
-  Modal, 
-  TextInput, 
-  Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Dimensions
-} from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import NavigationBar from "../../components/NavigationBar"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import AnalogClock from "../../components/analogClock"
-
-const { width } = Dimensions.get("window")
+  SafeAreaView 
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import NavigationBar from "../../components/NavigationBar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 
 const currentUser = {
   id: 1,
@@ -28,94 +19,57 @@ const currentUser = {
   email: 'AlmIsaMedRam@gmail.com'
 };
 
-const MovementsScreen = ({ navigation }) => {
-  const insets = useSafeAreaInsets()
+const MovementsScreen = () => {
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [movements, setMovements] = useState([
-    { id: "1", name: "Left", speed: 50, time: 10, type: "Left" },
-    { id: "2", name: "Right", speed: 75, time: 15, type: "Right" },
-    { id: "3", name: "Swing", speed: 60, time: 20, type: "Swing" },
-  ])
-  const [selectedMovement, setSelectedMovement] = useState(null)
-  const [isModalVisible, setIsModalVisible] = useState(false)
-  const [editableMovement, setEditableMovement] = useState(null)
-
-  // Determina las props del reloj basado en el movimiento seleccionado
-  const getClockProps = () => {
-    if (!editableMovement) return {}
-    
-    const lowerType = editableMovement.type.toLowerCase()
-    return {
-      direction: lowerType === "left" ? "left" : lowerType === "right" ? "right" : "normal",
-      isCrazy: lowerType === "crazy",
-      isSwing: lowerType === "swing",
-      speed: editableMovement.speed
-    }
-  }
+    { id: "1", name: "Left", speed: 50, type: "Left" },
+    { id: "2", name: "Right", speed: 75, type: "Right" },
+    { id: "3", name: "Swing", speed: 60, type: "Swing" },
+  ]);
 
   const handleCreateMovement = () => {
-    navigation.navigate("CreateMovement")
-  }
+    navigation.navigate("CreateMovement");
+  };
 
   const handleMovementPress = (movement) => {
-    setSelectedMovement(movement)
-    setEditableMovement({...movement})
-    setIsModalVisible(true)
-  }
+    navigation.navigate('EditMovement', { movement });
+  };
 
   const handleMovementCreated = (newMovement) => {
-    setMovements((prev) => [...prev, { ...newMovement, id: Date.now().toString() }])
-  }
+    setMovements((prev) => [...prev, { ...newMovement, id: Date.now().toString() }]);
+  };
 
   const handleMovementUpdated = (updatedMovement) => {
-    setMovements((prev) => prev.map((m) => (m.id === updatedMovement.id ? updatedMovement : m)))
-    setIsModalVisible(false)
-  }
+    setMovements((prev) => prev.map((m) => (m.id === updatedMovement.id ? updatedMovement : m)));
+  };
 
   const handleMovementDeleted = (movementId) => {
-    Alert.alert(
-      "Delete Movement",
-      "Are you sure you want to delete this movement?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        { 
-          text: "Delete", 
-          onPress: () => {
-            setMovements((prev) => prev.filter((m) => m.id !== movementId))
-            setIsModalVisible(false)
-          }
-        }
-      ]
-    )
-  }
+    setMovements((prev) => prev.filter((m) => m.id !== movementId));
+  };
 
-  const handleInputChange = (field, value) => {
-    setEditableMovement(prev => ({
-      ...prev,
-      [field]: field === 'speed' || field === 'time' ? parseInt(value) || 0 : value
-    }))
-  }
-
+  // Configura los callbacks usando setOptions
   useEffect(() => {
     navigation.setOptions({
       onMovementCreated: handleMovementCreated,
       onMovementUpdated: handleMovementUpdated,
-      onMovementDeleted: handleMovementDeleted,
-    })
-  }, [navigation])
+      onMovementDeleted: handleMovementDeleted
+    });
+  }, [navigation]);
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.item} onPress={() => handleMovementPress(item)}>
+    <TouchableOpacity 
+      style={styles.item} 
+      onPress={() => handleMovementPress(item)}
+    >
       <Text style={styles.itemText}>{item.name}</Text>
       <View style={styles.itemDetails}>
         <Text style={styles.itemSubtext}>
-          Speed: {item.speed} | Time: {item.time}s | Type: {item.type}
+          Speed: {item.speed} | Type: {item.type}
         </Text>
       </View>
     </TouchableOpacity>
-  )
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -155,121 +109,10 @@ const MovementsScreen = ({ navigation }) => {
         </TouchableOpacity>
 
         <NavigationBar />
-
-        {/* Modal para edición/eliminación */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={isModalVisible}
-          onRequestClose={() => setIsModalVisible(false)}
-        >
-          <KeyboardAvoidingView
-            style={styles.modalContainer}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-          >
-            <ScrollView contentContainerStyle={styles.modalScrollContainer}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Edit Movement</Text>
-                  <TouchableOpacity 
-                    style={styles.closeButton}
-                    onPress={() => setIsModalVisible(false)}
-                  >
-                    <Ionicons name="close" size={24} color="#666" />
-                  </TouchableOpacity>
-                </View>
-                
-                {editableMovement && (
-                  <View style={styles.formContainer}>
-                    {/* Sección del reloj */}
-                    <View style={styles.clockContainer}>
-                      <AnalogClock 
-                        {...getClockProps()}
-                        size={width * 0.4} // Tamaño responsivo
-                      />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                      <Text style={styles.sectionTitle}>Move Name</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={editableMovement.name}
-                        onChangeText={(text) => handleInputChange('name', text)}
-                      />
-                    </View>
-
-                    <View style={styles.movementBox}>
-                      <Text style={styles.sectionTitle}>Move Settings</Text>
-                      
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Type</Text>
-                        <TextInput
-                          style={styles.input}
-                          value={editableMovement.type}
-                          onChangeText={(text) => {
-                            handleInputChange('type', text)
-                            // Actualiza el reloj inmediatamente al cambiar el tipo
-                            setEditableMovement(prev => ({
-                              ...prev,
-                              type: text
-                            }))
-                          }}
-                        />
-                      </View>
-
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Speed</Text>
-                        <TextInput
-                          style={styles.input}
-                          value={editableMovement.speed.toString()}
-                          onChangeText={(text) => {
-                            handleInputChange('speed', text)
-                            // Actualiza el reloj inmediatamente al cambiar la velocidad
-                            setEditableMovement(prev => ({
-                              ...prev,
-                              speed: parseInt(text) || 0
-                            }))
-                          }}
-                          keyboardType="numeric"
-                        />
-                      </View>
-
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Time (seconds)</Text>
-                        <TextInput
-                          style={styles.input}
-                          value={editableMovement.time.toString()}
-                          onChangeText={(text) => handleInputChange('time', text)}
-                          keyboardType="numeric"
-                        />
-                      </View>
-                    </View>
-
-                    <View style={styles.modalButtons}>
-                      <TouchableOpacity 
-                        style={[styles.modalButton, styles.deleteButton]}
-                        onPress={() => handleMovementDeleted(editableMovement.id)}
-                      >
-                        <Text style={styles.buttonText}>Delete</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity 
-                        style={[styles.modalButton, styles.saveButton]}
-                        onPress={() => handleMovementUpdated(editableMovement)}
-                      >
-                        <Text style={styles.buttonText}>Save Changes</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
-              </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </Modal>
       </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -438,6 +281,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: 4,
   },
+  dropdown: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  borderWidth: 0.8,
+  borderColor: "rgba(204, 204, 204, 0.8)",
+  borderRadius: 6,
+  padding: 12,
+  backgroundColor: "#fff",
+  marginBottom: 8,
+},
+dropdownText: {
+  fontSize: 15,
+  color: "#333",
+},
+dropdownList: {
+  position: "absolute",
+  top: 70,
+  left: 0,
+  right: 0,
+  backgroundColor: "#fff",
+  borderWidth: 0.8,
+  borderColor: "rgba(204, 204, 204, 0.8)",
+  borderRadius: 6,
+  zIndex: 1000,
+  elevation: 5,
+},
+dropdownItem: {
+  padding: 12,
+  borderBottomWidth: 0.5,
+  borderBottomColor: "#eee",
+},
   deleteButton: {
     backgroundColor: '#ff4444',
   },

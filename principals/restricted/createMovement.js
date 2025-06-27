@@ -27,10 +27,11 @@ const MOVE_TYPES = [
 
 const CreateMovementScreen = ({ navigation }) => {
   const [moveName, setMoveName] = useState("")
-  const [movements, setMovements] = useState([
-    { type: "Left", speed: "", showDropdown: false },
-    { type: "Right", speed: "", showDropdown: false },
-  ])
+ const [movements, setMovements] = useState([
+  { hand: "Hour", type: "Left", speed: "", showDropdown: false },
+  { hand: "Minute", type: "Right", speed: "", showDropdown: false },
+])
+
   const [moveType, setMoveType] = useState("")
 
   // Get the callback from navigation options instead of route.params
@@ -101,7 +102,10 @@ const CreateMovementScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.clockContainer}>
-          <AnalogClock />
+          <AnalogClock 
+            direction={moveType.toLowerCase()}
+            speed={movements.find(m => m.hand === "Hour")?.speed || 50}
+          />
         </View>
         <View style={styles.divider} />
         <ScrollView 
@@ -121,54 +125,54 @@ const CreateMovementScreen = ({ navigation }) => {
             />
             {/* Movement controls */}
             {movements.map((movement, index) => (
-              <View key={index} style={styles.movementBox}>
-                <Text style={styles.movementLabel}>Move type for hour</Text>
-                <View style={styles.dropdownRow}>
-                  <View style={styles.dropdownContainer}>
-                    <TouchableOpacity
-                      style={styles.dropdown}
-                      onPress={() => updateMovement(index, "showDropdown", !movement.showDropdown)}
-                    >
-                      <Text style={styles.dropdownText}>{MOVE_TYPES.find((t) => t.value === movement.type)?.label || movement.type}</Text>
-                    </TouchableOpacity>
-
-                    {movement.showDropdown && (
-                      <View style={styles.dropdownList}>
-                        {MOVE_TYPES.map((type) => (
-                          <TouchableOpacity
-                            key={type.value}
-                            style={styles.dropdownItem}
-                            onPress={() => {
-                              updateMovement(index, "type", type.value)
-                              updateMovement(index, "showDropdown", false)
-                            }
-                          }
-                          >
-                            <Text style={styles.dropdownText}>{type.label}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-
-                  <View pointerEvents="box-only" style={styles.sliderContainer}>
-                    <Text style={styles.sliderLabel}>Speed</Text>
-                    <Slider 
-                      style={styles.slider}
-                      minimumValue={1}
-                      maximumValue={100}
-                      step={1}
-                      value={movement.speed ? Number(movement.speed) : 1}
-                      onValueChange={(value) => updateMovement(index, "speed", String(value))}
-                      minimumTrackTintColor="#660154"
-                      maximumTrackTintColor="#ddd"
-                      thumbTintColor="#660154"
-                    />
-                    <Text style={styles.sliderValue}>{movement.speed || 1}</Text>
-                  </View>
-                </View>
-              </View>
+  <View key={index} style={styles.movementBox}>
+    <Text style={styles.movementLabel}>Move type for {movement.hand.toLowerCase()} hand</Text>
+    <View style={styles.dropdownRow}>
+      <View style={styles.dropdownContainer}>
+        <TouchableOpacity
+          style={styles.dropdown}
+          onPress={() => updateMovement(index, "showDropdown", !movement.showDropdown)}
+        >
+          <Text style={styles.dropdownText}>
+            {MOVE_TYPES.find((t) => t.value === movement.type)?.label || movement.type}
+          </Text>
+        </TouchableOpacity>
+        {movement.showDropdown && (
+          <View style={styles.dropdownList}>
+            {MOVE_TYPES.map((type) => (
+              <TouchableOpacity
+                key={type.value}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  updateMovement(index, "type", type.value)
+                  updateMovement(index, "showDropdown", false)
+                }}
+              >
+                <Text style={styles.dropdownText}>{type.label}</Text>
+              </TouchableOpacity>
             ))}
+          </View>
+        )}
+      </View>
+      <View pointerEvents="box-only" style={styles.sliderContainer}>
+        <Text style={styles.sliderLabel}>Speed</Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={1}
+          maximumValue={100}
+          step={1}
+          value={movement.speed ? Number(movement.speed) : 1}
+          onValueChange={(value) => updateMovement(index, "speed", String(value))}
+          minimumTrackTintColor="#660154"
+          maximumTrackTintColor="#ddd"
+          thumbTintColor="#660154"
+        />
+        <Text style={styles.sliderValue}>{movement.speed || 1}</Text>
+      </View>
+    </View>
+  </View>
+))}
+
 
             <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
               <Text style={styles.createButtonText}>Create</Text>

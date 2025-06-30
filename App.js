@@ -14,6 +14,7 @@ import MovementsScreen from "./principals/restricted/movementsScreen.js"
 import CreateMovementScreen from "./principals/restricted/createMovement.js"
 import EditMovementScreen from "./principals/restricted/editMovement.js"
 import CreateUsers from "./principals/restricted/createUsers.js"
+import EditEventModal from "./principals/restricted/editEventModal.js"
 
 const Stack = createNativeStackNavigator()
 
@@ -31,6 +32,7 @@ export default function App() {
             <Stack.Screen name="Events" component={EventsScreen}  />
             <Stack.Screen name="Movements" component={MovementsScreen} />
             <Stack.Screen name="NewEventScreen" component={NewEventScreen}/>
+            <Stack.Screen name="EditEventModal" component={EditEventModal} />
             <Stack.Screen name="Users" component={usersScreen} />
             <Stack.Screen name="UserDetail" component={UserDetailScreen} />
             <Stack.Screen name="CreateMovement" component={CreateMovementScreen} />

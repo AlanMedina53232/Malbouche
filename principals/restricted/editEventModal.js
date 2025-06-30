@@ -1,102 +1,97 @@
 "use client"
-
-import { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useContext } from "react";
 import {
-  Modal,
   View,
   Text,
-  StyleSheet,
-  TouchableOpacity,
   TextInput,
-  ScrollView,
-  Alert,
-  Dimensions,
+  TouchableOpacity,
+  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
-} from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import DateTimePicker from "@react-native-community/datetimepicker"
-import AnalogClock from "../../components/analogClock"
+  Dimensions,
+  Alert,
+  ScrollView,
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Ionicons } from "@expo/vector-icons";
+import AnalogClock from "../../components/analogClock";
+import Slider from "@react-native-community/slider";
+import { EventContext } from "../../context/eventContext";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
-const EditEventModal = ({ visible, event, onClose, onUpdate, onDelete }) => {
-  const [eventName, setEventName] = useState("")
-  const [startTime, setStartTime] = useState(new Date())
-  const [endTime, setEndTime] = useState(new Date())
-  const [selectedDays, setSelectedDays] = useState([])
-  const [movements, setMovements] = useState([
-    { type: "Left", speed: "", time: "" },
-    { type: "Right", speed: "", time: "" },
-  ])
+const { height } = Dimensions.get("window");
 
-  const [showStartPicker, setShowStartPicker] = useState(false)
-  const [showEndPicker, setShowEndPicker] = useState(false)
-  const [screenData, setScreenData] = useState(Dimensions.get("window"))
-  const scrollViewRef = useRef(null)
+const daysOfWeek = ["Su", "M", "T", "W", "Th", "F", "Sa"];
+const moveOptions = ["Left", "Right", "Swings", "Crazy"];
 
-  const daysOfWeek = ["S", "M", "T", "W", "Th", "F", "S"]
-  const moveOptions = ["Left", "Right", "Swings", "Crazy"]
+const EditEventModal = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { event } = route.params;
+  const { events, setEvents } = useContext(EventContext);
+  
+  // Estados inicializados con valores del evento
+  const [eventName, setEventName] = useState(event?.name || "");
+  const [startTime, setStartTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(new Date());
+  const [selectedDays, setSelectedDays] = useState(event?.days || []);
+  const [movements, setMovements] = useState(
+    event?.movements || [{ type: "Left", speed: 50, time: "" }]
+  );
 
-  useEffect(() => {
-    const subscription = Dimensions.addEventListener("change", ({ window }) => {
-      setScreenData(window)
-    })
-    return () => subscription?.remove()
-  }, [])
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
 
   useEffect(() => {
     if (event) {
-      setEventName(event.name || "")
-      setSelectedDays(event.days || [])
-      setMovements(
-        event.movements || [
-          { type: "Left", speed: "", time: "" },
-          { type: "Right", speed: "", time: "" },
-        ],
-      )
+      setEventName(event.name || "");
+      setSelectedDays(event.days || []);
+      setMovements(event.movements || [{ type: "Left", speed: 50, time: "" }]);
 
-      // Parse time strings
       const parseTime = (timeStr) => {
+        if (!timeStr) return new Date();
         try {
-          const [time, period] = timeStr.split(" ")
-          const [hours, minutes] = time.split(":")
-          const date = new Date()
-          let hour = Number.parseInt(hours, 10)
-
-          if (period === "PM" && hour !== 12) hour += 12
-          else if (period === "AM" && hour === 12) hour = 0
-
-          date.setHours(hour, Number.parseInt(minutes, 10), 0)
-          return date
+          const [time, period] = timeStr.split(" ");
+          const [hours, minutes] = time.split(":");
+          const date = new Date();
+          let hour = parseInt(hours);
+          if (period === "PM" && hour !== 12) hour += 12;
+          if (period === "AM" && hour === 12) hour = 0;
+          date.setHours(hour, parseInt(minutes));
+          return date;
         } catch {
-          return new Date()
+          return new Date();
         }
-      }
+      };
 
-      if (event.startTime) setStartTime(parseTime(event.startTime))
-      if (event.endTime) setEndTime(parseTime(event.endTime))
+      if (event.startTime) setStartTime(parseTime(event.startTime));
+      if (event.endTime) setEndTime(parseTime(event.endTime));
     }
-  }, [event])
+  }, [event]);
 
   const toggleDay = (day) => {
-    setSelectedDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
-  }
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
 
   const updateMovement = (index, field, value) => {
-    const updated = [...movements]
-    updated[index] = { ...updated[index], [field]: value }
-    setMovements(updated)
-  }
+    const updated = [...movements];
+    updated[index] = { ...updated[index], [field]: value };
+    setMovements(updated);
+  };
 
   const handleUpdate = () => {
     if (!eventName.trim()) {
-      Alert.alert("Error", "Please enter an event name")
-      return
+      Alert.alert("Error", "Please enter an event name");
+      return;
     }
 
     if (selectedDays.length === 0) {
-      Alert.alert("Error", "Please select at least one day")
-      return
+      Alert.alert("Error", "Please select at least one day");
+      return;
     }
 
     const updatedEvent = {
@@ -105,450 +100,312 @@ const EditEventModal = ({ visible, event, onClose, onUpdate, onDelete }) => {
       startTime: startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       endTime: endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       days: selectedDays,
-      movements: movements.filter((m) => m.speed && m.time),
-    }
+      movements: movements.map((m) => ({ ...m, speed: m.speed.toString() })),
+    };
 
-    onUpdate(updatedEvent)
-  }
+    setEvents((prev) => prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
+    navigation.goBack();
+  };
 
   const handleDelete = () => {
-    Alert.alert("Delete Event", "Are you sure you want to delete this event?", [
+    Alert.alert("Delete Event", "Are you sure?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => onDelete(event.id) },
-    ])
-  }
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          setEvents((prev) => prev.filter((e) => e.id !== event.id));
+          navigation.goBack();
+        },
+      },
+    ]);
+  };
 
-  if (!event) return null
-
-  // Calculate dimensions for modal
-  const isLandscape = screenData.width > screenData.height
-  const availableHeight = screenData.height * (isLandscape ? 0.9 : 0.85)
-  const modalWidth = Math.min(screenData.width * 0.92, 450)
-
-  // Calculate content height for proper scrolling
-  const headerHeight = 60
-  const buttonsHeight = 70
-  const contentHeight = availableHeight - headerHeight - buttonsHeight
+  const clockSize = Math.min(height * 0.25, 200);
 
   return (
-    <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
-      <SafeAreaView style={styles.safeContainer}>
-        <KeyboardAvoidingView style={styles.keyboardContainer} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-          <View style={styles.overlay}>
-            <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose}>
-              <View
-                style={[
-                  styles.modal,
-                  {
-                    width: modalWidth,
-                    height: availableHeight,
-                  },
-                ]}
-              >
-                <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-                  {/* Fixed Header */}
-                  <View style={[styles.header, { height: headerHeight }]}>
-                    <Text style={styles.title}>Edit Event</Text>
-                    <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                      <Ionicons name="close" size={24} color="#666" />
-                    </TouchableOpacity>
-                  </View>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.arrowButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="black" />
+          </TouchableOpacity>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>EDIT EVENT</Text>
+          </View>
+          <View style={{ width: 24 }} />
+        </View>
 
-                  {/* Scrollable Content with fixed height */}
-                  <ScrollView
-                    ref={scrollViewRef}
-                    style={[styles.content, { height: contentHeight }]}
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={true}
-                    bounces={true}
-                    scrollEventThrottle={16}
-                  >
-                    {/* Clock Section */}
-                    <View style={styles.clockSection}>
-                      <View style={styles.clockWrapper}>
-                        <AnalogClock />
-                      </View>
-                      <View style={styles.timeRow}>
-                        <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.timeBtn}>
-                          <Text style={styles.timeText}>
-                            {startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.timeBtn}>
-                          <Text style={styles.timeText}>
-                            {endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={[styles.clockContainer, { height: clockSize }]}>
+            <AnalogClock />
+          </View>
 
-                    {/* Days Selection */}
-                    <View style={styles.daysSection}>
-                      <View style={styles.daysRow}>
-                        {daysOfWeek.map((day, index) => (
-                          <TouchableOpacity
-                            key={index}
-                            style={[styles.dayBtn, selectedDays.includes(day) && styles.daySelected]}
-                            onPress={() => toggleDay(day)}
-                          >
-                            <Text style={[styles.dayText, selectedDays.includes(day) && styles.dayTextSelected]}>
-                              {day}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </View>
-
-                    {/* Event Name */}
-                    <View style={styles.section}>
-                      <Text style={styles.label}>Event Name</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Enter event name"
-                        value={eventName}
-                        onChangeText={setEventName}
-                        placeholderTextColor="#999"
-                        onFocus={() => {
-                          setTimeout(() => {
-                            scrollViewRef.current?.scrollTo({ y: 200, animated: true })
-                          }, 100)
-                        }}
-                      />
-                    </View>
-
-                    {/* Movements */}
-                    {movements.map((movement, index) => (
-                      <View key={index} style={styles.movementSection}>
-                        <Text style={styles.label}>Move type</Text>
-                        <EnhancedDropdown
-                          options={moveOptions}
-                          value={movement.type}
-                          onSelect={(value) => updateMovement(index, "type", value)}
-                        />
-                        <View style={styles.inputRow}>
-                          <View style={styles.inputHalf}>
-                            <Text style={styles.smallLabel}>Speed</Text>
-                            <TextInput
-                              style={styles.smallInput}
-                              placeholder="0-100"
-                              value={movement.speed}
-                              onChangeText={(value) => updateMovement(index, "speed", value)}
-                              keyboardType="numeric"
-                              placeholderTextColor="#999"
-                              onFocus={() => {
-                                setTimeout(() => {
-                                  scrollViewRef.current?.scrollTo({ y: 300 + index * 200, animated: true })
-                                }, 100)
-                              }}
-                            />
-                          </View>
-                          <View style={styles.inputHalf}>
-                            <Text style={styles.smallLabel}>Time (seg)</Text>
-                            <TextInput
-                              style={styles.smallInput}
-                              placeholder="Seconds"
-                              value={movement.time}
-                              onChangeText={(value) => updateMovement(index, "time", value)}
-                              keyboardType="numeric"
-                              placeholderTextColor="#999"
-                              onFocus={() => {
-                                setTimeout(() => {
-                                  scrollViewRef.current?.scrollTo({ y: 300 + index * 200, animated: true })
-                                }, 100)
-                              }}
-                            />
-                          </View>
-                        </View>
-                      </View>
-                    ))}
-
-                    {/* Bottom padding for comfortable scrolling */}
-                    <View style={styles.bottomPadding} />
-                  </ScrollView>
-
-                  {/* Fixed Action Buttons */}
-                  <View style={[styles.actions, { height: buttonsHeight }]}>
-                    <TouchableOpacity style={styles.updateBtn} onPress={handleUpdate}>
-                      <Text style={styles.updateText}>Update Event</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-                      <Text style={styles.deleteText}>Delete</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Time Pickers */}
-                  {showStartPicker && (
-                    <DateTimePicker
-                      value={startTime}
-                      mode="time"
-                      display="default"
-                      onChange={(event, date) => {
-                        setShowStartPicker(false)
-                        if (date) setStartTime(date)
-                      }}
-                    />
-                  )}
-
-                  {showEndPicker && (
-                    <DateTimePicker
-                      value={endTime}
-                      mode="time"
-                      display="default"
-                      onChange={(event, date) => {
-                        setShowEndPicker(false)
-                        if (date) setEndTime(date)
-                      }}
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
+          <View style={styles.timeRow}>
+            <TouchableOpacity
+              onPress={() => setShowStartPicker(true)}
+              style={styles.timeButton}
+            >
+              <Text style={styles.timeText}>
+                {startTime.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowEndPicker(true)}
+              style={styles.timeButton}
+            >
+              <Text style={styles.timeText}>
+                {endTime.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </Text>
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Modal>
-  )
-}
 
-// Enhanced Dropdown Component
-const EnhancedDropdown = ({ options, value, onSelect }) => {
-  const [visible, setVisible] = useState(false)
+          <View style={styles.daysRow}>
+            {daysOfWeek.map((day, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.dayButton,
+                  selectedDays.includes(day) && styles.daySelected,
+                ]}
+                onPress={() => toggleDay(day)}
+              >
+                <Text
+                  style={[
+                    styles.dayText,
+                    selectedDays.includes(day) && styles.dayTextSelected,
+                  ]}
+                >
+                  {day}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-  return (
-    <View style={styles.dropdownContainer}>
-      <TouchableOpacity onPress={() => setVisible(!visible)} style={styles.dropdown}>
-        <Text style={styles.dropdownText}>{value}</Text>
-        <Ionicons name={visible ? "chevron-up" : "chevron-down"} size={20} color="#666" />
-      </TouchableOpacity>
-      {visible && (
-        <View style={styles.dropdownList}>
-          {options.map((option, index) => (
-            <TouchableOpacity
-              key={option}
-              style={[styles.dropdownItem, index === options.length - 1 && styles.dropdownItemLast]}
-              onPress={() => {
-                onSelect(option)
-                setVisible(false)
-              }}
-            >
-              <Text style={styles.dropdownItemText}>{option}</Text>
+          <View style={styles.formContainer}>
+            <Text style={styles.inputLabel}>Event Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter event name"
+              value={eventName}
+              onChangeText={setEventName}
+            />
+
+            <Text style={styles.inputLabel}>Move Type</Text>
+            <View style={styles.dropdownContainer}>
+              <TouchableOpacity
+                style={styles.dropdown}
+                onPress={() => setDropdownVisible(!dropdownVisible)}
+              >
+                <Text>{movements[0]?.type}</Text>
+                <Ionicons
+                  name={dropdownVisible ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color="#666"
+                />
+              </TouchableOpacity>
+              {dropdownVisible && (
+                <View style={styles.dropdownList}>
+                  {moveOptions.map((option) => (
+                    <TouchableOpacity
+                      key={option}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        updateMovement(0, "type", option);
+                        setDropdownVisible(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{option}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <Text style={styles.inputLabel}>Speed</Text>
+            <Slider
+              style={{ width: "100%", height: 40 }}
+              minimumValue={1}
+              maximumValue={100}
+              step={1}
+              value={parseInt(movements[0]?.speed || 50)}
+              onValueChange={(value) => updateMovement(0, "speed", value)}
+              minimumTrackTintColor="#400135"
+              maximumTrackTintColor="#d3d3d3"
+              thumbTintColor="#400135"
+            />
+            <Text style={{ textAlign: "center" }}>{movements[0]?.speed}</Text>
+
+            <TouchableOpacity style={styles.createButton} onPress={handleUpdate}>
+              <Text style={styles.createButtonText}>Update Event</Text>
             </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </View>
-  )
-}
+
+            <TouchableOpacity
+              style={[styles.createButton, { backgroundColor: "#ff6b6b" }]}
+              onPress={handleDelete}
+            >
+              <Text style={styles.createButtonText}>Delete Event</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        {showStartPicker && (
+          <DateTimePicker
+            value={startTime}
+            mode="time"
+            display="default"
+            onChange={(event, date) => {
+              setShowStartPicker(false);
+              if (date) setStartTime(date);
+            }}
+          />
+        )}
+
+        {showEndPicker && (
+          <DateTimePicker
+            value={endTime}
+            mode="time"
+            display="default"
+            onChange={(event, date) => {
+              setShowEndPicker(false);
+              if (date) setEndTime(date);
+            }}
+          />
+        )}
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
-  safeContainer: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "transparent",
+    backgroundColor: "#fff",
   },
-  keyboardContainer: {
+  container: {
     flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  backdrop: {
-    flex: 1,
-    width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modal: {
-    backgroundColor: "#ffffff",
-    borderRadius: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 10,
-    overflow: "hidden",
+    backgroundColor: "#f4f4f4",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
+    paddingTop: 30,
+    backgroundColor: "#FAFAFA",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    backgroundColor: "#ffffff",
+    borderBottomColor: "#eee",
+    zIndex: 100,
+  },
+  arrowButton: {
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: "center",
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     color: "#333",
   },
-  closeBtn: {
-    padding: 6,
-    borderRadius: 12,
-    backgroundColor: "#f8f9fa",
-  },
   content: {
-    backgroundColor: "#fff",
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-  },
-  clockSection: {
+  clockContainer: {
     alignItems: "center",
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    marginBottom: 20,
-  },
-  clockWrapper: {
-    height: 160,
-    width: 160,
     justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 15,
   },
   timeRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "100%",
-    paddingHorizontal: 30,
+    marginBottom: 20,
+    paddingHorizontal: 40,
   },
-  timeBtn: {
+  timeButton: {
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 12,
-    minWidth: 90,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   timeText: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "bold",
     color: "#333",
-  },
-  daysSection: {
-    marginBottom: 24,
   },
   daysRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 8,
+    marginBottom: 20,
+    paddingHorizontal: 10,
   },
-  dayBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  dayButton: {
+    width: 35,
+    height: 35,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
-    borderWidth: 2,
-    borderColor: "transparent",
+    backgroundColor: "rgba(64, 1, 53, 0.2)",
   },
   daySelected: {
-    backgroundColor: "#333",
-    borderColor: "#333",
+    backgroundColor: "#400135",
   },
   dayText: {
-    color: "#666",
+    color: "#400135",
     fontWeight: "600",
     fontSize: 14,
   },
   dayTextSelected: {
     color: "#fff",
   },
-  section: {
-    marginBottom: 20,
-  },
-  movementSection: {
-    marginBottom: 24,
-    padding: 16,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 12,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-    color: "#333",
-  },
-  smallLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-    fontWeight: "500",
+  formContainer: {
+    flex: 1,
+    justifyContent: "space-between",
+    paddingBottom: 10,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: 6,
+    backgroundColor: "#fff",
+    paddingVertical: 15,
+    paddingHorizontal: 15,
     fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#333",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  inputRow: {
-    flexDirection: "row",
-    gap: 16,
-    marginTop: 12,
-  },
-  inputHalf: {
-    flex: 1,
-  },
-  smallInput: {
+    marginBottom: 15,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderColor: "#ddd",
+  },
+  inputLabel: {
     fontSize: 14,
-    backgroundColor: "#fff",
-    color: "#333",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    color: "#666",
+    marginBottom: 6,
+    fontWeight: "600",
   },
   dropdownContainer: {
     position: "relative",
-    zIndex: 1000,
-    marginBottom: 8,
+    marginBottom: 15,
   },
   dropdown: {
+    borderRadius: 6,
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  dropdownText: {
-    fontSize: 16,
-    color: "#333",
-    fontWeight: "500",
   },
   dropdownList: {
     position: "absolute",
@@ -557,77 +414,32 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 12,
-    marginTop: 4,
-    zIndex: 2000,
-    elevation: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    borderColor: "#ddd",
+    borderRadius: 6,
+    zIndex: 1000,
+    marginTop: 5,
   },
   dropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
-  },
-  dropdownItemLast: {
-    borderBottomWidth: 0,
   },
   dropdownItemText: {
     fontSize: 16,
     color: "#333",
   },
-  bottomPadding: {
-    height: 40,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-    backgroundColor: "#fff",
-    justifyContent: "center",
+  createButton: {
+    backgroundColor: "#400135",
+    paddingVertical: 15,
+    borderRadius: 8,
     alignItems: "center",
+    marginBottom: 10,
   },
-  updateBtn: {
-    flex: 1,
-    backgroundColor: "#ddd",
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  updateText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  deleteBtn: {
-    flex: 1,
-    backgroundColor: "#ff6b6b",
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  deleteText: {
+  createButtonText: {
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
   },
-})
+});
 
-export default EditEventModal
+export default EditEventModal;

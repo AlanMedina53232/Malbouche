@@ -6,7 +6,7 @@ import { useNavigation } from "@react-navigation/native"
 import { EventContext } from "../../context/eventContext"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
-import EditEventModal from "./editEventModal"
+
 
 
 const EventsScreen = () => {
@@ -103,10 +103,10 @@ const EventsScreen = () => {
     )
   }
 
-  const handlePress = (event) => {
-    setSelectedEvent(event)
-    setEditModalVisible(true)
-  }
+const handlePress = (event) => {
+ navigation.navigate("EditEventModal", { event })
+}
+
 
   const handleUpdateEvent = (updatedEvent) => {
     setLocalEvents((prevEvents) => prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event)))
@@ -198,16 +198,6 @@ return (
         <Ionicons name="add" size={28} color="white" />
       </TouchableOpacity>
 
-      <EditEventModal
-        visible={editModalVisible}
-        event={selectedEvent}
-        onClose={() => {
-          setEditModalVisible(false)
-          setSelectedEvent(null)
-        }}
-        onUpdate={handleUpdateEvent}
-        onDelete={handleDeleteEvent}
-      />
       <NavigationBar />
     </View>
   </SafeAreaView>

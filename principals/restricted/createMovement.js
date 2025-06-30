@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons"
 import AnalogClock from "../../components/analogClock"
 import NavigationBar from "../../components/NavigationBar"
 import Slider from "@react-native-community/slider"
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { height } = Dimensions.get("window")
 
@@ -32,9 +33,8 @@ const CreateMovementScreen = ({ navigation }) => {
   { hand: "Minute", type: "Right", speed: "", showDropdown: false },
 ])
 
-const eventInfo = {
-  
-}
+const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api'
+
 
   const [moveType, setMoveType] = useState("")
 
@@ -57,30 +57,67 @@ const eventInfo = {
     setMovements(updatedMovements)
   }
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!moveName.trim()) {
       Alert.alert("Error", "Please enter a movement name")
       return
     }
 
-    const hasValidMovement = movements.some((m) => m.speed)
-    if (!hasValidMovement) {
-      Alert.alert("Error", "Please fill at least one movement with speed")
+    // Solo tomamos los movimientos con velocidad válida
+    const validMovements = movements.filter((m) => m.speed)
+    if (validMovements.length < 2) {
+      Alert.alert("Error", "Debes definir velocidad y sentido para ambas manecillas")
       return
     }
 
-    const newMovement = {
-      name: moveName,
-      movements: movements.filter((m) => m.speed),
-      type: moveType || movements.find((m) => m.speed)?.type || "Custom",
-      speed: movements.find((m) => m.speed)?.speed || "0",
+    // Extraer datos para horas y minutos
+    const hour = movements.find(m => m.hand === 'Hour')
+    const minute = movements.find(m => m.hand === 'Minute')
+
+    const movimientoPayload = {
+      nombre: moveName,
+      tipoMovimientoHoras: hour.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
+      velocidadHora: parseInt(hour.speed),
+      tipoMovimientoMinutos: minute.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
+      velocidadMinuto: parseInt(minute.speed),
+      // Campos legacy para compatibilidad backend
+      tipoMovimiento: hour.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
+      velocidad: parseInt(hour.speed),
+      duracion: 10
     }
 
-    if (onMovementCreated) {
-      onMovementCreated(newMovement)
-    }
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert("Error", "No se encontró token de autenticación. Por favor inicie sesión nuevamente.");
+        return;
+      }
 
-    Alert.alert("Success", "Movement created successfully!", [{ text: "OK", onPress: () => navigation.goBack() }])
+      const response = await fetch(`${BACKEND_URL}/movements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(movimientoPayload),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        console.error("Error creating movement:", data);
+        Alert.alert("Error", data.error || "Error creando movimiento")
+        return
+      }
+
+      Alert.alert("Éxito", "Movimiento creado exitosamente", [
+        { text: "OK", onPress: () => navigation.goBack() }
+      ])
+      if (onMovementCreated) {
+        onMovementCreated(movimientoPayload)
+      }
+    } catch (error) {
+      console.error("Fetch error creating movement:", error);
+      Alert.alert("Error", "No se pudo conectar con el servidor")
+    }
   }
 
   const clockSize = Math.min(height * 0.22, 180) // Responsive clock size

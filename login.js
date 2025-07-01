@@ -50,8 +50,8 @@ export default function Login({ navigation }) {
         // Guarda el token para futuras peticiones
         await AsyncStorage.setItem('token', data.data.token);
         // Save the user ID for current user info
-        if (data.data && data.data.id) {
-          await AsyncStorage.setItem('currentUserId', data.data.id);
+        if (data.data && data.data.user && data.data.user.id) {
+          await AsyncStorage.setItem('currentUserId', data.data.user.id);
         }
         navigation.replace('Home');
       } else {

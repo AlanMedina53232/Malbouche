@@ -4,12 +4,12 @@
     "slug": "Malbouche",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icono.png",
+    "icon": "./assets/LogoBlanco.jpg",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
+      "image": "./assets/icono.png",
+      "resizeMode": "cover",
       "backgroundColor": "#660154"
     },
     "ios": {
@@ -17,8 +17,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icono.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#660154"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.amedina53.Malbouche"

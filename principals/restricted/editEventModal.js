@@ -100,7 +100,7 @@ const EditEventModal = () => {
       startTime: startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       endTime: endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       days: selectedDays,
-      movements: movements.map((m) => ({ ...m, speed: m.speed.toString() })),
+      movements: movements.map((m) => ({ ...m, speed: String(m.speed) })),
     };
 
     setEvents((prev) => prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
@@ -240,13 +240,13 @@ const EditEventModal = () => {
               minimumValue={1}
               maximumValue={100}
               step={1}
-              value={parseInt(movements[0]?.speed || 50)}
-              onValueChange={(value) => updateMovement(0, "speed", value)}
+              value={movements[0]?.speed ? Number(movements[0].speed) : 50}
+              onSlidingComplete={(value) => updateMovement(0, "speed", String(value))}
               minimumTrackTintColor="#400135"
               maximumTrackTintColor="#d3d3d3"
               thumbTintColor="#400135"
             />
-            <Text style={{ textAlign: "center" }}>{movements[0]?.speed}</Text>
+            <Text style={{ textAlign: "center" }}>{movements[0]?.speed || 50}</Text>
 
             <TouchableOpacity style={styles.createButton} onPress={handleUpdate}>
               <Text style={styles.createButtonText}>Update Event</Text>

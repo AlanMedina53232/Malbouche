@@ -8,6 +8,7 @@ import {
   TouchableOpacity, 
   SafeAreaView 
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from "@expo/vector-icons";
 import NavigationBar from "../../components/NavigationBar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,14 +20,12 @@ const currentUser = {
   email: 'AlmIsaMedRam@gmail.com'
 };
 
+const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
+
 const MovementsScreen = () => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const [movements, setMovements] = useState([
-    { id: "1", name: "Left", speed: 50, type: "Left" },
-    { id: "2", name: "Right", speed: 75, type: "Right" },
-    { id: "3", name: "Swing", speed: 60, type: "Swing" },
-  ]);
+  const [movements, setMovements] = useState([]);
 
   const handleCreateMovement = () => {
     navigation.navigate("CreateMovement");
@@ -56,6 +55,44 @@ const MovementsScreen = () => {
       onMovementDeleted: handleMovementDeleted
     });
   }, [navigation]);
+
+  // Fetch movements from backend on mount
+  useEffect(() => {
+    const fetchMovements = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          console.error("No auth token found");
+          return;
+        }
+        const response = await fetch(`${BACKEND_URL}/movements`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          console.error("Failed to fetch movements:", response.status);
+          return;
+        }
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+          // Map backend fields to frontend fields
+          const mappedMovements = data.data.map(m => ({
+            id: m.id,
+            name: m.nombre,
+            speed: m.velocidad,
+            type: m.tipoMovimiento
+          }));
+          setMovements(mappedMovements);
+        } else {
+          console.error("Invalid data format from movements API");
+        }
+      } catch (error) {
+        console.error("Error fetching movements:", error);
+      }
+    };
+    fetchMovements();
+  }, []);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity 

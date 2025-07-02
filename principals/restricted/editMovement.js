@@ -18,6 +18,9 @@ import AnalogClock from "../../components/analogClock";
 import NavigationBar from "../../components/NavigationBar";
 import Slider from "@react-native-community/slider";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
 
 const { height } = Dimensions.get("window");
 
@@ -70,12 +73,16 @@ const EditMovementScreen = () => {
 
   // Obtener callbacks del padre de manera segura
   const getParentCallbacks = () => {
-    const parentState = navigation.dangerouslyGetParent()?.getState();
+    const parent = navigation.getParent();
+    if (!parent) return {};
+    const parentState = parent.getState();
     const parentRoute = parentState?.routes.find(r => r.name === "Movements");
     return parentRoute?.params || {};
   };
 
-  const handleSave = () => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSave = async () => {
     if (!moveName.trim()) {
       Alert.alert("Error", "Please enter a movement name");
       return;
@@ -87,19 +94,55 @@ const EditMovementScreen = () => {
       return;
     }
 
+    setLoading(true);
+
     const updatedMovement = {
-      ...movement,
-      name: moveName,
-      movements: movements.filter(m => m.speed),
-      type: "Custom",
+      nombre: moveName,
+      tipoMovimientoHoras: movements.find(m => m.hand === "Hour")?.type.toLowerCase() === "left" ? "izquierda" : "derecha",
+      velocidadHora: parseInt(movements.find(m => m.hand === "Hour")?.speed) || 0,
+      tipoMovimientoMinutos: movements.find(m => m.hand === "Minute")?.type.toLowerCase() === "left" ? "izquierda" : "derecha",
+      velocidadMinuto: parseInt(movements.find(m => m.hand === "Minute")?.speed) || 0,
+      duracion: 10
     };
 
-    const { onMovementUpdated } = getParentCallbacks();
-    if (onMovementUpdated) {
-      onMovementUpdated(updatedMovement);
-    }
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert("Error", "No se encontró token de autenticación. Por favor inicie sesión nuevamente.");
+        setLoading(false);
+        return;
+      }
 
-    navigation.goBack();
+      const response = await fetch(`${BACKEND_URL}/movements/${movement.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedMovement)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        Alert.alert("Error", data.error || "Error actualizando movimiento");
+        setLoading(false);
+        return;
+      }
+
+      const { onMovementUpdated } = getParentCallbacks();
+      if (onMovementUpdated) {
+        onMovementUpdated({ id: movement.id, ...updatedMovement });
+      }
+
+      Alert.alert("Éxito", "Movimiento actualizado exitosamente");
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error updating movement:", error);
+      Alert.alert("Error", "No se pudo conectar con el servidor");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = () => {
@@ -110,12 +153,43 @@ const EditMovementScreen = () => {
         { text: "Cancel", style: "cancel" },
         { 
           text: "Delete", 
-          onPress: () => {
-            const { onMovementDeleted } = getParentCallbacks();
-            if (onMovementDeleted && movement?.id) {
-              onMovementDeleted(movement.id);
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const token = await AsyncStorage.getItem('token');
+              if (!token) {
+                Alert.alert("Error", "No se encontró token de autenticación. Por favor inicie sesión nuevamente.");
+                setLoading(false);
+                return;
+              }
+
+              const response = await fetch(`${BACKEND_URL}/movements/${movement.id}`, {
+                method: "DELETE",
+                headers: {
+                  "Authorization": `Bearer ${token}`
+                }
+              });
+
+              if (!response.ok) {
+                const data = await response.json();
+                Alert.alert("Error", data.error || "Error eliminando movimiento");
+                setLoading(false);
+                return;
+              }
+
+              const { onMovementDeleted } = getParentCallbacks();
+              if (onMovementDeleted) {
+                onMovementDeleted(movement.id);
+              }
+
+              Alert.alert("Éxito", "Movimiento eliminado exitosamente");
+              navigation.goBack();
+            } catch (error) {
+              console.error("Error deleting movement:", error);
+              Alert.alert("Error", "No se pudo conectar con el servidor");
+            } finally {
+              setLoading(false);
             }
-            navigation.goBack();
           }
         }
       ]

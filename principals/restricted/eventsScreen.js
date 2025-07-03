@@ -31,6 +31,7 @@ const EventsScreen = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
+      setLocalEvents([]) // Clear events before fetching new data
       const token = await AsyncStorage.getItem('token')
       if (!token) {
         Alert.alert("Error", "No authentication token found. Please log in again.")
@@ -203,8 +204,10 @@ const toggleEventStatus = async (eventId) => {
           }
           contentContainerStyle={styles.eventsList}
           style={styles.eventContainer}
-          showsVerticalScrollIndicator={false}
-        />
+        showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={fetchData}
+      />
 
         <TouchableOpacity 
           style={styles.fab} 

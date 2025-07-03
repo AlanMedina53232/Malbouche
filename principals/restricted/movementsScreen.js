@@ -79,14 +79,8 @@ const MovementsScreen = () => {
       }
       const data = await response.json();
       if (data.success && Array.isArray(data.data)) {
-        // Map backend fields to frontend fields
-        const mappedMovements = data.data.map(m => ({
-          id: m.id,
-          name: m.nombre,
-          speed: m.velocidad,
-          type: m.tipoMovimiento
-        }));
-        setMovements(mappedMovements);
+        // Store full movement objects without mapping to preserve detailed fields
+        setMovements(data.data);
       } else {
         console.error("Invalid data format from movements API");
       }
@@ -101,19 +95,30 @@ const MovementsScreen = () => {
     fetchMovements();
   }, []);
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.item} 
-      onPress={() => handleMovementPress(item)}
-    >
-      <Text style={styles.itemText}>{item.name}</Text>
-      <View style={styles.itemDetails}>
-        <Text style={styles.itemSubtext}>
-          Speed: {item.speed} | Type: {item.type}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const renderItem = ({ item }) => {
+    // Determine display values for speed and type, prefer detailed fields if present
+    const hourSpeed = item.velocidadHora ?? item.velocidad ?? '';
+    const minuteSpeed = item.velocidadMinuto ?? '';
+    const hourType = item.tipoMovimientoHoras ?? item.tipoMovimiento ?? '';
+    const minuteType = item.tipoMovimientoMinutos ?? '';
+
+    return (
+      <TouchableOpacity 
+        style={styles.item} 
+        onPress={() => handleMovementPress(item)}
+      >
+        <Text style={styles.itemText}>{item.nombre}</Text>
+        <View style={styles.itemDetails}>
+          <Text style={styles.itemSubtext}>
+            Hour - Speed: {hourSpeed} | Type: {hourType}
+          </Text>
+          <Text style={styles.itemSubtext}>
+            Minute - Speed: {minuteSpeed} | Type: {minuteType}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -43,22 +43,41 @@ const EditMovementScreen = () => {
   // Precargar datos del movimiento
   useEffect(() => {
     if (movement) {
+      console.log("Movement object in EditMovement useEffect:", movement);
+
       setMoveName(movement.name || "");
 
+      // Adjust to read speed from velocidadHora and velocidadMinuto fields
       const hourMovement = movement.movements?.find(m => m.hand === "Hour") || {};
       const minuteMovement = movement.movements?.find(m => m.hand === "Minute") || {};
+
+      // If speed is missing, try to get from velocidadHora and velocidadMinuto fields
+      let hourSpeed = hourMovement.speed;
+      if (hourSpeed === undefined || hourSpeed === null) {
+        hourSpeed = movement.velocidadHora;
+      }
+      let minuteSpeed = minuteMovement.speed;
+      if (minuteSpeed === undefined || minuteSpeed === null) {
+        minuteSpeed = movement.velocidadMinuto;
+      }
+
+      // Ensure speed is string for state
+      hourSpeed = hourSpeed !== undefined && hourSpeed !== null ? String(hourSpeed) : "50";
+      minuteSpeed = minuteSpeed !== undefined && minuteSpeed !== null ? String(minuteSpeed) : "50";
+
+      console.log("Hour speed:", hourSpeed, "Minute speed:", minuteSpeed);
 
       setMovements([
         {
           hand: "Hour",
           type: hourMovement.type || "Left",
-          speed: hourMovement.speed?.toString() || "50",
+          speed: hourSpeed,
           showDropdown: false,
         },
         {
           hand: "Minute",
           type: minuteMovement.type || "Right",
-          speed: minuteMovement.speed?.toString() || "50",
+          speed: minuteSpeed,
           showDropdown: false,
         }
       ]);

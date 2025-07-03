@@ -37,6 +37,8 @@ const EditEventModal = () => {
   const [movementId, setMovementId] = useState(null);
   const [movements, setMovements] = useState([]);
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
 
   useEffect(() => {
     fetchMovements();

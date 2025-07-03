@@ -24,6 +24,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
 
 const { height } = Dimensions.get("window")
 
+// Backend expects these exact day abbreviations
 const daysOfWeek = ["Su", "M", "T", "W", "Th", "F", "Sa"]
 
 const NewEventScreen = ({ navigation }) => {
@@ -59,6 +60,7 @@ const NewEventScreen = ({ navigation }) => {
         Alert.alert("Error", "Failed to load movements")
       }
     } catch (error) {
+      console.error("Error fetching movements:", error)
       Alert.alert("Error", "Failed to load movements")
     }
   }
@@ -67,43 +69,43 @@ const NewEventScreen = ({ navigation }) => {
     setSelectedDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
   }
 
+  // Format time to HH:MM (24-hour format) as expected by backend
+  const formatTimeForBackend = (date) => {
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${hours}:${minutes}`
+  }
+
   const handleCreate = async () => {
-    if (!eventName.trim()) {
-      Alert.alert("Error", "Please enter an event name")
+    // Validate event name (2-100 characters as per backend validation)
+    if (!eventName.trim() || eventName.trim().length < 2 || eventName.trim().length > 100) {
+      Alert.alert("Error", "Event name must be between 2 and 100 characters")
       return
     }
 
+    // Validate days selection
     if (selectedDays.length === 0) {
       Alert.alert("Error", "Please select at least one day")
       return
     }
 
+    // Validate movement selection
     if (!selectedMovementId) {
       Alert.alert("Error", "Please select a movement type")
       return
     }
 
-    // Map days to backend format
-    const dayMapping = {
-      "Su": "domingo",
-      "M": "lunes", 
-      "T": "martes",
-      "W": "miercoles",
-      "Th": "jueves",
-      "F": "viernes",
-      "Sa": "sabado"
-    }
-
-    const mappedDays = selectedDays.map(day => dayMapping[day])
-
+    // Prepare data exactly as backend expects
     const newEvent = {
-      nombreEvento: eventName,
-      horaInicio: startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
-      horaFin: endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
-      diasSemana: mappedDays,
-      movementId: selectedMovementId,
+      nombreEvento: eventName.trim(),
+      horaInicio: formatTimeForBackend(startTime),
+      horaFin: formatTimeForBackend(endTime),
+      diasSemana: selectedDays, // Send as-is since we're using backend format
+      movementId: selectedMovementId.toString(), // Ensure it's a string
       enabled: true
     }
+
+    console.log("Sending event data:", newEvent) // Debug log
 
     try {
       const token = await AsyncStorage.getItem('token');
@@ -128,7 +130,14 @@ const NewEventScreen = ({ navigation }) => {
           { text: "OK", onPress: () => navigation.goBack() }
         ])
       } else {
-        Alert.alert("Error", data.error || "Failed to create event")
+        console.error("Backend validation error:", data)
+        // Show specific validation errors if available
+        if (data.details && Array.isArray(data.details)) {
+          const errorMessages = data.details.map(detail => detail.msg).join('\n')
+          Alert.alert("Validation Error", errorMessages)
+        } else {
+          Alert.alert("Error", data.error || "Failed to create event")
+        }
       }
     } catch (error) {
       console.error("Error creating event:", error)
@@ -167,12 +176,12 @@ const NewEventScreen = ({ navigation }) => {
           <View style={styles.timeRow}>
             <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.timeButton}>
               <Text style={styles.timeText}>
-                {startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                {formatTimeForBackend(startTime)}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.timeButton}>
               <Text style={styles.timeText}>
-                {endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                {formatTimeForBackend(endTime)}
               </Text>
             </TouchableOpacity>
           </View>
@@ -198,13 +207,17 @@ const NewEventScreen = ({ navigation }) => {
                 <Text style={styles.formGroupLabel}>Event Details</Text>
                 
                 <View style={styles.formColumn}>
-                  <Text style={styles.inputLabel}>Event Name</Text>
+                  <Text style={styles.inputLabel}>Event Name (2-100 characters)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="Enter event name"
                     value={eventName}
                     onChangeText={setEventName}
+                    maxLength={100}
                   />
+                  <Text style={styles.characterCount}>
+                    {eventName.length}/100 characters
+                  </Text>
                 </View>
 
                 <View style={styles.formColumn}>
@@ -229,6 +242,7 @@ const NewEventScreen = ({ navigation }) => {
             value={startTime}
             mode="time"
             display="default"
+            is24Hour={true}
             onChange={(event, date) => {
               setShowStartPicker(false)
               if (date) setStartTime(date)
@@ -241,6 +255,7 @@ const NewEventScreen = ({ navigation }) => {
             value={endTime}
             mode="time"
             display="default"
+            is24Hour={true}
             onChange={(event, date) => {
               setShowEndPicker(false)
               if (date) setEndTime(date)
@@ -386,6 +401,12 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     borderWidth: 1,
     borderColor: "#ddd",
+  },
+  characterCount: {
+    fontSize: 12,
+    color: "#666",
+    textAlign: "right",
+    marginBottom: 10,
   },
   dropdownContainer: {
     position: "relative",

@@ -120,12 +120,6 @@ return (
       )}
     </TouchableOpacity>
 
-    <TouchableOpacity
-      onPress={() => navigation.navigate('Mainfree')}
-      disabled={isLoading}
-    >
-      <Text style={styles.guestText}>or continue as a guest</Text>
-    </TouchableOpacity>
   </View>
   <StatusBar style="dark" />
 </LinearGradient>

@@ -8,7 +8,6 @@ import Login from "./login.js"
 import { EventProvider } from "./context/eventContext"
 import usersScreen from "./principals/restricted/usersScreen.js"
 import UserDetailScreen from "./principals/restricted/userDetailScreen.js"
-import Mainfree from "./principals/free/main.js"
 import MainRest from "./principals/restricted/main.js"
 import MovementsScreen from "./principals/restricted/movementsScreen.js"
 import CreateMovementScreen from "./principals/restricted/createMovement.js"
@@ -27,7 +26,6 @@ export default function App() {
           <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, animation:'none' }}>
             
             <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="Mainfree" component={Mainfree}  />
             <Stack.Screen name="Home" component={MainRest} />
             <Stack.Screen name="Events" component={EventsScreen}  />
             <Stack.Screen name="Movements" component={MovementsScreen} />

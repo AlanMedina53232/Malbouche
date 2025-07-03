@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -21,10 +20,11 @@ import AnalogClock from "../../components/analogClock"
 import Slider from "@react-native-community/slider"
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-
+const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api'
 
 const { height } = Dimensions.get("window")
 
+// Backend expects these exact day abbreviations
 const daysOfWeek = ["Su", "M", "T", "W", "Th", "F", "Sa"]
 
 const NewEventScreen = ({ navigation }) => {
@@ -32,15 +32,10 @@ const NewEventScreen = ({ navigation }) => {
   const [startTime, setStartTime] = useState(new Date())
   const [endTime, setEndTime] = useState(new Date())
   const [selectedDays, setSelectedDays] = useState([])
-  const [movements, setMovements] = useState([
-    { id: null, speed: 50, time: "" },
-    { id: null, speed: 50, time: "" },
-  ])
-  const [movementOptions, setMovementOptions] = useState([]) // fetched movements from backend
+  const [selectedMovementId, setSelectedMovementId] = useState(null)
+  const [movementOptions, setMovementOptions] = useState([])
   const [showStartPicker, setShowStartPicker] = useState(false)
   const [showEndPicker, setShowEndPicker] = useState(false)
-  const [showMovementTimePicker, setShowMovementTimePicker] = useState(false)
-  const [movementTimePickerIndex, setMovementTimePickerIndex] = useState(null)
 
   useEffect(() => {
     fetchMovements()
@@ -49,7 +44,7 @@ const NewEventScreen = ({ navigation }) => {
   const fetchMovements = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch("https://malbouche-backend.onrender.com/api/movements", {
+      const response = await fetch(`${BACKEND_URL}/movements`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -57,17 +52,15 @@ const NewEventScreen = ({ navigation }) => {
       const data = await response.json()
       if (data.success) {
         setMovementOptions(data.data)
-        // Initialize movements with first movement id if available
-        setMovements((prev) =>
-          prev.map((m) => ({
-            ...m,
-            id: data.data.length > 0 ? data.data[0].id : null,
-          }))
-        )
+        // Initialize with first movement if available
+        if (data.data.length > 0) {
+          setSelectedMovementId(data.data[0].id)
+        }
       } else {
         Alert.alert("Error", "Failed to load movements")
       }
     } catch (error) {
+      console.error("Error fetching movements:", error)
       Alert.alert("Error", "Failed to load movements")
     }
   }
@@ -76,52 +69,80 @@ const NewEventScreen = ({ navigation }) => {
     setSelectedDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
   }
 
-  const updateMovement = (index, field, value) => {
-    const updatedMovements = [...movements]
-    updatedMovements[index] = { ...updatedMovements[index], [field]: value }
-    setMovements(updatedMovements)
+  // Format time to HH:MM (24-hour format) as expected by backend
+  const formatTimeForBackend = (date) => {
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${hours}:${minutes}`
   }
 
-  const handleCreate = () => {
-    if (!eventName.trim()) {
-      Alert.alert("Error", "Please enter an event name")
+  const handleCreate = async () => {
+    // Validate event name (2-100 characters as per backend validation)
+    if (!eventName.trim() || eventName.trim().length < 2 || eventName.trim().length > 100) {
+      Alert.alert("Error", "Event name must be between 2 and 100 characters")
       return
     }
 
+    // Validate days selection
     if (selectedDays.length === 0) {
       Alert.alert("Error", "Please select at least one day")
       return
     }
 
-    // Validate movements have id and time
-    for (const m of movements) {
-      if (!m.id) {
-        Alert.alert("Error", "Please select a movement type")
-        return
-      }
-      if (!m.time) {
-        Alert.alert("Error", "Please enter time for all movements")
-        return
-      }
+    // Validate movement selection
+    if (!selectedMovementId) {
+      Alert.alert("Error", "Please select a movement type")
+      return
     }
 
+    // Prepare data exactly as backend expects
     const newEvent = {
-      id: Date.now(),
-      name: eventName,
-      startTime: startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      endTime: endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      days: selectedDays,
-      movements: movements
-        .filter((m) => m.speed !== undefined && m.time)
-        .map((m) => ({
-          id: m.id,
-          speed: m.speed.toString(),
-          time: m.time,
-        })),
-      enabled: true,
+      nombreEvento: eventName.trim(),
+      horaInicio: formatTimeForBackend(startTime),
+      horaFin: formatTimeForBackend(endTime),
+      diasSemana: selectedDays, // Send as-is since we're using backend format
+      movementId: selectedMovementId.toString(), // Ensure it's a string
+      enabled: true
     }
 
-    Alert.alert("Success", "Event created successfully!", [{ text: "OK", onPress: () => navigation.goBack() }])
+    console.log("Sending event data:", newEvent) // Debug log
+
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert("Error", "No authentication token found. Please log in again.");
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newEvent),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        Alert.alert("Success", "Event created successfully!", [
+          { text: "OK", onPress: () => navigation.goBack() }
+        ])
+      } else {
+        console.error("Backend validation error:", data)
+        // Show specific validation errors if available
+        if (data.details && Array.isArray(data.details)) {
+          const errorMessages = data.details.map(detail => detail.msg).join('\n')
+          Alert.alert("Validation Error", errorMessages)
+        } else {
+          Alert.alert("Error", data.error || "Failed to create event")
+        }
+      }
+    } catch (error) {
+      console.error("Error creating event:", error)
+      Alert.alert("Error", "Failed to connect to server")
+    }
   }
 
   const clockSize = Math.min(height * 0.25, 200)
@@ -155,12 +176,12 @@ const NewEventScreen = ({ navigation }) => {
           <View style={styles.timeRow}>
             <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.timeButton}>
               <Text style={styles.timeText}>
-                {startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                {formatTimeForBackend(startTime)}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.timeButton}>
               <Text style={styles.timeText}>
-                {endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                {formatTimeForBackend(endTime)}
               </Text>
             </TouchableOpacity>
           </View>
@@ -176,6 +197,7 @@ const NewEventScreen = ({ navigation }) => {
               </TouchableOpacity>
             ))}
           </View>
+
           <ScrollView
             contentContainerStyle={styles.scrollContainer}
             showsVerticalScrollIndicator={false}
@@ -183,46 +205,29 @@ const NewEventScreen = ({ navigation }) => {
             <View style={styles.formContainer}>
               <View style={styles.formGroup}>
                 <Text style={styles.formGroupLabel}>Event Details</Text>
+                
                 <View style={styles.formColumn}>
-                  <Text style={styles.inputLabel}>Event Name</Text>
+                  <Text style={styles.inputLabel}>Event Name (2-100 characters)</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="Enter event name"
                     value={eventName}
                     onChangeText={setEventName}
+                    maxLength={100}
                   />
+                  <Text style={styles.characterCount}>
+                    {eventName.length}/100 characters
+                  </Text>
                 </View>
 
                 <View style={styles.formColumn}>
                   <Text style={styles.inputLabel}>Move Type</Text>
                   <Dropdown
                     options={movementOptions}
-                    value={movementOptions.find(m => m.id === movements[0].id)?.nombre || ""}
-                    onSelect={(value) => updateMovement(0, "id", value.id)}
+                    value={movementOptions.find(m => m.id === selectedMovementId)?.nombre || "Select Movement"}
+                    onSelect={(value) => setSelectedMovementId(value.id)}
                   />
                 </View>
-
-                <View style={styles.formColumn}>
-                  <Text style={styles.inputLabel}>Speed</Text>
-                  <View style={styles.sliderContainer}>
-                    <View style={styles.sliderBox}>
-                      <Text style={styles.sliderLabel}>Speed</Text>
-                      <Slider
-                        style={styles.slider}
-                        minimumValue={1}
-                        maximumValue={100}
-                        step={1}
-                        value={movements[0].speed}
-                        onSlidingComplete={(value) => updateMovement(0, "speed", value)}
-                        minimumTrackTintColor="#000"
-                        maximumTrackTintColor="#aaa"
-                        thumbTintColor="#660154"
-                      />
-                      <Text style={{ textAlign: "center", fontWeight: "bold" }}>{movements[0].speed}</Text>
-                    </View>
-                  </View>
-                </View>
-
               </View>
 
               <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
@@ -230,7 +235,6 @@ const NewEventScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </ScrollView>
-
         </View>
 
         {showStartPicker && (
@@ -238,6 +242,7 @@ const NewEventScreen = ({ navigation }) => {
             value={startTime}
             mode="time"
             display="default"
+            is24Hour={true}
             onChange={(event, date) => {
               setShowStartPicker(false)
               if (date) setStartTime(date)
@@ -250,6 +255,7 @@ const NewEventScreen = ({ navigation }) => {
             value={endTime}
             mode="time"
             display="default"
+            is24Hour={true}
             onChange={(event, date) => {
               setShowEndPicker(false)
               if (date) setEndTime(date)
@@ -269,6 +275,7 @@ const Dropdown = ({ options, value, onSelect }) => {
     <View style={styles.dropdownContainer}>
       <TouchableOpacity onPress={() => setVisible(!visible)} style={styles.dropdown}>
         <Text style={styles.dropdownText}>{value}</Text>
+        <Ionicons name={visible ? "chevron-up" : "chevron-down"} size={20} color="#666" />
       </TouchableOpacity>
       {visible && (
         <View style={styles.dropdownList}>
@@ -310,7 +317,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
     zIndex: 100,
   },
-   arrowButton: {
+  arrowButton: {
     marginRight: 10,
     marginBottom: 10,
   },
@@ -321,7 +328,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-   titleContainer: {
+  titleContainer: {
     flex: 1,
   },
   title: {
@@ -377,17 +384,29 @@ const styles = StyleSheet.create({
   dayTextSelected: {
     color: "#fff",
   },
+  scrollContainer: {
+    paddingBottom: 20,
+  },
   formContainer: {
     flex: 1,
     justifyContent: "space-between",
     paddingBottom: 10,
   },
- input: {
+  input: {
     borderRadius: 6,
     backgroundColor: "#fff",
     paddingVertical: 15,
+    paddingHorizontal: 15,
     fontSize: 16,
     marginBottom: 5,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  characterCount: {
+    fontSize: 12,
+    color: "#666",
+    textAlign: "right",
+    marginBottom: 10,
   },
   dropdownContainer: {
     position: "relative",
@@ -395,10 +414,13 @@ const styles = StyleSheet.create({
   dropdown: {
     borderRadius: 6,
     paddingVertical: 15,
-    paddingHorizontal: 5,
+    paddingHorizontal: 15,
     backgroundColor: "#fff",
-    minWidth: 90,
-    zIndex: 2,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   dropdownText: {
     fontSize: 16,
@@ -410,11 +432,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: "#fff",
-  /*   borderWidth: 1,
+    borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 8,
-    elevation: 2, */
+    borderRadius: 6,
     zIndex: 1000,
+    marginTop: 5,
+    elevation: 5,
   },
   dropdownItem: {
     padding: 12,
@@ -426,59 +449,33 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   formGroup: {
-  marginBottom: 20,
-},
-formGroupLabel: {
-  fontSize: 16,
-  fontWeight: "600",
-  marginBottom: 10,
-  color: "#333",
-},
-formColumn: {
-  marginBottom: 15,
-},
-inputLabel: {
-  fontSize: 14,
-  color: "#666",
-  marginBottom: 6,
-},
-createButton: {
+    marginBottom: 20,
+  },
+  formGroupLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 10,
+    color: "#333",
+  },
+  formColumn: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 6,
+  },
+  createButton: {
     backgroundColor: "#400135",
     paddingVertical: 15,
     borderRadius: 8,
     alignItems: "center",
-
     marginBottom: 5,
   },
-createButtonText: {
+  createButtonText: {
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
-  },
-  sliderContainer: {
-    width: "100%",
-    alignItems: "center",
-  },
-  sliderBox: {
-    backgroundColor: "#fff",
-    width: "90%",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#fff",
-    marginTop: 10,
-    elevation: 2,
-    overflow: "hidden",
-  },
-  sliderLabel: {
-    marginTop: 10,
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  slider: {
-    width: "85%",
-    height: 30,
-    alignSelf: "center",
   },
 })
 

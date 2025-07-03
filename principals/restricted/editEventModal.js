@@ -20,6 +20,8 @@ import { EventContext } from "../../context/eventContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
+
 const { height } = Dimensions.get("window");
 
 const daysOfWeek = ["Su", "M", "T", "W", "Th", "F", "Sa"];
@@ -74,9 +76,25 @@ const EditEventModal = () => {
   const fetchMovements = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch("https://malbouche-backend.onrender.com/api/movements", {
-        Authorization: `Bearer ${token}`,
+      if (!token) {
+        Alert.alert("Error", "No authentication token found. Please log in again.");
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/movements`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to fetch movements:", errorData);
+        Alert.alert("Error", errorData.error || "Failed to load movements");
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
         setMovements(data.data);
@@ -84,6 +102,7 @@ const EditEventModal = () => {
         Alert.alert("Error", "Failed to load movements");
       }
     } catch (error) {
+      console.error("Error fetching movements:", error);
       Alert.alert("Error", "Failed to load movements");
     }
   };
@@ -120,11 +139,17 @@ const EditEventModal = () => {
     };
 
     try {
-      const response = await fetch(`http://localhost:3000/api/events/${event.id}`, {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert("Error", "No authentication token found. Please log in again.");
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/events/${event.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer your_token_here",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(updatedEvent),
       });
@@ -148,10 +173,16 @@ const EditEventModal = () => {
         style: "destructive",
         onPress: async () => {
           try {
-            const response = await fetch(`http://localhost:3000/api/events/${event.id}`, {
+            const token = await AsyncStorage.getItem('token');
+            if (!token) {
+              Alert.alert("Error", "No authentication token found. Please log in again.");
+              return;
+            }
+
+            const response = await fetch(`${BACKEND_URL}/events/${event.id}`, {
               method: "DELETE",
               headers: {
-                Authorization: "Bearer your_token_here",
+                "Authorization": `Bearer ${token}`,
               },
             });
             const data = await response.json();

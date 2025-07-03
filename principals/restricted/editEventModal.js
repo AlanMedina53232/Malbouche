@@ -23,32 +23,30 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 const { height } = Dimensions.get("window");
 
 const daysOfWeek = ["Su", "M", "T", "W", "Th", "F", "Sa"];
-const moveOptions = ["Left", "Right", "Swings", "Crazy"];
 
 const EditEventModal = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { event } = route.params;
   const { events, setEvents } = useContext(EventContext);
-  
-  // Estados inicializados con valores del evento
+
   const [eventName, setEventName] = useState(event?.name || "");
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
   const [selectedDays, setSelectedDays] = useState(event?.days || []);
-  const [movements, setMovements] = useState(
-    event?.movements || [{ type: "Left", speed: 50, time: "" }]
-  );
-
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [movementId, setMovementId] = useState(null);
+  const [movements, setMovements] = useState([]);
   const [dropdownVisible, setDropdownVisible] = useState(false);
+
+  useEffect(() => {
+    fetchMovements();
+  }, []);
 
   useEffect(() => {
     if (event) {
       setEventName(event.name || "");
       setSelectedDays(event.days || []);
-      setMovements(event.movements || [{ type: "Left", speed: 50, time: "" }]);
+      setMovementId(event.movement?.id || null);
 
       const parseTime = (timeStr) => {
         if (!timeStr) return new Date();
@@ -71,19 +69,29 @@ const EditEventModal = () => {
     }
   }, [event]);
 
+  const fetchMovements = async () => {
+    try {
+      const response = await fetch("http://localhost:3000/api/movements", {
+        headers: { Authorization: "Bearer your_token_here" },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setMovements(data.data);
+      } else {
+        Alert.alert("Error", "Failed to load movements");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to load movements");
+    }
+  };
+
   const toggleDay = (day) => {
     setSelectedDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
   };
 
-  const updateMovement = (index, field, value) => {
-    const updated = [...movements];
-    updated[index] = { ...updated[index], [field]: value };
-    setMovements(updated);
-  };
-
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!eventName.trim()) {
       Alert.alert("Error", "Please enter an event name");
       return;
@@ -94,28 +102,65 @@ const EditEventModal = () => {
       return;
     }
 
+    if (!movementId) {
+      Alert.alert("Error", "Please select a movement");
+      return;
+    }
+
     const updatedEvent = {
       ...event,
       name: eventName,
       startTime: startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       endTime: endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       days: selectedDays,
-      movements: movements.map((m) => ({ ...m, speed: String(m.speed) })),
+      movementId,
     };
 
-    setEvents((prev) => prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
-    navigation.goBack();
+    try {
+      const response = await fetch(`http://localhost:3000/api/events/${event.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer your_token_here",
+        },
+        body: JSON.stringify(updatedEvent),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setEvents((prev) => prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
+        navigation.goBack();
+      } else {
+        Alert.alert("Error", "Failed to update event");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to update event");
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     Alert.alert("Delete Event", "Are you sure?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          setEvents((prev) => prev.filter((e) => e.id !== event.id));
-          navigation.goBack();
+        onPress: async () => {
+          try {
+            const response = await fetch(`http://localhost:3000/api/events/${event.id}`, {
+              method: "DELETE",
+              headers: {
+                Authorization: "Bearer your_token_here",
+              },
+            });
+            const data = await response.json();
+            if (data.success) {
+              setEvents((prev) => prev.filter((e) => e.id !== event.id));
+              navigation.goBack();
+            } else {
+              Alert.alert("Error", "Failed to delete event");
+            }
+          } catch (error) {
+            Alert.alert("Error", "Failed to delete event");
+          }
         },
       },
     ]);
@@ -209,7 +254,7 @@ const EditEventModal = () => {
                 style={styles.dropdown}
                 onPress={() => setDropdownVisible(!dropdownVisible)}
               >
-                <Text>{movements[0]?.type}</Text>
+                <Text>{movements.find(m => m.id === movementId)?.nombre || "Select Movement"}</Text>
                 <Ionicons
                   name={dropdownVisible ? "chevron-up" : "chevron-down"}
                   size={20}
@@ -218,35 +263,21 @@ const EditEventModal = () => {
               </TouchableOpacity>
               {dropdownVisible && (
                 <View style={styles.dropdownList}>
-                  {moveOptions.map((option) => (
+                  {movements.map((movement) => (
                     <TouchableOpacity
-                      key={option}
+                      key={movement.id}
                       style={styles.dropdownItem}
                       onPress={() => {
-                        updateMovement(0, "type", option);
+                        setMovementId(movement.id);
                         setDropdownVisible(false);
                       }}
                     >
-                      <Text style={styles.dropdownItemText}>{option}</Text>
+                      <Text style={styles.dropdownItemText}>{movement.nombre}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
             </View>
-
-            <Text style={styles.inputLabel}>Speed</Text>
-            <Slider
-              style={{ width: "100%", height: 40 }}
-              minimumValue={1}
-              maximumValue={100}
-              step={1}
-              value={movements[0]?.speed ? Number(movements[0].speed) : 50}
-              onSlidingComplete={(value) => updateMovement(0, "speed", String(value))}
-              minimumTrackTintColor="#400135"
-              maximumTrackTintColor="#d3d3d3"
-              thumbTintColor="#400135"
-            />
-            <Text style={{ textAlign: "center" }}>{movements[0]?.speed || 50}</Text>
 
             <TouchableOpacity style={styles.createButton} onPress={handleUpdate}>
               <Text style={styles.createButtonText}>Update Event</Text>

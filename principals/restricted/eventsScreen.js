@@ -2,16 +2,17 @@
 
 import { useState, useEffect, useContext } from "react"
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Switch, Alert, SafeAreaView, ActivityIndicator } from "react-native"
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation } from "@react-navigation/native"
 import { EventContext } from "../../context/eventContext"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
 
-const API_BASE_URL = "http://localhost:3000/api" // Adjust to your backend URL
+const API_BASE_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api' // Fallback if env not set
 
 const EventsScreen = () => {
   const navigation = useNavigation()
-  const { events, setEvents } = useContext(EventContext)
+  // const { events, setEvents } = useContext(EventContext)
   const [movements, setMovements] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -30,13 +31,19 @@ const EventsScreen = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        Alert.alert("Error", "No authentication token found. Please log in again.")
+        setLoading(false)
+        return
+      }
       const eventsResponse = await fetch(`${API_BASE_URL}/events`, {
-        headers: { Authorization: "Bearer your_token_here" } // Add auth token if needed
+        headers: { Authorization: `Bearer ${token}` }
       })
       const eventsData = await eventsResponse.json()
 
       const movementsResponse = await fetch(`${API_BASE_URL}/movements`, {
-        headers: { Authorization: "Bearer your_token_here" }
+        headers: { Authorization: `Bearer ${token}` }
       })
       const movementsData = await movementsResponse.json()
 
@@ -44,6 +51,9 @@ const EventsScreen = () => {
         // Map events to include movement details
         const enrichedEvents = eventsData.data.map(event => {
           const movement = movementsData.data.find(mov => mov.id === event.movementId)
+          if (!movement) {
+            console.warn(`Movement with id ${event.movementId} not found`)
+          }
           return {
             id: event.id,
             name: event.nombreEvento,
@@ -59,11 +69,12 @@ const EventsScreen = () => {
           }
         })
         setLocalEvents(enrichedEvents)
-        setEvents(enrichedEvents)
+        // setEvents(enrichedEvents)
       } else {
         Alert.alert("Error", "Error loading events or movements")
       }
     } catch (error) {
+      console.error("Fetch error:", error)
       Alert.alert("Error", "Failed to fetch data from server")
     } finally {
       setLoading(false)
@@ -90,7 +101,7 @@ const EventsScreen = () => {
     return dayMap[day] || day
   }
 
-  const toggleEventStatus = async (eventId) => {
+const toggleEventStatus = async (eventId) => {
     const event = localEvents.find(e => e.id === eventId)
     if (!event) return
 
@@ -101,7 +112,7 @@ const EventsScreen = () => {
           "Content-Type": "application/json",
           Authorization: "Bearer your_token_here"
         },
-        body: JSON.stringify({ enabled: !event.enabled })
+        body: JSON.stringify({ activo: !event.enabled }) // backend expects 'activo'
       })
       const data = await response.json()
       if (data.success) {

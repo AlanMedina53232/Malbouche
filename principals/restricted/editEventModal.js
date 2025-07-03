@@ -16,9 +16,9 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import AnalogClock from "../../components/analogClock";
-import Slider from "@react-native-community/slider";
 import { EventContext } from "../../context/eventContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { height } = Dimensions.get("window");
 
@@ -71,8 +71,9 @@ const EditEventModal = () => {
 
   const fetchMovements = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/movements", {
-        headers: { Authorization: "Bearer your_token_here" },
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch("https://malbouche-backend.onrender.com/api/movements", {
+        Authorization: `Bearer ${token}`,
       });
       const data = await response.json();
       if (data.success) {

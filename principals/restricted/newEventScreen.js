@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -18,11 +19,13 @@ import DateTimePicker from "@react-native-community/datetimepicker"
 import { Ionicons } from "@expo/vector-icons"
 import AnalogClock from "../../components/analogClock"
 import Slider from "@react-native-community/slider"
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+
 
 const { height } = Dimensions.get("window")
 
 const daysOfWeek = ["Su", "M", "T", "W", "Th", "F", "Sa"]
-const moveOptions = ["Left", "Right", "Swings", "Crazy"]
 
 const NewEventScreen = ({ navigation }) => {
   const [eventName, setEventName] = useState("")
@@ -30,12 +33,44 @@ const NewEventScreen = ({ navigation }) => {
   const [endTime, setEndTime] = useState(new Date())
   const [selectedDays, setSelectedDays] = useState([])
   const [movements, setMovements] = useState([
-    { type: "Left", speed: 50, time: "" },
-    { type: "Right", speed: 50, time: "" },
+    { id: null, speed: 50, time: "" },
+    { id: null, speed: 50, time: "" },
   ])
-
+  const [movementOptions, setMovementOptions] = useState([]) // fetched movements from backend
   const [showStartPicker, setShowStartPicker] = useState(false)
   const [showEndPicker, setShowEndPicker] = useState(false)
+  const [showMovementTimePicker, setShowMovementTimePicker] = useState(false)
+  const [movementTimePickerIndex, setMovementTimePickerIndex] = useState(null)
+
+  useEffect(() => {
+    fetchMovements()
+  }, [])
+
+  const fetchMovements = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch("https://malbouche-backend.onrender.com/api/movements", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      const data = await response.json()
+      if (data.success) {
+        setMovementOptions(data.data)
+        // Initialize movements with first movement id if available
+        setMovements((prev) =>
+          prev.map((m) => ({
+            ...m,
+            id: data.data.length > 0 ? data.data[0].id : null,
+          }))
+        )
+      } else {
+        Alert.alert("Error", "Failed to load movements")
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to load movements")
+    }
+  }
 
   const toggleDay = (day) => {
     setSelectedDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
@@ -58,13 +93,31 @@ const NewEventScreen = ({ navigation }) => {
       return
     }
 
+    // Validate movements have id and time
+    for (const m of movements) {
+      if (!m.id) {
+        Alert.alert("Error", "Please select a movement type")
+        return
+      }
+      if (!m.time) {
+        Alert.alert("Error", "Please enter time for all movements")
+        return
+      }
+    }
+
     const newEvent = {
       id: Date.now(),
       name: eventName,
       startTime: startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       endTime: endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       days: selectedDays,
-      movements: movements.filter((m) => m.speed !== undefined && m.time).map(m => ({...m, speed: m.speed.toString()})),
+      movements: movements
+        .filter((m) => m.speed !== undefined && m.time)
+        .map((m) => ({
+          id: m.id,
+          speed: m.speed.toString(),
+          time: m.time,
+        })),
       enabled: true,
     }
 
@@ -81,9 +134,10 @@ const NewEventScreen = ({ navigation }) => {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.arrowButton}
-            onPress={() => navigation.goBack()}>
+            onPress={() => navigation.goBack()}
+          >
             <View style={styles.iconSmall}>
               <Ionicons name="arrow-back" size={24} color="black" />
             </View>
@@ -97,7 +151,7 @@ const NewEventScreen = ({ navigation }) => {
           <View style={[styles.clockContainer, { height: clockSize }]}>
             <AnalogClock />
           </View>
-        
+
           <View style={styles.timeRow}>
             <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.timeButton}>
               <Text style={styles.timeText}>
@@ -122,59 +176,59 @@ const NewEventScreen = ({ navigation }) => {
               </TouchableOpacity>
             ))}
           </View>
-          <ScrollView 
-            contentContainerStyle={styles.scrollContainer} 
-            showsVerticalScrollIndicator={false} 
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
           >
-          <View style={styles.formContainer}>
-            <View style={styles.formGroup}>
-              <Text style={styles.formGroupLabel}>Event Details</Text>
-              <View style={styles.formColumn}>
-                <Text style={styles.inputLabel}>Event Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter event name"
-                  value={eventName}
-                  onChangeText={setEventName}
-                />
-              </View>
+            <View style={styles.formContainer}>
+              <View style={styles.formGroup}>
+                <Text style={styles.formGroupLabel}>Event Details</Text>
+                <View style={styles.formColumn}>
+                  <Text style={styles.inputLabel}>Event Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter event name"
+                    value={eventName}
+                    onChangeText={setEventName}
+                  />
+                </View>
 
-              <View style={styles.formColumn}>
-                <Text style={styles.inputLabel}>Move Type</Text>
-                <Dropdown
-                  options={moveOptions}
-                  value={movements[0].type}
-                  onSelect={(value) => updateMovement(0, "type", value)}
-                />
-              </View>
+                <View style={styles.formColumn}>
+                  <Text style={styles.inputLabel}>Move Type</Text>
+                  <Dropdown
+                    options={movementOptions}
+                    value={movementOptions.find(m => m.id === movements[0].id)?.nombre || ""}
+                    onSelect={(value) => updateMovement(0, "id", value.id)}
+                  />
+                </View>
 
-              <View style={styles.formColumn}>
-                <Text style={styles.inputLabel}>Speed</Text>
-                <View style={styles.sliderContainer}>
-                  <View style={styles.sliderBox}>
-                    <Text style={styles.sliderLabel}>Speed</Text>
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={1}
-                      maximumValue={100}
-                      step={1}
-                      value={movements[0].speed}
-                      onSlidingComplete={(value) => updateMovement(0, "speed", value)}
-                      minimumTrackTintColor="#000"
-                      maximumTrackTintColor="#aaa"
-                      thumbTintColor="#660154"
-                    />
-                    <Text style={{textAlign: 'center', fontWeight: 'bold'}}>{movements[0].speed}</Text>
+                <View style={styles.formColumn}>
+                  <Text style={styles.inputLabel}>Speed</Text>
+                  <View style={styles.sliderContainer}>
+                    <View style={styles.sliderBox}>
+                      <Text style={styles.sliderLabel}>Speed</Text>
+                      <Slider
+                        style={styles.slider}
+                        minimumValue={1}
+                        maximumValue={100}
+                        step={1}
+                        value={movements[0].speed}
+                        onSlidingComplete={(value) => updateMovement(0, "speed", value)}
+                        minimumTrackTintColor="#000"
+                        maximumTrackTintColor="#aaa"
+                        thumbTintColor="#660154"
+                      />
+                      <Text style={{ textAlign: "center", fontWeight: "bold" }}>{movements[0].speed}</Text>
+                    </View>
                   </View>
                 </View>
+
               </View>
 
+              <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
+                <Text style={styles.createButtonText}>Create event</Text>
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
-              <Text style={styles.createButtonText}>Create event</Text>
-            </TouchableOpacity>
-          </View>
           </ScrollView>
 
         </View>
@@ -220,14 +274,14 @@ const Dropdown = ({ options, value, onSelect }) => {
         <View style={styles.dropdownList}>
           {options.map((option) => (
             <TouchableOpacity
-              key={option}
+              key={option.id}
               style={styles.dropdownItem}
               onPress={() => {
                 onSelect(option)
                 setVisible(false)
               }}
             >
-              <Text style={styles.dropdownItemText}>{option}</Text>
+              <Text style={styles.dropdownItemText}>{option.nombre}</Text>
             </TouchableOpacity>
           ))}
         </View>

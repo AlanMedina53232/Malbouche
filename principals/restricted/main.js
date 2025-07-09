@@ -5,30 +5,21 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-<<<<<<< HEAD
-  ScrollView, 
-  ImageBackground
-=======
   ScrollView,
   ImageBackground,
   ActivityIndicator,
   Alert,
   Modal,
   FlatList
->>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import NavigationBar from "../../components/NavigationBar";
 import AnalogClock from "../../components/analogClock";
 import { Ionicons } from '@expo/vector-icons';
-<<<<<<< HEAD
-import FrameImage from '../../assets/marcoReloj.png';
-=======
 import FrameImage from '../../assets/reloj.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
->>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
 
 const MainRest = ({ navigation }) => {
   const [selectedOption, setSelectedOption] = useState("normal");
@@ -45,15 +36,9 @@ const MainRest = ({ navigation }) => {
   };
 
   const options = [
-<<<<<<< HEAD
-    ["Left", "Right"],
-    ["Crazy", "Swing"],
-    [ "Normal"]
-=======
     ["left", "right"],
     ["crazy", "swing"],
     ["customized", "normal"]
->>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
   ];
 
   // Preset names to exclude from custom movements
@@ -380,10 +365,6 @@ const MainRest = ({ navigation }) => {
               </View>
             </ImageBackground>
           </View>
-<<<<<<< HEAD
-          <View style={styles.buttonContainer}>
-        {options.map((row, index) => (
-=======
 
           {loading && (
             <View style={styles.loadingContainer}>
@@ -393,7 +374,6 @@ const MainRest = ({ navigation }) => {
           )}
 
           {options.map((row, index) => (
->>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
             <View key={index} style={styles.buttonRow}>
               {row.map((item) => (
                 <TouchableOpacity
@@ -417,12 +397,8 @@ const MainRest = ({ navigation }) => {
               ))}
             </View>
           ))}
-<<<<<<< HEAD
-          </View>
-  
-=======
+
           
->>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
           <View style={styles.sliderContainer}>
             <View style={styles.sliderBox}>
               <Text style={styles.sliderLabel}>Speed: {speed}</Text>
@@ -560,22 +536,6 @@ const styles = StyleSheet.create({
     height: '98%',
     justifyContent: 'center',
     alignItems: 'center',
-<<<<<<< HEAD
- // Espacio superior para el marco
-    marginBottom: 25, // Espacio superior para el marco
-    marginTop: 20, // Espacio superior para el marco
-    overflow: 'hidden', // Asegura que el reloj no sobresalga del marco
-    
-  },
-  clockInnerContainer: {
-    width: '100%',            // Ajusta el tamaño del reloj visualmente
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight:2, // Espacio inferior para el marco
-    marginTop: 54,    // Sube ligeramente el reloj
-
-=======
     marginLeft: 38,
     marginBottom: 20,
     marginTop: 20,
@@ -588,7 +548,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingRight: 34,
     marginBottom: 15,
->>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
   },
   buttonContainer: {
     marginTop: 20

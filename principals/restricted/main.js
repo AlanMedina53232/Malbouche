@@ -8,7 +8,9 @@ import {
   ScrollView,
   ImageBackground,
   ActivityIndicator,
-  Alert
+  Alert,
+  Modal,
+  FlatList
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import NavigationBar from "../../components/NavigationBar";
@@ -23,6 +25,9 @@ const MainRest = ({ navigation }) => {
   const [selectedOption, setSelectedOption] = useState("normal");
   const [speed, setSpeed] = useState(50);
   const [loading, setLoading] = useState(false);
+  const [customModalVisible, setCustomModalVisible] = useState(false);
+  const [customMovements, setCustomMovements] = useState([]);
+  const [loadingMovements, setLoadingMovements] = useState(false);
 
   const currentUser = {
     id: 1,
@@ -35,6 +40,9 @@ const MainRest = ({ navigation }) => {
     ["crazy", "swing"],
     ["customized", "normal"]
   ];
+
+  // Preset names to exclude from custom movements
+  const PRESET_NAMES = ["left", "right", "crazy", "swing", "normal"];
 
   // Get authentication token from AsyncStorage
   const getAuthToken = async () => {
@@ -53,8 +61,59 @@ const MainRest = ({ navigation }) => {
     }
   };
 
+  // Fetch custom movements from backend
+  const fetchCustomMovements = async () => {
+    setLoadingMovements(true);
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        setLoadingMovements(false);
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/movements`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Failed to fetch movements:", data);
+        Alert.alert("Error", data.error || "Failed to load custom movements.");
+        setLoadingMovements(false);
+        return;
+      }
+
+      if (data.success && Array.isArray(data.data)) {
+        // Filter out preset movements
+        const filteredMovements = data.data.filter(movement => 
+          !PRESET_NAMES.includes(movement.nombre?.toLowerCase())
+        );
+        setCustomMovements(filteredMovements);
+      } else {
+        console.error("Invalid movements data format:", data);
+        Alert.alert("Error", "Invalid data format from movements API.");
+      }
+    } catch (error) {
+      console.error("Network error fetching movements:", error);
+      Alert.alert("Network Error", "Failed to connect to server. Please check your internet connection.");
+    } finally {
+      setLoadingMovements(false);
+    }
+  };
+
   // Handle preset button press: POST /api/movimiento-actual/:preset with optional speed
   const handlePresetSelect = async (preset) => {
+    // If customized is selected, show modal instead of making API call
+    if (preset === "customized") {
+      setCustomModalVisible(true);
+      fetchCustomMovements();
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -105,6 +164,67 @@ const MainRest = ({ navigation }) => {
 
     } catch (error) {
       console.error("Network error updating preset:", error);
+      Alert.alert("Network Error", "Failed to connect to server. Please check your internet connection.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle custom movement selection
+  const handleCustomMovementSelect = async (movement) => {
+    setLoading(true);
+    
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      const payload = { velocidad: speed };
+      
+      const response = await fetch(`${BACKEND_URL}/movimiento-actual/${movement.nombre}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Custom movement update error:", data);
+        if (response.status === 404) {
+          Alert.alert("Error", `Movement '${movement.nombre}' not found.`);
+        } else if (response.status === 401) {
+          Alert.alert("Authentication Error", "Please log in again.");
+          navigation.replace('Login');
+        } else {
+          Alert.alert("Error", data.error || "Failed to update movement.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Update local state with returned data
+      if (data.success && data.data) {
+        setSelectedOption("customized");
+        if (data.data.movimiento?.horas?.velocidad) {
+          setSpeed(data.data.movimiento.horas.velocidad);
+        }
+        console.log("Custom movement updated successfully:", movement.nombre);
+      } else {
+        setSelectedOption("customized");
+        console.log("Custom movement updated (no data returned):", movement.nombre);
+      }
+
+      // Close modal
+      setCustomModalVisible(false);
+
+    } catch (error) {
+      console.error("Network error updating custom movement:", error);
       Alert.alert("Network Error", "Failed to connect to server. Please check your internet connection.");
     } finally {
       setLoading(false);
@@ -179,6 +299,38 @@ const MainRest = ({ navigation }) => {
       isSwing: lowerOption === "swing",
       speed: speed
     };
+  };
+
+  // Render custom movement item
+  const renderCustomMovementItem = ({ item }) => {
+    // Get movement details for display
+    const movimiento = item.movimiento || {};
+    const horas = movimiento.horas || {};
+    const minutos = movimiento.minutos || {};
+    
+    const hourSpeed = horas.velocidad !== undefined ? horas.velocidad : (item.velocidad ?? '');
+    const minuteSpeed = minutos.velocidad !== undefined ? minutos.velocidad : '';
+    const hourDirection = horas.direccion || movimiento.direccionGeneral || '';
+    const minuteDirection = minutos.direccion || '';
+
+    return (
+      <TouchableOpacity
+        style={styles.customMovementItem}
+        onPress={() => handleCustomMovementSelect(item)}
+        disabled={loading}
+      >
+        <View style={styles.customMovementInfo}>
+          <Text style={styles.customMovementName}>{item.nombre}</Text>
+          <Text style={styles.customMovementDetails}>
+            Hour: {hourDirection} (Speed: {hourSpeed})
+          </Text>
+          <Text style={styles.customMovementDetails}>
+            Minute: {minuteDirection} (Speed: {minuteSpeed})
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -264,6 +416,54 @@ const MainRest = ({ navigation }) => {
             </View> 
           </View>
         </ScrollView>
+
+        {/* Custom Movements Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={customModalVisible}
+          onRequestClose={() => setCustomModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select Custom Movement</Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setCustomModalVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.modalBody}>
+                {loadingMovements ? (
+                  <View style={styles.modalLoadingContainer}>
+                    <ActivityIndicator size="large" color="#660154" />
+                    <Text style={styles.modalLoadingText}>Loading movements...</Text>
+                  </View>
+                ) : customMovements.length === 0 ? (
+                  <View style={styles.emptyStateContainer}>
+                    <Ionicons name="folder-open-outline" size={48} color="#ccc" />
+                    <Text style={styles.emptyStateText}>No custom movements found</Text>
+                    <Text style={styles.emptyStateSubtext}>
+                      Create custom movements in the Movements section
+                    </Text>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={customMovements}
+                    renderItem={renderCustomMovementItem}
+                    keyExtractor={(item) => item.id}
+                    showsVerticalScrollIndicator={false}
+                    style={styles.customMovementsList}
+                  />
+                )}
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         <NavigationBar/>
       </View>
     </SafeAreaView>
@@ -418,6 +618,106 @@ const styles = StyleSheet.create({
   loadingText: {
     color: "#660154",
     fontWeight: "600",
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalBody: {
+    flex: 1,
+    padding: 20,
+  },
+  modalLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  modalLoadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  customMovementsList: {
+    flex: 1,
+  },
+  customMovementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  customMovementInfo: {
+    flex: 1,
+  },
+  customMovementName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  customMovementDetails: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
   },
 });
 

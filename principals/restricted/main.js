@@ -1,22 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
+<<<<<<< HEAD
   ScrollView, 
   ImageBackground
+=======
+  ScrollView,
+  ImageBackground,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  FlatList
+>>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import NavigationBar from "../../components/NavigationBar";
 import AnalogClock from "../../components/analogClock";
 import { Ionicons } from '@expo/vector-icons';
+<<<<<<< HEAD
 import FrameImage from '../../assets/marcoReloj.png';
+=======
+import FrameImage from '../../assets/reloj.png';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
+>>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
 
 const MainRest = ({ navigation }) => {
   const [selectedOption, setSelectedOption] = useState("normal");
   const [speed, setSpeed] = useState(50);
+  const [loading, setLoading] = useState(false);
+  const [customModalVisible, setCustomModalVisible] = useState(false);
+  const [customMovements, setCustomMovements] = useState([]);
+  const [loadingMovements, setLoadingMovements] = useState(false);
 
   const currentUser = {
     id: 1,
@@ -25,15 +45,267 @@ const MainRest = ({ navigation }) => {
   };
 
   const options = [
+<<<<<<< HEAD
     ["Left", "Right"],
     ["Crazy", "Swing"],
     [ "Normal"]
+=======
+    ["left", "right"],
+    ["crazy", "swing"],
+    ["customized", "normal"]
+>>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
   ];
 
-  const handleOptionSelect = (option) => {
-    setSelectedOption(option);
+  // Preset names to exclude from custom movements
+  const PRESET_NAMES = ["left", "right", "crazy", "swing", "normal"];
+
+  // Get authentication token from AsyncStorage
+  const getAuthToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert("Authentication Error", "Please log in again.");
+        navigation.replace('Login');
+        return null;
+      }
+      return token;
+    } catch (error) {
+      console.error("Error getting auth token:", error);
+      Alert.alert("Error", "Failed to get authentication token.");
+      return null;
+    }
   };
-    // Determina qué props enviar al AnalogClock basado en la selección
+
+  // Fetch custom movements from backend
+  const fetchCustomMovements = async () => {
+    setLoadingMovements(true);
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        setLoadingMovements(false);
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/movements`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Failed to fetch movements:", data);
+        Alert.alert("Error", data.error || "Failed to load custom movements.");
+        setLoadingMovements(false);
+        return;
+      }
+
+      if (data.success && Array.isArray(data.data)) {
+        // Filter out preset movements
+        const filteredMovements = data.data.filter(movement => 
+          !PRESET_NAMES.includes(movement.nombre?.toLowerCase())
+        );
+        setCustomMovements(filteredMovements);
+      } else {
+        console.error("Invalid movements data format:", data);
+        Alert.alert("Error", "Invalid data format from movements API.");
+      }
+    } catch (error) {
+      console.error("Network error fetching movements:", error);
+      Alert.alert("Network Error", "Failed to connect to server. Please check your internet connection.");
+    } finally {
+      setLoadingMovements(false);
+    }
+  };
+
+  // Handle preset button press: POST /api/movimiento-actual/:preset with optional speed
+  const handlePresetSelect = async (preset) => {
+    // If customized is selected, show modal instead of making API call
+    if (preset === "customized") {
+      setCustomModalVisible(true);
+      fetchCustomMovements();
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      const payload = { velocidad: speed };
+      
+      const response = await fetch(`${BACKEND_URL}/movimiento-actual/${preset.toLowerCase()}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Preset update error:", data);
+        if (response.status === 404) {
+          Alert.alert("Error", `Movement preset '${preset}' not found.`);
+        } else if (response.status === 401) {
+          Alert.alert("Authentication Error", "Please log in again.");
+          navigation.replace('Login');
+        } else {
+          Alert.alert("Error", data.error || "Failed to update movement preset.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Update local state with returned data
+      if (data.success && data.data) {
+        setSelectedOption(preset);
+        if (data.data.movimiento?.horas?.velocidad) {
+          setSpeed(data.data.movimiento.horas.velocidad);
+        }
+        console.log("Preset updated successfully:", preset);
+      } else {
+        setSelectedOption(preset);
+        console.log("Preset updated (no data returned):", preset);
+      }
+
+    } catch (error) {
+      console.error("Network error updating preset:", error);
+      Alert.alert("Network Error", "Failed to connect to server. Please check your internet connection.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle custom movement selection
+  const handleCustomMovementSelect = async (movement) => {
+    setLoading(true);
+    
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      const payload = { velocidad: speed };
+      
+      const response = await fetch(`${BACKEND_URL}/movimiento-actual/${movement.nombre}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Custom movement update error:", data);
+        if (response.status === 404) {
+          Alert.alert("Error", `Movement '${movement.nombre}' not found.`);
+        } else if (response.status === 401) {
+          Alert.alert("Authentication Error", "Please log in again.");
+          navigation.replace('Login');
+        } else {
+          Alert.alert("Error", data.error || "Failed to update movement.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Update local state with returned data
+      if (data.success && data.data) {
+        setSelectedOption("customized");
+        if (data.data.movimiento?.horas?.velocidad) {
+          setSpeed(data.data.movimiento.horas.velocidad);
+        }
+        console.log("Custom movement updated successfully:", movement.nombre);
+      } else {
+        setSelectedOption("customized");
+        console.log("Custom movement updated (no data returned):", movement.nombre);
+      }
+
+      // Close modal
+      setCustomModalVisible(false);
+
+    } catch (error) {
+      console.error("Network error updating custom movement:", error);
+      Alert.alert("Network Error", "Failed to connect to server. Please check your internet connection.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle speed change: PATCH /api/movimiento-actual/velocidad
+  const sendSpeedUpdate = async (newSpeed) => {
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(`${BACKEND_URL}/movimiento-actual/velocidad`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ velocidad: newSpeed }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Speed update error:", data);
+        if (response.status === 404) {
+          // Gracefully handle 404 - movement document might not exist yet
+          console.log("Movement document not found, speed update skipped");
+        } else if (response.status === 401) {
+          Alert.alert("Authentication Error", "Please log in again.");
+          navigation.replace('Login');
+        } else {
+          Alert.alert("Error", data.error || "Failed to update speed.");
+        }
+        return;
+      }
+
+      // Update local state with returned data
+      if (data.success && data.data?.movimiento?.horas?.velocidad) {
+        setSpeed(data.data.movimiento.horas.velocidad);
+      }
+      console.log("Speed updated successfully:", newSpeed);
+
+    } catch (error) {
+      console.error("Network error updating speed:", error);
+      Alert.alert("Network Error", "Failed to update speed. Please check your internet connection.");
+    }
+  };
+
+  // Debounce speed update to avoid excessive requests
+  const debouncedSpeedUpdate = useCallback(
+    debounce((newSpeed) => {
+      sendSpeedUpdate(newSpeed);
+    }, 500),
+    []
+  );
+
+  // Handle slider change complete event
+  const handleSpeedChange = (newSpeed) => {
+    setSpeed(newSpeed);
+    debouncedSpeedUpdate(newSpeed);
+  };
+
+  // Determine props for AnalogClock based on selected option and speed
   const getClockProps = () => {
     const lowerOption = selectedOption.toLowerCase();
     return {
@@ -44,8 +316,39 @@ const MainRest = ({ navigation }) => {
     };
   };
 
-  return (
+  // Render custom movement item
+  const renderCustomMovementItem = ({ item }) => {
+    // Get movement details for display
+    const movimiento = item.movimiento || {};
+    const horas = movimiento.horas || {};
+    const minutos = movimiento.minutos || {};
     
+    const hourSpeed = horas.velocidad !== undefined ? horas.velocidad : (item.velocidad ?? '');
+    const minuteSpeed = minutos.velocidad !== undefined ? minutos.velocidad : '';
+    const hourDirection = horas.direccion || movimiento.direccionGeneral || '';
+    const minuteDirection = minutos.direccion || '';
+
+    return (
+      <TouchableOpacity
+        style={styles.customMovementItem}
+        onPress={() => handleCustomMovementSelect(item)}
+        disabled={loading}
+      >
+        <View style={styles.customMovementInfo}>
+          <Text style={styles.customMovementName}>{item.nombre}</Text>
+          <Text style={styles.customMovementDetails}>
+            Hour: {hourDirection} (Speed: {hourSpeed})
+          </Text>
+          <Text style={styles.customMovementDetails}>
+            Minute: {minuteDirection} (Speed: {minuteSpeed})
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+    );
+  };
+
+  return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
@@ -68,17 +371,29 @@ const MainRest = ({ navigation }) => {
         >   
           <View style={styles.clockFrame}>
             <ImageBackground
-              source={FrameImage} // Tu imagen de marco
+              source={FrameImage}
               style={styles.clockImageFrame}
-              resizeMode="contain" // Ajusta la imagen al contenedor
+              resizeMode="contain"
             >
-            <View style={styles.clockInnerContainer}>
-              <AnalogClock {...getClockProps()} />
-            </View>
+              <View style={styles.clockInnerContainer}>
+                <AnalogClock {...getClockProps()} />
+              </View>
             </ImageBackground>
           </View>
+<<<<<<< HEAD
           <View style={styles.buttonContainer}>
         {options.map((row, index) => (
+=======
+
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#660154" />
+              <Text style={styles.loadingText}>Updating...</Text>
+            </View>
+          )}
+
+          {options.map((row, index) => (
+>>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
             <View key={index} style={styles.buttonRow}>
               {row.map((item) => (
                 <TouchableOpacity
@@ -87,7 +402,8 @@ const MainRest = ({ navigation }) => {
                     styles.button,
                     selectedOption === item && styles.activeButton,
                   ]}
-                  onPress={() => setSelectedOption(item)}
+                  onPress={() => handlePresetSelect(item)}
+                  disabled={loading}
                 >
                   <Text
                     style={[
@@ -101,34 +417,96 @@ const MainRest = ({ navigation }) => {
               ))}
             </View>
           ))}
+<<<<<<< HEAD
           </View>
   
+=======
+          
+>>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
           <View style={styles.sliderContainer}>
             <View style={styles.sliderBox}>
-              <Text style={styles.sliderLabel}>Speed</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={1}
-                  maximumValue={100}
-                  step={1}
-                  value={speed}
-                  onSlidingComplete={setSpeed}
-                  minimumTrackTintColor="#000"
-                  maximumTrackTintColor="#aaa"
-                  thumbTintColor="#660154"
-                />
+              <Text style={styles.sliderLabel}>Speed: {speed}</Text>
+              <Slider
+                style={styles.slider}
+                minimumValue={1}
+                maximumValue={100}
+                step={1}
+                value={speed}
+                onSlidingComplete={handleSpeedChange}
+                minimumTrackTintColor="#000"
+                maximumTrackTintColor="#aaa"
+                thumbTintColor="#660154"
+                disabled={loading}
+              />
             </View> 
           </View>
-      
-         
         </ScrollView>
-      <NavigationBar/>
-    </View>
-    
+
+        {/* Custom Movements Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={customModalVisible}
+          onRequestClose={() => setCustomModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select Custom Movement</Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setCustomModalVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.modalBody}>
+                {loadingMovements ? (
+                  <View style={styles.modalLoadingContainer}>
+                    <ActivityIndicator size="large" color="#660154" />
+                    <Text style={styles.modalLoadingText}>Loading movements...</Text>
+                  </View>
+                ) : customMovements.length === 0 ? (
+                  <View style={styles.emptyStateContainer}>
+                    <Ionicons name="folder-open-outline" size={48} color="#ccc" />
+                    <Text style={styles.emptyStateText}>No custom movements found</Text>
+                    <Text style={styles.emptyStateSubtext}>
+                      Create custom movements in the Movements section
+                    </Text>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={customMovements}
+                    renderItem={renderCustomMovementItem}
+                    keyExtractor={(item) => item.id}
+                    showsVerticalScrollIndicator={false}
+                    style={styles.customMovementsList}
+                  />
+                )}
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <NavigationBar/>
+      </View>
     </SafeAreaView>
   );
 };
 
+// Simple debounce function
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -141,14 +519,14 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Título a la izquierda, botón a la derecha
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 30, // Espacio superior para el header
-    backgroundColor: "#FAFAFA", // Mismo color que el fondo
-    borderBottomWidth: 1, // Opcional: línea divisoria
+    paddingTop: 30,
+    backgroundColor: "#FAFAFA",
+    borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    zIndex: 100, // Asegura que esté por encima del contenido
+    zIndex: 100,
   },
   titleContainer: {
     flex: 1,
@@ -157,7 +535,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     color: "#333",
-
   },
   profileButton: {
     marginLeft: 10,
@@ -183,6 +560,7 @@ const styles = StyleSheet.create({
     height: '98%',
     justifyContent: 'center',
     alignItems: 'center',
+<<<<<<< HEAD
  // Espacio superior para el marco
     marginBottom: 25, // Espacio superior para el marco
     marginTop: 20, // Espacio superior para el marco
@@ -197,6 +575,20 @@ const styles = StyleSheet.create({
     marginRight:2, // Espacio inferior para el marco
     marginTop: 54,    // Sube ligeramente el reloj
 
+=======
+    marginLeft: 38,
+    marginBottom: 20,
+    marginTop: 20,
+    overflow: 'hidden',
+  },
+  clockInnerContainer: {
+    width: '75%',
+    height: '75%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingRight: 34,
+    marginBottom: 15,
+>>>>>>> e0db33c6c936ca70801dac624f12a1eae60327d1
   },
   buttonContainer: {
     marginTop: 20
@@ -222,7 +614,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   activeButton: {
-  backgroundColor: "#660154",
+    backgroundColor: "#660154",
   },
   buttonText: {
     color: "#000",
@@ -243,13 +635,14 @@ const styles = StyleSheet.create({
     marginTop: 20,
     elevation: 2,
     overflow: "hidden",
-
+    paddingBottom: 20,
   },
   sliderLabel: {
     marginTop: 10,
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
+    marginBottom: 10,
   },
   slider: {
     width: "85%",
@@ -258,9 +651,119 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingBottom: 80, // Espacio para el NavigationBar
+    paddingBottom: 80,
   },
-
+  loadingContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 8,
+  },
+  loadingText: {
+    color: "#660154",
+    fontWeight: "600",
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalBody: {
+    flex: 1,
+    padding: 20,
+  },
+  modalLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  modalLoadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  customMovementsList: {
+    flex: 1,
+  },
+  customMovementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  customMovementInfo: {
+    flex: 1,
+  },
+  customMovementName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  customMovementDetails: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
+  },
 });
 
 export default MainRest;

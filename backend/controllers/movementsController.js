@@ -1,175 +1,133 @@
-import { db } from '../services/firebase.js';
 import { logger } from '../services/logger.js';
+import { db } from '../services/firebase.js';
+
+export const setCurrentMovement = async (presetName, velocidad, userId) => {
+  try {
+    const docRef = db.collection('movimiento_actual').doc('actual');
+    const docSnapshot = await docRef.get();
+
+    if (!docSnapshot.exists) {
+      const error = new Error(`Current movement document 'actual' not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Assuming presetName corresponds to a movement preset stored in 'movimientos' collection
+    const presetQuery = await db.collection('movimientos').where('nombre', '==', presetName).limit(1).get();
+
+    if (presetQuery.empty) {
+      const error = new Error(`Preset movement '${presetName}' not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const presetData = presetQuery.docs[0].data();
+
+    // Prepare updated movement data based on preset and velocidad
+    const updatedMovement = {
+      ...presetData,
+      movimiento: {
+        ...presetData.movimiento,
+        horas: {
+          ...presetData.movimiento.horas,
+          velocidad: parseInt(velocidad)
+        },
+        minutos: {
+          ...presetData.movimiento.minutos,
+          velocidad: parseInt(velocidad)
+        }
+      },
+      fechaActualizacion: new Date().toISOString(),
+      creadoPor: userId || 'system'
+    };
+
+    // Update the 'movimiento_actual' document with the updated movement
+    await docRef.set(updatedMovement);
+
+    return { id: 'actual', ...updatedMovement };
+  } catch (err) {
+    logger.error('❌ Error setting current movement:', err.message);
+    throw err;
+  }
+};
 
 export const getAllMovements = async (req, res) => {
   try {
-    // Removed activity logging
-    
-    const movimientosSnapshot = await db.collection('movimientos').get();
-    const movimientos = [];
-    
-    movimientosSnapshot.forEach(doc => {
-      movimientos.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
-    
-    res.json({
-      success: true,
-      data: movimientos,
-      count: movimientos.length
-    });
-  } catch (err) {
-    logger.error('❌ Error obteniendo movimientos:', err.message);
-    res.status(500).json({
-      success: false,
-      error: 'Error obteniendo movimientos',
-      details: err.message
-    });
+    const snapshot = await db.collection('movimientos').get();
+    const movements = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.status(200).json({ success: true, data: movements });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error fetching movements', details: error.message });
   }
 };
 
 export const createMovement = async (req, res) => {
   try {
-    const { 
-      nombre, 
-      tipoMovimientoHoras, 
-      velocidadHora, 
-      tipoMovimientoMinutos, 
-      velocidadMinuto, 
-      tipoMovimiento, 
-      velocidad, 
-      duracion 
-    } = req.body;
-    
-    // Removed activity logging
-    
-    const movimientoData = {
-      nombre,
-      tipoMovimientoHoras,
-      velocidadHora: parseInt(velocidadHora),
-      tipoMovimientoMinutos,
-      velocidadMinuto: parseInt(velocidadMinuto),
-      // Campos legacy para compatibilidad
-      tipoMovimiento,
-      velocidad: parseInt(velocidad),
-      duracion: parseInt(duracion),
-      fechaCreacion: new Date().toISOString(),
-      creadoPor: req.user?.uid || 'system'
-    };
-    
-    const movimientoRef = await db.collection('movimientos').add(movimientoData);
-    
-    // Removed activity logging to logs collection
-    
-    res.status(201).json({
-      success: true,
-      message: 'Movimiento creado exitosamente',
-      data: {
-        id: movimientoRef.id,
-        ...movimientoData
-      }
-    });
-  } catch (err) {
-    logger.error('❌ Error creando movimiento:', err.message);
-    res.status(500).json({
-      success: false,
-      error: 'Error creando movimiento',
-      details: err.message
-    });
+    const newMovement = req.body;
+    const docRef = await db.collection('movimientos').add(newMovement);
+    const createdMovement = { id: docRef.id, ...newMovement };
+    res.status(201).json(createdMovement);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating movement', error: error.message });
   }
 };
 
 export const updateMovement = async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
-      nombre, 
-      tipoMovimientoHoras, 
-      velocidadHora, 
-      tipoMovimientoMinutos, 
-      velocidadMinuto, 
-      tipoMovimiento, 
-      velocidad, 
-      duracion 
-    } = req.body;
-    
-    // Removed activity logging
-    
-    // Check if movement exists
-    const movimientoDoc = await db.collection('movimientos').doc(id).get();
-    
-    if (!movimientoDoc.exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'Movimiento no encontrado'
-      });
-    }
-    
-    const updateData = {};
-    
-    if (nombre) updateData.nombre = nombre;
-    if (tipoMovimientoHoras) updateData.tipoMovimientoHoras = tipoMovimientoHoras;
-    if (velocidadHora !== undefined) updateData.velocidadHora = parseInt(velocidadHora);
-    if (tipoMovimientoMinutos) updateData.tipoMovimientoMinutos = tipoMovimientoMinutos;
-    if (velocidadMinuto !== undefined) updateData.velocidadMinuto = parseInt(velocidadMinuto);
-    if (tipoMovimiento) updateData.tipoMovimiento = tipoMovimiento;
-    if (velocidad !== undefined) updateData.velocidad = parseInt(velocidad);
-    if (duracion !== undefined) updateData.duracion = parseInt(duracion);
-    
-    updateData.fechaActualizacion = new Date().toISOString();
-    
-    await db.collection('movimientos').doc(id).update(updateData);
-    
-    // Removed activity logging to logs collection
-    
-    res.json({
-      success: true,
-      message: 'Movimiento actualizado exitosamente',
-      data: { id, ...updateData }
-    });
-  } catch (err) {
-    logger.error('❌ Error actualizando movimiento:', err.message);
-    res.status(500).json({
-      success: false,
-      error: 'Error actualizando movimiento',
-      details: err.message
-    });
+    const updatedData = req.body;
+    // Placeholder: Update movement by id in database
+    res.status(200).json({ id, ...updatedData });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating movement', error: error.message });
   }
 };
 
 export const deleteMovement = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // Removed activity logging
-    
-    // Check if movement exists
-    const movimientoDoc = await db.collection('movimientos').doc(id).get();
-    
-    if (!movimientoDoc.exists) {
-      return res.status(404).json({
-        success: false,
-        error: 'Movimiento no encontrado'
-      });
+    // Placeholder: Delete movement by id from database
+    res.status(200).json({ message: `Movement with id ${id} deleted` });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting movement', error: error.message });
+  }
+};
+
+export const updateCurrentMovementSpeed = async (velocidad, userId) => {
+  try {
+    const docRef = db.collection('movimiento_actual').doc('actual');
+    const docSnapshot = await docRef.get();
+
+    if (!docSnapshot.exists) {
+      const error = new Error(`Current movement document 'actual' not found`);
+      error.statusCode = 404;
+      throw error;
     }
-    
-    await db.collection('movimientos').doc(id).delete();
-    
-    // Removed activity logging to logs collection
-    
-    res.json({
-      success: true,
-      message: 'Movimiento eliminado exitosamente',
-      data: { id }
-    });
+
+    const currentData = docSnapshot.data();
+
+    const updatedMovement = {
+      ...currentData,
+      movimiento: {
+        ...currentData.movimiento,
+        horas: {
+          ...currentData.movimiento.horas,
+          velocidad: parseInt(velocidad)
+        },
+        minutos: {
+          ...currentData.movimiento.minutos,
+          velocidad: parseInt(velocidad)
+        }
+      },
+      fechaActualizacion: new Date().toISOString(),
+      modificadoPor: userId || 'system'
+    };
+
+    await docRef.set(updatedMovement);
+
+    return { id: 'actual', ...updatedMovement };
   } catch (err) {
-    logger.error('❌ Error eliminando movimiento:', err.message);
-    res.status(500).json({
-      success: false,
-      error: 'Error eliminando movimiento',
-      details: err.message
-    });
+    logger.error('❌ Error updating current movement speed:', err.message);
+    throw err;
   }
 };

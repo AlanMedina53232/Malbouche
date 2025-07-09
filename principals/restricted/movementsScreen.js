@@ -6,7 +6,8 @@ import {
   StyleSheet, 
   FlatList, 
   TouchableOpacity, 
-  SafeAreaView 
+  SafeAreaView,
+  Alert 
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from "@expo/vector-icons";
@@ -64,6 +65,7 @@ const MovementsScreen = () => {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         console.error("No auth token found");
+        Alert.alert("Error", "No authentication token found. Please log in again.");
         setLoading(false);
         return;
       }
@@ -73,56 +75,90 @@ const MovementsScreen = () => {
         }
       });
       if (!response.ok) {
-        console.error("Failed to fetch movements:", response.status);
+        const errorData = await response.json();
+        console.error("Failed to fetch movements:", response.status, errorData);
+        Alert.alert("Error", errorData.error || "Failed to load movements");
         setLoading(false);
         return;
       }
       const data = await response.json();
-      if (data.success && Array.isArray(data.data)) {
-        // Store full movement objects without mapping to preserve detailed fields
-        setMovements(data.data);
+      console.log("Movements API response:", data); // Debug log
+      
+      // Handle different possible response formats
+      let movementsArray = [];
+      if (data.success && data.data) {
+        movementsArray = Array.isArray(data.data) ? data.data : [];
+      } else if (Array.isArray(data)) {
+        movementsArray = data;
+      } else if (data.data && Array.isArray(data.data)) {
+        movementsArray = data.data;
       } else {
-        console.error("Invalid data format from movements API");
+        console.error("Unexpected API response format:", data);
+        Alert.alert("Error", "Unexpected data format from server");
+        setLoading(false);
+        return;
       }
+      
+      if (movementsArray.length === 0) {
+        console.log("No movements found");
+      }
+      
+      setMovements(movementsArray);
     } catch (error) {
       console.error("Error fetching movements:", error);
+      Alert.alert("Error", "Failed to connect to server. Please check your internet connection.");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Add error handling for when movements fail to load
+  const retryFetchMovements = () => {
+    fetchMovements();
   };
 
   useEffect(() => {
     fetchMovements();
   }, []);
 
-    const renderItem = ({ item }) => {
-      // Determine display values for speed and type, prefer nested fields if present
-      const movimiento = item.movimiento || {};
-      const horas = movimiento.horas || {};
-      const minutos = movimiento.minutos || {};
+  const renderItem = ({ item }) => {
+    // Determine display values for speed and type, prefer nested fields if present
+    const movimiento = item.movimiento || {};
+    const horas = movimiento.horas || {};
+    const minutos = movimiento.minutos || {};
 
-      const hourSpeed = horas.velocidad !== undefined ? horas.velocidad : (item.velocidadHora ?? item.velocidad ?? '');
-      const minuteSpeed = minutos.velocidad !== undefined ? minutos.velocidad : (item.velocidadMinuto ?? '');
-      const hourType = movimiento.direccionGeneral || item.tipoMovimientoHoras || item.tipoMovimiento || '';
-      const minuteType = minutos.direccion || item.tipoMovimientoMinutos || '';
+    const hourSpeed = horas.velocidad !== undefined ? horas.velocidad : (item.velocidadHora ?? item.velocidad ?? 'N/A');
+    const minuteSpeed = minutos.velocidad !== undefined ? minutos.velocidad : (item.velocidadMinuto ?? 'N/A');
+    const hourType = movimiento.direccionGeneral || item.tipoMovimientoHoras || item.tipoMovimiento || 'N/A';
+    const minuteType = minutos.direccion || item.tipoMovimientoMinutos || 'N/A';
 
-      return (
-        <TouchableOpacity 
-          style={styles.item} 
-          onPress={() => handleMovementPress(item)}
-        >
-          <Text style={styles.itemText}>{item.nombre}</Text>
-          <View style={styles.itemDetails}>
-            <Text style={styles.itemSubtext}>
-              Hour - Speed: {hourSpeed} | Type: {hourType}
-            </Text>
-            <Text style={styles.itemSubtext}>
-              Minute - Speed: {minuteSpeed} | Type: {minuteType}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      );
-    };
+    return (
+      <TouchableOpacity 
+        style={styles.item} 
+        onPress={() => handleMovementPress(item)}
+      >
+        <Text style={styles.itemText}>{item.nombre || 'Unnamed Movement'}</Text>
+        <View style={styles.itemDetails}>
+          <Text style={styles.itemSubtext}>
+            Hour - Speed: {hourSpeed} | Type: {hourType}
+          </Text>
+          <Text style={styles.itemSubtext}>
+            Minute - Speed: {minuteSpeed} | Type: {minuteType}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Add empty state component
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyStateText}>No movements found</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={retryFetchMovements}>
+        <Text style={styles.retryButtonText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -144,16 +180,17 @@ const MovementsScreen = () => {
         <FlatList
           data={movements}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => item.id || index.toString()}
           ListHeaderComponent={
             <Text style={styles.subtitle}>Create a new movement...</Text>
           }
+          ListEmptyComponent={!loading ? renderEmptyState : null}
           contentContainerStyle={[
             styles.list,
             { paddingBottom: insets.bottom + 100 }
           ]}
-        refreshing={loading}
-        onRefresh={fetchMovements}
+          refreshing={loading}
+          onRefresh={fetchMovements}
         />
 
         <TouchableOpacity 
@@ -168,6 +205,7 @@ const MovementsScreen = () => {
     </SafeAreaView>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -241,6 +279,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#400135",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
   fab: {
     position: "absolute",
     right: 20,
@@ -258,8 +316,7 @@ const styles = StyleSheet.create({
     shadowRadius: 5, 
     zIndex: 10,
   },
-  // Estilos para el modal
-   modalContainer: {
+  modalContainer: {
     flex: 1,
     justifyContent: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -337,37 +394,37 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   dropdown: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  borderWidth: 0.8,
-  borderColor: "rgba(204, 204, 204, 0.8)",
-  borderRadius: 6,
-  padding: 12,
-  backgroundColor: "#fff",
-  marginBottom: 8,
-},
-dropdownText: {
-  fontSize: 15,
-  color: "#333",
-},
-dropdownList: {
-  position: "absolute",
-  top: 70,
-  left: 0,
-  right: 0,
-  backgroundColor: "#fff",
-  borderWidth: 0.8,
-  borderColor: "rgba(204, 204, 204, 0.8)",
-  borderRadius: 6,
-  zIndex: 1000,
-  elevation: 5,
-},
-dropdownItem: {
-  padding: 12,
-  borderBottomWidth: 0.5,
-  borderBottomColor: "#eee",
-},
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 0.8,
+    borderColor: "rgba(204, 204, 204, 0.8)",
+    borderRadius: 6,
+    padding: 12,
+    backgroundColor: "#fff",
+    marginBottom: 8,
+  },
+  dropdownText: {
+    fontSize: 15,
+    color: "#333",
+  },
+  dropdownList: {
+    position: "absolute",
+    top: 70,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderWidth: 0.8,
+    borderColor: "rgba(204, 204, 204, 0.8)",
+    borderRadius: 6,
+    zIndex: 1000,
+    elevation: 5,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#eee",
+  },
   deleteButton: {
     backgroundColor: '#ff4444',
   },

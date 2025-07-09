@@ -76,14 +76,18 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
 
     const movimientoPayload = {
       nombre: moveName,
-      tipoMovimientoHoras: hour.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
-      velocidadHora: parseInt(hour.speed),
-      tipoMovimientoMinutos: minute.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
-      velocidadMinuto: parseInt(minute.speed),
-      // Campos legacy para compatibilidad backend
-      tipoMovimiento: hour.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
-      velocidad: parseInt(hour.speed),
-      duracion: 10
+      duracion: 10,
+      movimiento: {
+        direccionGeneral: hour.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
+        horas: {
+          direccion: hour.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
+          velocidad: parseInt(hour.speed)
+        },
+        minutos: {
+          direccion: minute.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
+          velocidad: parseInt(minute.speed)
+        }
+      }
     }
 
     try {

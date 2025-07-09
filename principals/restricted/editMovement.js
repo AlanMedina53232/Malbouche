@@ -45,38 +45,29 @@ const EditMovementScreen = () => {
     if (movement) {
       console.log("Movement object in EditMovement useEffect:", movement);
 
-      setMoveName(movement.name || "");
+      setMoveName(movement.nombre || "");
 
-      // Adjust to read speed from velocidadHora and velocidadMinuto fields
-      const hourMovement = movement.movements?.find(m => m.hand === "Hour") || {};
-      const minuteMovement = movement.movements?.find(m => m.hand === "Minute") || {};
+      // Load nested movimiento fields
+      const movimiento = movement.movimiento || {};
+      const horas = movimiento.horas || {};
+      const minutos = movimiento.minutos || {};
 
-      // If speed is missing, try to get from velocidadHora and velocidadMinuto fields
-      let hourSpeed = hourMovement.speed;
-      if (hourSpeed === undefined || hourSpeed === null) {
-        hourSpeed = movement.velocidadHora;
-      }
-      let minuteSpeed = minuteMovement.speed;
-      if (minuteSpeed === undefined || minuteSpeed === null) {
-        minuteSpeed = movement.velocidadMinuto;
-      }
+      const hourType = horas.direccion === "izquierda" ? "Left" : "Right";
+      const minuteType = minutos.direccion === "izquierda" ? "Left" : "Right";
 
-      // Ensure speed is string for state
-      hourSpeed = hourSpeed !== undefined && hourSpeed !== null ? String(hourSpeed) : "50";
-      minuteSpeed = minuteSpeed !== undefined && minuteSpeed !== null ? String(minuteSpeed) : "50";
-
-      console.log("Hour speed:", hourSpeed, "Minute speed:", minuteSpeed);
+      const hourSpeed = horas.velocidad !== undefined ? String(horas.velocidad) : "50";
+      const minuteSpeed = minutos.velocidad !== undefined ? String(minutos.velocidad) : "50";
 
       setMovements([
         {
           hand: "Hour",
-          type: hourMovement.type || "Left",
+          type: hourType,
           speed: hourSpeed,
           showDropdown: false,
         },
         {
           hand: "Minute",
-          type: minuteMovement.type || "Right",
+          type: minuteType,
           speed: minuteSpeed,
           showDropdown: false,
         }

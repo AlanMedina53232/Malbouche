@@ -95,30 +95,34 @@ const MovementsScreen = () => {
     fetchMovements();
   }, []);
 
-  const renderItem = ({ item }) => {
-    // Determine display values for speed and type, prefer detailed fields if present
-    const hourSpeed = item.velocidadHora ?? item.velocidad ?? '';
-    const minuteSpeed = item.velocidadMinuto ?? '';
-    const hourType = item.tipoMovimientoHoras ?? item.tipoMovimiento ?? '';
-    const minuteType = item.tipoMovimientoMinutos ?? '';
+    const renderItem = ({ item }) => {
+      // Determine display values for speed and type, prefer nested fields if present
+      const movimiento = item.movimiento || {};
+      const horas = movimiento.horas || {};
+      const minutos = movimiento.minutos || {};
 
-    return (
-      <TouchableOpacity 
-        style={styles.item} 
-        onPress={() => handleMovementPress(item)}
-      >
-        <Text style={styles.itemText}>{item.nombre}</Text>
-        <View style={styles.itemDetails}>
-          <Text style={styles.itemSubtext}>
-            Hour - Speed: {hourSpeed} | Type: {hourType}
-          </Text>
-          <Text style={styles.itemSubtext}>
-            Minute - Speed: {minuteSpeed} | Type: {minuteType}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+      const hourSpeed = horas.velocidad !== undefined ? horas.velocidad : (item.velocidadHora ?? item.velocidad ?? '');
+      const minuteSpeed = minutos.velocidad !== undefined ? minutos.velocidad : (item.velocidadMinuto ?? '');
+      const hourType = movimiento.direccionGeneral || item.tipoMovimientoHoras || item.tipoMovimiento || '';
+      const minuteType = minutos.direccion || item.tipoMovimientoMinutos || '';
+
+      return (
+        <TouchableOpacity 
+          style={styles.item} 
+          onPress={() => handleMovementPress(item)}
+        >
+          <Text style={styles.itemText}>{item.nombre}</Text>
+          <View style={styles.itemDetails}>
+            <Text style={styles.itemSubtext}>
+              Hour - Speed: {hourSpeed} | Type: {hourType}
+            </Text>
+            <Text style={styles.itemSubtext}>
+              Minute - Speed: {minuteSpeed} | Type: {minuteType}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    };
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -108,12 +108,25 @@ const EditMovementScreen = () => {
 
     const updatedMovement = {
       nombre: moveName,
-      tipoMovimientoHoras: movements.find(m => m.hand === "Hour")?.type.toLowerCase() === "left" ? "izquierda" : "derecha",
-      velocidadHora: parseInt(movements.find(m => m.hand === "Hour")?.speed) || 0,
-      tipoMovimientoMinutos: movements.find(m => m.hand === "Minute")?.type.toLowerCase() === "left" ? "izquierda" : "derecha",
-      velocidadMinuto: parseInt(movements.find(m => m.hand === "Minute")?.speed) || 0,
-      duracion: 10
+      duracion: 10,
+      movimiento: {
+        direccionGeneral: movements.find(m => m.hand === "Hour")?.type.toLowerCase() === "left" ? "izquierda" : "derecha",
+        horas: {
+          direccion: movements.find(m => m.hand === "Hour")?.type.toLowerCase() === "left" ? "izquierda" : "derecha",
+          velocidad: parseInt(movements.find(m => m.hand === "Hour")?.speed) || 0,
+        },
+        minutos: {
+          direccion: movements.find(m => m.hand === "Minute")?.type.toLowerCase() === "left" ? "izquierda" : "derecha",
+          velocidad: parseInt(movements.find(m => m.hand === "Minute")?.speed) || 0,
+        }
+      }
     };
+
+    // Remove legacy flat fields to avoid validation errors
+    delete updatedMovement.tipoMovimientoHoras;
+    delete updatedMovement.velocidadHora;
+    delete updatedMovement.tipoMovimientoMinutos;
+    delete updatedMovement.velocidadMinuto;
 
     try {
       const token = await AsyncStorage.getItem('token');

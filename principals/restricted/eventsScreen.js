@@ -28,7 +28,7 @@ const EventsScreen = () => {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+const fetchData = async () => {
     try {
       setLoading(true)
       setLocalEvents([]) // Clear events before fetching new data
@@ -41,12 +41,16 @@ const EventsScreen = () => {
       const eventsResponse = await fetch(`${API_BASE_URL}/events`, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      const eventsData = await eventsResponse.json()
+      const eventsText = await eventsResponse.text();
+      console.log("Events API response text:", eventsText);
+      const eventsData = JSON.parse(eventsText);
 
       const movementsResponse = await fetch(`${API_BASE_URL}/movements`, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      const movementsData = await movementsResponse.json()
+      const movementsText = await movementsResponse.text();
+      console.log("Movements API response text:", movementsText);
+      const movementsData = JSON.parse(movementsText);
 
       if (eventsData.success && movementsData.success) {
         // Map events to include movement details
@@ -62,11 +66,11 @@ const EventsScreen = () => {
             endTime: event.horaFin,
             days: event.diasSemana.map(day => mapDayAbbreviation(day)),
             enabled: event.activo,
-            movement: movement ? {
-              type: movement.nombre,
-              speed: movement.velocidad?.toString() || "",
-              time: movement.duracion?.toString() || ""
-            } : null
+movement: movement ? {
+  type: movement.nombre,
+  speed: (movement.movimiento?.horas?.velocidad ?? movement.velocidad)?.toString() || "",
+  time: movement.duracion?.toString() || ""
+} : null
           }
         })
         setLocalEvents(enrichedEvents)
@@ -107,11 +111,16 @@ const toggleEventStatus = async (eventId) => {
     if (!event) return
 
     try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert("Error", "No authentication token found. Please log in again.");
+        return;
+      }
       const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer your_token_here"
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ activo: !event.enabled }) // backend expects 'activo'
       })

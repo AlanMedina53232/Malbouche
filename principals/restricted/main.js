@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,17 +6,22 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  ImageBackground
+  ImageBackground,
+  ActivityIndicator,
+  Alert
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import NavigationBar from "../../components/NavigationBar";
 import AnalogClock from "../../components/analogClock";
 import { Ionicons } from '@expo/vector-icons';
 import FrameImage from '../../assets/reloj.png';
+import axios from "axios";
+import debounce from "lodash.debounce";
 
 const MainRest = ({ navigation }) => {
   const [selectedOption, setSelectedOption] = useState("normal");
   const [speed, setSpeed] = useState(50);
+  const [loading, setLoading] = useState(false);
 
   const currentUser = {
     id: 1,
@@ -25,15 +30,73 @@ const MainRest = ({ navigation }) => {
   };
 
   const options = [
-    ["Left", "Right"],
-    ["Crazy", "Swing"],
-    ["Customized", "Normal"]
+    ["left", "right"],
+    ["crazy", "swing"],
+    ["customized", "normal"]
   ];
 
-  const handleOptionSelect = (option) => {
-    setSelectedOption(option);
+  // Handle preset button press: POST /api/movimiento-actual/:preset with optional speed
+  const handlePresetSelect = async (preset) => {
+    setLoading(true);
+    try {
+      const payload = speed ? { velocidad: speed } : {};
+      const response = await axios.post(`/api/movimiento-actual/${preset.toLowerCase()}`, payload);
+      // Update local state with returned data if any
+      if (response.data && response.data.data) {
+        const data = response.data.data;
+        if (data.preset) {
+          setSelectedOption(data.preset);
+        } else {
+          setSelectedOption(preset);
+        }
+        if (data.velocidad) {
+          setSpeed(data.velocidad);
+        }
+      } else {
+        setSelectedOption(preset);
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        Alert.alert("Error", "Preset not found.");
+      } else {
+        Alert.alert("Error", "Failed to update movement preset.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
-    // Determina qué props enviar al AnalogClock basado en la selección
+
+  // Debounced PATCH /api/movimiento-actual/velocidad with new speed
+  const sendSpeedUpdate = async (newSpeed) => {
+    setLoading(true);
+    try {
+      const response = await axios.patch(`/api/movimiento-actual/velocidad`, { velocidad: newSpeed });
+      if (response.data && response.data.data && response.data.data.velocidad) {
+        setSpeed(response.data.data.velocidad);
+      } else {
+        setSpeed(newSpeed);
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        // Gracefully ignore 404
+      } else {
+        Alert.alert("Error", "Failed to update speed.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Debounce speed update to avoid excessive requests
+  const debouncedSpeedUpdate = useCallback(debounce(sendSpeedUpdate, 400), []);
+
+  // Handle slider change complete event
+  const handleSpeedChange = (newSpeed) => {
+    setSpeed(newSpeed);
+    debouncedSpeedUpdate(newSpeed);
+  };
+
+  // Determine props for AnalogClock based on selected option and speed
   const getClockProps = () => {
     const lowerOption = selectedOption.toLowerCase();
     return {
@@ -45,7 +108,6 @@ const MainRest = ({ navigation }) => {
   };
 
   return (
-    
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
@@ -78,6 +140,13 @@ const MainRest = ({ navigation }) => {
             </ImageBackground>
           </View>
 
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#660154" />
+              <Text style={styles.loadingText}>Updating...</Text>
+            </View>
+          )}
+
           {options.map((row, index) => (
             <View key={index} style={styles.buttonRow}>
               {row.map((item) => (
@@ -87,7 +156,8 @@ const MainRest = ({ navigation }) => {
                     styles.button,
                     selectedOption === item && styles.activeButton,
                   ]}
-                  onPress={() => setSelectedOption(item)}
+                  onPress={() => handlePresetSelect(item)}
+                  disabled={loading}
                 >
                   <Text
                     style={[
@@ -110,10 +180,11 @@ const MainRest = ({ navigation }) => {
                   maximumValue={100}
                   step={1}
                   value={speed}
-                  onSlidingComplete={setSpeed}
+                  onSlidingComplete={handleSpeedChange}
                   minimumTrackTintColor="#000"
                   maximumTrackTintColor="#aaa"
                   thumbTintColor="#660154"
+                  disabled={loading}
                 />
             </View> 
           </View>
@@ -257,7 +328,17 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 80, // Espacio para el NavigationBar
   },
-
+  loadingContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 8,
+  },
+  loadingText: {
+    color: "#660154",
+    fontWeight: "600",
+  },
 });
 
 export default MainRest;

@@ -1,22 +1,34 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faHouse, faCalendarWeek, faClock, faUsers } from '@fortawesome/free-solid-svg-icons'; // Íconos sólidos (alternativa)
+import { faHouse, faCalendarWeek, faClock, faUsers } from '@fortawesome/free-solid-svg-icons';
 
 const NavigationBar = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("Home");
 
-  // Define los íconos y nombres
+  // Sincroniza el tab activo con la ruta actual
+  useEffect(() => {
+    if (route.name) {
+      setActiveTab(route.name);
+    }
+  }, [route.name]);
+
   const navItems = [
-    { name: "Home", icon: faHouse }, // Alternativa a fa-light fa-house
-    { name: "Events", icon: faCalendarWeek },
+    { name: "Home", icon: faHouse },
     { name: "Movements", icon: faClock },
+    { name: "Events", icon: faCalendarWeek },
     { name: "Users", icon: faUsers },
   ];
+
+  const handlePress = (tabName) => {
+    setActiveTab(tabName);
+    navigation.navigate(tabName);
+  };
 
   return (
     <View style={[
@@ -29,10 +41,7 @@ const NavigationBar = () => {
           <TouchableOpacity
             key={index}
             style={styles.navItem}
-            onPress={() => {
-              navigation.navigate(item.name);
-              setActiveTab(item.name);
-            }}
+            onPress={() => handlePress(item.name)}
           >
             <FontAwesomeIcon
               icon={item.icon}
@@ -49,7 +58,6 @@ const NavigationBar = () => {
   );
 };
 
-// Estilos (igual que antes)
 const styles = StyleSheet.create({
   navbar: {
     flexDirection: "row",
@@ -66,7 +74,7 @@ const styles = StyleSheet.create({
     width: "100%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1, 
+    shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 5,
   },
@@ -78,7 +86,6 @@ const styles = StyleSheet.create({
   },
   navText: {
     fontSize: 12,
-    color: "#400135",
     textAlign: "center",
     marginTop: 4,
   },

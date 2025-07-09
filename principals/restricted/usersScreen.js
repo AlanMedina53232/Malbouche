@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList, SafeAreaView, Alert } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
@@ -16,14 +14,21 @@ const UsersScreen = ({ navigation }) => {
   const [editedEmail, setEditedEmail] = useState("")
   const [editedPuesto, setEditedPuesto] = useState("")
   const [editedRol, setEditedRol] = useState("")
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false)
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
+
 
   const currentUser = {
     id: 1,
     name: 'Almendro Isaac Medina Ramírez',
     email: 'AlmIsaMedRam@gmail.com'
   };
+
+  const ROLE_OPTIONS = [
+    { label: "Admin", value: "admin" },
+    { label: "VIP", value: "vip" },
+  ]
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -97,7 +102,7 @@ const UsersScreen = ({ navigation }) => {
       })
       if (!response.ok) {
         const errorData = await response.json()
-        Alert.alert("Error", errorData.error || "Error actualizando usuario")
+        Alert.alert("Error", errorData.error || "Error while updating user")
         return
       }
       // Update users state with updated user data
@@ -106,11 +111,20 @@ const UsersScreen = ({ navigation }) => {
           (user.id === userId || user._id === userId) ? { ...user, ...updatedUser } : user
         )
       )
-      Alert.alert("Éxito", "Usuario actualizado exitosamente")
+      Alert.alert("Éxito", "User successfully updated", )
       setModalVisible(false)
     } catch (error) {
       console.error("Error updating user:", error)
       Alert.alert("Error", "No se pudo conectar con el servidor")
+    }
+  }
+
+  // Function to get role color based on role name
+  const getRoleColor = (role) => {
+    switch(role?.toLowerCase()) {
+      case 'vip': return '#fbb42a';
+      case 'admin': return '#660154';
+      default: return '#666';
     }
   }
 
@@ -125,7 +139,9 @@ const UsersScreen = ({ navigation }) => {
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{item.nombre || item.name}</Text>
         <Text style={styles.userEmail}>{item.correo || item.email}</Text>
-        <Text style={styles.userRol}>{item.rol || item.Rol}</Text>
+        <Text style={[styles.userRol,{ color: getRoleColor(item.rol || item.Rol) }]}>
+          {item.rol || item.Rol}
+        </Text>
       </View>
       <Ionicons name="create-outline" size={20} color="#666" />
     </TouchableOpacity>
@@ -200,7 +216,9 @@ const UsersScreen = ({ navigation }) => {
           animationType="slide"
           transparent={true}
           visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
+          onRequestClose={() => { 
+            setModalVisible(false); }}
+          style={styles.modalContainer}
         >
           <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setModalVisible(false)}>
             <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={() => {}}>
@@ -222,17 +240,17 @@ const UsersScreen = ({ navigation }) => {
                   style={styles.input}
                   value={editedName}
                   onChangeText={setEditedName}
-                  placeholder="Enter name"
+                  placeholder="Insert Name"
                 />
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Apellidos</Text>
+                <Text style={styles.label}>Last name</Text>
                 <TextInput
                   style={styles.input}
                   value={editedApellidos}
                   onChangeText={setEditedApellidos}
-                  placeholder="Enter apellidos"
+                  placeholder="Insert Last Name"
                 />
               </View>
 
@@ -242,20 +260,47 @@ const UsersScreen = ({ navigation }) => {
                   style={styles.input}
                   value={editedEmail}
                   onChangeText={setEditedEmail}
-                  placeholder="Enter email"
+                  placeholder="Insert Email"
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Puesto</Text>
-                <TextInput
-                  style={styles.input}
-                  value={editedPuesto}
-                  onChangeText={setEditedPuesto}
-                  placeholder="Enter puesto"
-                />
+                <Text style={styles.label}>Rol</Text>
+                <TouchableOpacity 
+                  style={styles.dropdownSelector}
+                  onPress={() => setShowRoleDropdown(!showRoleDropdown)} //esto cambia el estado del dropdown para mostrarlo/ocultarlo
+                >
+                  <Text style={styles.dropdownSelectorText}>
+                    {editedRol || "Select Role"} 
+                  </Text>
+                  <Ionicons 
+                    name={showRoleDropdown ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color="#666" 
+                  />
+                </TouchableOpacity>
+                
+                {showRoleDropdown && (
+                  <View style={styles.dropdownOptions}>
+                    {ROLE_OPTIONS.map((role, index) => (
+                      <TouchableOpacity
+                        key={role.value}
+                        style={[
+                          styles.dropdownOption,
+                          index === ROLE_OPTIONS.length - 1 && { borderBottomWidth: 0 }
+                        ]}
+                        onPress={() => {
+                          setEditedRol(role.value);
+                          setShowRoleDropdown(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownOptionText}>{role.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </View>
 
               <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
@@ -297,7 +342,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginBottom: 10,
   },
-    avatarSmall: {
+  avatarSmall: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -333,12 +378,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 15,
   },
-    listContainer: {
+  listContainer: {
     flex: 1,
   },
   listContent: {
     paddingHorizontal: 15,
-    paddingBottom: 20,
+    paddingBottom:70,
   },
   userCard: {
     flexDirection: "row",
@@ -384,7 +429,7 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "90%",
     maxWidth: 400,
-    backgroundColor: "white",
+    backgroundColor: "#f4f4f4",
     borderRadius: 20,
     shadowColor: "#000",
     shadowOffset: {
@@ -396,20 +441,23 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalHeader: {
+    backgroundColor: "#660154",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 20,
+    borderBottomRadius: 6,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#ddd",
   },
+
   modalBody: {
     padding: 20,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: "white",
   },
   closeButton: {
     padding: 5,
@@ -424,11 +472,57 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignSelf: "center",
   },
+   label: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 5,
+    fontWeight: "500",
+  },
   inputContainer: {
     marginBottom: 15,
   },
+    input: { 
+    /* borderWidth: 1,
+    borderColor: "#ddd", */
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: "#fff",
+    marginBottom: 15,
+  },
+
+  dropdownSelector: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  borderRadius: 8,
+  padding: 12,
+  backgroundColor: '#fff',
+},
+  dropdownSelectorText: {
+    fontSize: 16,
+    color: '#333',
+},
+  dropdownOptions: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginTop: 5,
+    zIndex: 1000, 
+},
+  dropdownOption: {
+    padding: 12,
+
+},
+  dropdownOptionText: {
+    fontSize: 16,
+    color: '#333',
+},
   saveButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#660154",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
@@ -441,8 +535,8 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 20,
-    bottom: 80, // Ajusta según la altura de tu NavigationBar
-    backgroundColor: "#400135", // Color que coincide con tu tema
+    bottom: 80,
+    backgroundColor: "#400135", 
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -453,7 +547,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 5, 
-    zIndex: 10, // Asegura que esté por encima de otros elementos
+    zIndex: 10,
   },
 })
 

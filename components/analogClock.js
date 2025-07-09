@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
 
-const CLOCK_SIZE = 200;
+const CLOCK_SIZE = 176;
 const CENTER = CLOCK_SIZE / 2;
 const RADIUS = CLOCK_SIZE / 2 - 10;
 
@@ -10,7 +10,7 @@ const AnalogClock = ({ direction = 'normal', speed = 50, isCrazy = false, isSwin
   const [pendulum, setPendulum] = useState({
     hour: { angle: 0, velocity: 0, targetAngle: 180 },
     minute: { angle: 0, velocity: 0, targetAngle: 180 }
-  });
+  }); 
   const animationRef = useRef(null);
   const lastTimeRef = useRef(Date.now());
 
@@ -195,8 +195,8 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 25,
-    marginBottom: 25,
+    marginTop: 20,
+    marginBottom: 20,
   },
 
 });

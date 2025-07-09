@@ -17,9 +17,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DEFAULT_PASSWORD = "Malbouche2025!"
 const ROLE_OPTIONS = [
-  { label: "Admin", value: "admin" },
-  { label: "Usuario", value: "usuario" },
-  { label: "VIP", value: "vip" },
+  { label: "Admin", value: "Admin" },
+  { label: "VIP", value: "VIP" },
 ]
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api' // Fallback if env not set
@@ -28,7 +27,6 @@ const CreateUsers = ({ navigation }) => {
   const [nombre, setNombre] = useState("")
   const [apellidos, setApellidos] = useState("")
   const [correo, setCorreo] = useState("")
-  const [puesto, setPuesto] = useState("")
   const [rol, setRol] = useState("usuario") // default role
 
   const [showRoleDropdown, setShowRoleDropdown] = useState(false)
@@ -44,7 +42,6 @@ const CreateUsers = ({ navigation }) => {
       nombre: nombre.trim(),
       apellidos: apellidos.trim(),
       correo: correo.trim(),
-      puesto: puesto.trim(),
       rol: ROLE_OPTIONS.some(r => r.value === rol) ? rol : "usuario",
       password: DEFAULT_PASSWORD,
     }
@@ -135,14 +132,6 @@ const CreateUsers = ({ navigation }) => {
               autoCapitalize="none"
             />
 
-            <Text style={styles.label}>Puesto</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ingrese puesto"
-              value={puesto}
-              onChangeText={setPuesto}
-              autoCapitalize="words"
-            />
 
             <Text style={styles.label}>Rol</Text>
             <TouchableOpacity
@@ -150,7 +139,7 @@ const CreateUsers = ({ navigation }) => {
               onPress={() => setShowRoleDropdown(!showRoleDropdown)}
             >
               <Text style={styles.dropdownText}>
-                {ROLE_OPTIONS.find(r => r.value === rol)?.label || "Seleccione un rol"}
+                {ROLE_OPTIONS.find(r => r.value === rol)?.label || "Select Role"} 
               </Text>
               <Ionicons name={showRoleDropdown ? "chevron-up" : "chevron-down"} size={20} color="#333" />
             </TouchableOpacity>
@@ -239,7 +228,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     fontWeight: "500",
   },
-  input: {
+  input: { 
     /* borderWidth: 1,
     borderColor: "#ddd", */
     borderRadius: 8,
@@ -252,12 +241,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ddd",
+    
     borderRadius: 8,
     padding: 12,
     backgroundColor: "#fff",
-    marginBottom: 15,
+    
   },
   dropdownText: {
     fontSize: 16,
@@ -265,9 +253,8 @@ const styles = StyleSheet.create({
   },
   dropdownList: {
     backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 8,
+    marginTop: 5,
     marginBottom: 15,
   },
   dropdownItem: {
@@ -278,6 +265,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 8,
     alignItems: "center",
+    marginTop: 20,
   },
   createButtonText: {
     color: "#fff",

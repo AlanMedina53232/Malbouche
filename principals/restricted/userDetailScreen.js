@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
-
+ 
 const UserDetailScreen = ({ navigation }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -124,100 +125,110 @@ const UserDetailScreen = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.profileSection}>
-        <View style={styles.avatarLarge}>
-          <Ionicons name="person" size={50} color="#666" />
+    <LinearGradient
+        colors={['rgba(51, 0, 42, 1)', 'rgba(254, 185, 220, 0.9)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.container}
+    > 
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
         </View>
-        <Text style={styles.userName}>{user.name || user.nombre}</Text>
-        <Text style={styles.userEmail}>{user.email || user.correo}</Text>
-      </View>
+        <View style={{ backgroundColor: 'white', borderRadius: 12, margin: 20, padding: 20, elevation: 5 }}>
+            <View style={styles.profileSection}>
+              <View style={styles.avatarLarge}>
+              <Ionicons name="person" size={50} color="#666" />
+            </View>
+            <Text style={styles.userName}>{user.name || user.nombre}</Text>
+            <Text style={styles.userEmail}>{user.email || user.correo}</Text>
+            <Text style={styles.userPosition}>{user.rol || ''}</Text>
+          </View>
 
-      <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-          <Text style={styles.buttonText}>Change Password</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.logoutButton]}
-          onPress={() => {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          }}
-        >
-          <Text style={[styles.buttonText, styles.logoutText]}>Log out</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Change Password Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Change Password</Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Current Password"
-              secureTextEntry
-              value={currentPassword}
-              onChangeText={setCurrentPassword}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="New Password"
-              secureTextEntry
-              value={newPassword}
-              onChangeText={setNewPassword}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm New Password"
-              secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
-
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleChangePassword}
-              disabled={changingPassword}
-            >
-              <Text style={styles.saveButtonText}>
-                {changingPassword ? 'Changing...' : 'Change Password'}
-              </Text>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
+              <Text style={styles.buttonText}>Change Password</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setModalVisible(false)}
-              disabled={changingPassword}
+              style={[styles.button, styles.logoutButton]}
+              onPress={() => {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Login' }],
+                });
+              }}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={[styles.buttonText, styles.logoutText]}>Log out</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-    </View>
+          
+        
+        {/* Change Password Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Change Password</Text>
+
+              <TextInput
+                style={styles.input}
+                placeholder="Current Password"
+                secureTextEntry
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="New Password"
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm New Password"
+                secureTextEntry
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleChangePassword}
+                disabled={changingPassword}
+              >
+                <Text style={styles.saveButtonText}>
+                  {changingPassword ? 'Changing...' : 'Change Password'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setModalVisible(false)}
+                disabled={changingPassword}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </LinearGradient>
+    
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
   },
   header: {
     paddingHorizontal: 20,

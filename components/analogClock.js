@@ -195,8 +195,8 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 25,
+    marginBottom: 25,
   },
 
 });

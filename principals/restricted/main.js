@@ -16,13 +16,14 @@ import Slider from "@react-native-community/slider";
 import NavigationBar from "../../components/NavigationBar";
 import AnalogClock from "../../components/analogClock";
 import { Ionicons } from '@expo/vector-icons';
-import FrameImage from '../../assets/reloj.png';
+import FrameImage from '../../assets/marcoReloj.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
+const ESP_IP = "192.168.0.175"; //ESP's ip  
 
 const MainRest = ({ navigation }) => {
-  const [selectedOption, setSelectedOption] = useState("normal");
+  const [selectedOption, setSelectedOption] = useState("Normal");
   const [speed, setSpeed] = useState(50);
   const [loading, setLoading] = useState(false);
   const [customModalVisible, setCustomModalVisible] = useState(false);
@@ -36,9 +37,9 @@ const MainRest = ({ navigation }) => {
   };
 
   const options = [
-    ["left", "right"],
-    ["crazy", "swing"],
-    ["customized", "normal"]
+    ["Left", "Right"],
+    ["Crazy", "Swing"],
+    ["Normal"]
   ];
 
   // Preset names to exclude from custom movements
@@ -289,6 +290,37 @@ const MainRest = ({ navigation }) => {
     setSpeed(newSpeed);
     debouncedSpeedUpdate(newSpeed);
   };
+   const sendCommand = async (command) => {
+    try {
+      const url = `http://${ESP_IP}/${command.toLowerCase()}`;
+      const response = await fetch(url);
+      const text = await response.text();
+      Alert.alert("Respuesta", text);
+    } catch (error) {
+      Alert.alert("Error", "No se pudo conectar con el reloj");
+  }
+  };
+
+    const sendSpeed = async (newSpeed) => {
+    try {
+      const url = `http://${ESP_IP}/speed?value=${newSpeed}`;
+      const response = await fetch(url);
+      const text = await response.text();
+      console.log("Velocidad ajustada:", text);
+    } catch (error) {
+      Alert.alert("Error", "No se pudo ajustar la velocidad");
+    }
+  };
+
+
+  const handleOptionSelect = (option) => {
+    setSelectedOption(option);
+     if(option.toLowerCase() === "customized") {
+      sendCommand("stop");
+    } else {
+      sendCommand(option.toLowerCase());
+    }
+  };
 
   // Determine props for AnalogClock based on selected option and speed
   const getClockProps = () => {
@@ -373,49 +405,54 @@ const MainRest = ({ navigation }) => {
             </View>
           )}
 
-          {options.map((row, index) => (
-            <View key={index} style={styles.buttonRow}>
-              {row.map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  style={[
-                    styles.button,
-                    selectedOption === item && styles.activeButton,
-                  ]}
-                  onPress={() => handlePresetSelect(item)}
-                  disabled={loading}
-                >
-                  <Text
-                    style={[
-                      styles.buttonText,
-                      selectedOption === item && { color: "#fff" },
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ))}
+{options.map((row, index) => (
+  <View key={index} style={styles.buttonRow}>
+    {row.map((item) => (
+      <TouchableOpacity
+        key={item}
+        style={[
+          styles.button,
+          selectedOption === item && styles.activeButton,
+        ]}
+        onPress={() => {
+          handlePresetSelect(item);
+          handleOptionSelect(item);
+        }}
+        disabled={loading}
+      >
+        <Text
+          style={[
+            styles.buttonText,
+            selectedOption === item && { color: "#fff" },
+          ]}
+        >
+          {item}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+))}
 
           
           <View style={styles.sliderContainer}>
             <View style={styles.sliderBox}>
-              <Text style={styles.sliderLabel}>Speed: {speed}</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={1}
-                maximumValue={100}
-                step={1}
-                value={speed}
-                onSlidingComplete={handleSpeedChange}
-                minimumTrackTintColor="#000"
-                maximumTrackTintColor="#aaa"
-                thumbTintColor="#660154"
-                disabled={loading}
-              />
+              <Text style={styles.sliderLabel}>Speed</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={1}
+                  maximumValue={100}
+                  step={1}
+                  value={speed}
+                  onSlidingComplete={(val) => {
+                    setSpeed(val);
+                    sendSpeed(val);
+                  }}
+                  minimumTrackTintColor="#000"
+                  maximumTrackTintColor="#aaa"
+                  thumbTintColor="#660154"
+                />
             </View> 
-          </View>
+        </View>
         </ScrollView>
 
         {/* Custom Movements Modal */}
@@ -530,27 +567,30 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 25,
   },
   clockImageFrame: {
     width: '98%',
     height: '98%',
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 38,
-    marginBottom: 20,
-    marginTop: 20,
-    overflow: 'hidden',
+ // Espacio superior para el marco
+    marginBottom: 25, // Espacio superior para el marco
+    marginTop: 30, // Espacio superior para el marco
+    overflow: 'hidden', // Asegura que el reloj no sobresalga del marco
+    
   },
   clockInnerContainer: {
-    width: '75%',
-    height: '75%',
+    width: '100%',            // Ajusta el tamaño del reloj visualmente
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingRight: 34,
-    marginBottom: 15,
+    marginRight:2, // Espacio inferior para el marco
+    marginTop: 54,    // Sube ligeramente el reloj
+
   },
   buttonContainer: {
-    marginTop: 20
+    marginTop: 30
   },
   buttonRow: {
     flexDirection: "row",
@@ -616,7 +656,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 15,
     gap: 8,
   },
   loadingText: {

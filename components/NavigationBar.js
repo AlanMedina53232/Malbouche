@@ -20,8 +20,8 @@ const NavigationBar = () => {
 
   const navItems = [
     { name: "Home", icon: faHouse },
-    { name: "Movements", icon: faClock },
-    { name: "Events", icon: faCalendarWeek },
+    //{ name: "Movements", icon: faClock },
+    //{ name: "Events", icon: faCalendarWeek },
     { name: "Users", icon: faUsers },
   ];
 

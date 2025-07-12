@@ -10,7 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
-  FlatList
+  FlatList,
+  TextInput
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import NavigationBar from "../../components/NavigationBar";
@@ -19,8 +20,12 @@ import { Ionicons } from '@expo/vector-icons';
 import FrameImage from '../../assets/marcoReloj.png';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
-const ESP_IP = "192.168.0.175"; //ESP's ip  
+// Dirección IP del ESP, se carga desde AsyncStorage
+const ESP_IP_KEY = 'esp_ip_address';
+let ESP_IP = "";
+
 
 const MainRest = ({ navigation }) => {
   const [selectedOption, setSelectedOption] = useState("Normal");
@@ -29,6 +34,29 @@ const MainRest = ({ navigation }) => {
   const [customModalVisible, setCustomModalVisible] = useState(false);
   const [customMovements, setCustomMovements] = useState([]);
   const [loadingMovements, setLoadingMovements] = useState(false);
+  // Estado para el modal de configuración de IP
+  const [ipModalVisible, setIpModalVisible] = useState(false);
+  const [espIp, setEspIp] = useState("");
+  const [ipInput, setIpInput] = useState("");
+  // Cargar la IP guardada al iniciar
+  useEffect(() => {
+    const loadEspIp = async () => {
+      try {
+        const savedIp = await AsyncStorage.getItem(ESP_IP_KEY);
+        if (savedIp) {
+          setEspIp(savedIp);
+        }
+      } catch (e) {
+        console.error("Error loading ESP IP:", e);
+      }
+    };
+    loadEspIp();
+  }, []);
+
+  // Actualizar la variable global ESP_IP cuando cambie espIp
+  useEffect(() => {
+    ESP_IP = espIp;
+  }, [espIp]);
 
   const currentUser = {
     id: 1,
@@ -290,20 +318,22 @@ const MainRest = ({ navigation }) => {
     setSpeed(newSpeed);
     debouncedSpeedUpdate(newSpeed);
   };
-   const sendCommand = async (command) => {
+
+  const sendCommand = async (command) => {
     try {
-      const url = `http://${ESP_IP}/${command.toLowerCase()}`;
+      const url = `http://${espIp}/${command.toLowerCase()}`;
       const response = await fetch(url);
       const text = await response.text();
       Alert.alert("Respuesta", text);
     } catch (error) {
       Alert.alert("Error", "No se pudo conectar con el reloj");
-  }
+    }
   };
 
-    const sendSpeed = async (newSpeed) => {
+
+  const sendSpeed = async (newSpeed) => {
     try {
-      const url = `http://${ESP_IP}/speed?value=${newSpeed}`;
+      const url = `http://${espIp}/speed?value=${newSpeed}`;
       const response = await fetch(url);
       const text = await response.text();
       console.log("Velocidad ajustada:", text);
@@ -392,6 +422,16 @@ const MainRest = ({ navigation }) => {
               style={styles.clockImageFrame}
               resizeMode="contain"
             >
+              {/* Engrane en la esquina superior derecha */}
+              <TouchableOpacity
+                style={styles.gearIcon}
+                onPress={() => {
+                  setIpInput(espIp);
+                  setIpModalVisible(true);
+                }}
+              >
+                <Ionicons name="settings-sharp" size={28} color="#660154" />
+              </TouchableOpacity>
               <View style={styles.clockInnerContainer}>
                 <AnalogClock {...getClockProps()} />
               </View>
@@ -405,35 +445,34 @@ const MainRest = ({ navigation }) => {
             </View>
           )}
 
-{options.map((row, index) => (
-  <View key={index} style={styles.buttonRow}>
-    {row.map((item) => (
-      <TouchableOpacity
-        key={item}
-        style={[
-          styles.button,
-          selectedOption === item && styles.activeButton,
-        ]}
-        onPress={() => {
-          handlePresetSelect(item);
-          handleOptionSelect(item);
-        }}
-        disabled={loading}
-      >
-        <Text
-          style={[
-            styles.buttonText,
-            selectedOption === item && { color: "#fff" },
-          ]}
-        >
-          {item}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-))}
+          {options.map((row, index) => (
+            <View key={index} style={styles.buttonRow}>
+              {row.map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={[
+                    styles.button,
+                    selectedOption === item && styles.activeButton,
+                  ]}
+                  onPress={() => {
+                    handlePresetSelect(item);
+                    handleOptionSelect(item);
+                  }}
+                  disabled={loading}
+                >
+                  <Text
+                    style={[
+                      styles.buttonText,
+                      selectedOption === item && { color: "#fff" },
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
 
-          
           <View style={styles.sliderContainer}>
             <View style={styles.sliderBox}>
               <Text style={styles.sliderLabel}>Speed</Text>
@@ -452,7 +491,7 @@ const MainRest = ({ navigation }) => {
                   thumbTintColor="#660154"
                 />
             </View> 
-        </View>
+          </View>
         </ScrollView>
 
         {/* Custom Movements Modal */}
@@ -502,6 +541,56 @@ const MainRest = ({ navigation }) => {
           </View>
         </Modal>
 
+        {/* Modal para ingresar la IP del reloj */}
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={ipModalVisible}
+          onRequestClose={() => setIpModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.ipModalContent}>
+              <View style={styles.ipModalHeader}>
+                <Text style={styles.modalTitle}>Configurar dirección IP del reloj</Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setIpModalVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.ipModalBody}>
+                <Text style={styles.ipCurrentLabel}>Dirección IP actual: <Text style={styles.ipCurrentValue}>{espIp || 'No configurada'}</Text></Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ej: 192.168.0.175"
+                  value={ipInput}
+                  onChangeText={setIpInput}
+                  keyboardType="numeric"
+                  autoFocus
+                  placeholderTextColor="#aaa"
+                />
+                <TouchableOpacity
+                  style={styles.saveButton}
+                  onPress={async () => {
+                    try {
+                      await AsyncStorage.setItem(ESP_IP_KEY, ipInput);
+                      setEspIp(ipInput);
+                      setIpModalVisible(false);
+                      Alert.alert('IP guardada', 'La dirección IP se guardó correctamente.');
+                    } catch (e) {
+                      Alert.alert('Error', 'No se pudo guardar la dirección IP.');
+                    }
+                  }}
+                >
+                  <Text style={styles.saveButtonText}>Guardar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         <NavigationBar/>
       </View>
     </SafeAreaView>
@@ -522,6 +611,66 @@ function debounce(func, wait) {
 }
 
 const styles = StyleSheet.create({
+  // Modal especial para la IP, más pequeño y centrado
+  ipModalContent: {
+    width: '92%',
+    maxWidth: 380,
+    backgroundColor: 'white',
+    borderRadius: 18,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 8,
+    marginVertical: 40,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+  ipModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 10,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    backgroundColor: '#fafafa',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  ipModalBody: {
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 24,
+    backgroundColor: 'white',
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    alignItems: 'stretch',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 16,
+    fontSize: 16,
+    backgroundColor: '#fafafa',
+    color: '#333',
+    width: '100%',
+    minHeight: 44,
+  },
+  ipCurrentLabel: {
+    marginBottom: 10,
+    fontSize: 15,
+    color: '#333',
+  },
+  ipCurrentValue: {
+    fontWeight: 'bold',
+    color: '#660154',
+  },
   container: {
     flex: 1,
     backgroundColor: "#f4f4f4",
@@ -574,20 +723,28 @@ const styles = StyleSheet.create({
     height: '98%',
     justifyContent: 'center',
     alignItems: 'center',
- // Espacio superior para el marco
-    marginBottom: 25, // Espacio superior para el marco
-    marginTop: 30, // Espacio superior para el marco
-    overflow: 'hidden', // Asegura que el reloj no sobresalga del marco
-    
+    marginBottom: 25,
+    marginTop: 30,
+    overflow: 'hidden',
+  },
+  // Engrane en la esquina superior derecha del reloj
+  gearIcon: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 4,
+    elevation: 3,
   },
   clockInnerContainer: {
-    width: '100%',            // Ajusta el tamaño del reloj visualmente
+    width: '100%',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight:2, // Espacio inferior para el marco
-    marginTop: 54,    // Sube ligeramente el reloj
-
+    marginRight:2,
+    marginTop: 54,
   },
   buttonContainer: {
     marginTop: 30
@@ -762,6 +919,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginBottom: 2,
+  },
+  // Input y botón para el modal de IP
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 16,
+    fontSize: 16,
+    backgroundColor: '#fafafa',
+  },
+  saveButton: {
+    backgroundColor: '#660154',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

@@ -18,6 +18,7 @@ import NavigationBar from "../../components/NavigationBar";
 import AnalogClock from "../../components/analogClock";
 import { Ionicons } from '@expo/vector-icons';
 import FrameImage from '../../assets/marcoReloj.png';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
@@ -412,66 +413,82 @@ const MainRest = ({ navigation }) => {
       </View>
 
       <View style={styles.container}>
-        <ScrollView 
+  <LinearGradient
+  colors={['rgba(51, 0, 42, 1)', 'rgba(254, 185, 220, 0.9)']}
+   start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 1 }}
+  style={styles.container}
+>
+
+     <ScrollView 
           contentContainerStyle={styles.scrollContainer} 
           showsVerticalScrollIndicator={false} 
-        >   
-          <View style={styles.clockFrame}>
-            <ImageBackground
-              source={FrameImage}
-              style={styles.clockImageFrame}
-              resizeMode="contain"
-            >
-              {/* Engrane en la esquina superior derecha */}
-              <TouchableOpacity
-                style={styles.gearIcon}
-                onPress={() => {
-                  setIpInput(espIp);
-                  setIpModalVisible(true);
+        >
+          {/* Engrane en la esquina superior derecha */}
+          <TouchableOpacity
+            style={styles.gearIcon}
+            onPress={() => {
+              setIpInput(espIp);
+              setIpModalVisible(true);
                 }}
               >
                 <Ionicons name="settings-sharp" size={28} color="#660154" />
-              </TouchableOpacity>
+              </TouchableOpacity>   
+          <View style={styles.clockFrame}>
+              {/*<ImageBackground
+                source={FrameImage}
+                style={styles.clockImageFrame}
+                resizeMode="contain"
+              > */}
+ 
               <View style={styles.clockInnerContainer}>
                 <AnalogClock {...getClockProps()} />
               </View>
-            </ImageBackground>
+             {/*</ImageBackground> */}
           </View>
+        <View style={styles.container2}>
 
-          {loading && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#660154" />
-              <Text style={styles.loadingText}>Updating...</Text>
-            </View>
-          )}
-
+          <View style={styles.buttonContainer}>
           {options.map((row, index) => (
             <View key={index} style={styles.buttonRow}>
               {row.map((item) => (
                 <TouchableOpacity
                   key={item}
-                  style={[
-                    styles.button,
-                    selectedOption === item && styles.activeButton,
-                  ]}
                   onPress={() => {
                     handlePresetSelect(item);
                     handleOptionSelect(item);
                   }}
                   disabled={loading}
+                  style={{ flex: 1 }} // <- Esto es importante
                 >
-                  <Text
+                  <LinearGradient
+                    colors={
+                      selectedOption === item
+                        ? ['rgba(102, 1, 84, 0.9)', 'rgba(102, 1, 84, 0.8)']
+                        : ['#fff', '#fff']
+                    }
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
                     style={[
-                      styles.buttonText,
-                      selectedOption === item && { color: "#fff" },
+                      styles.button,
+                      selectedOption === item && styles.activeButton,
                     ]}
                   >
-                    {item}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.buttonText,
+                        selectedOption === item && { color: "white" },
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </LinearGradient>
                 </TouchableOpacity>
+
               ))}
             </View>
           ))}
+          </View>
 
           <View style={styles.sliderContainer}>
             <View style={styles.sliderBox}>
@@ -492,8 +509,21 @@ const MainRest = ({ navigation }) => {
                 />
             </View> 
           </View>
+          
+            
+       
+        </View>       
+               {loading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#660154" />
+              <Text style={styles.loadingText}>Updating...</Text>
+            </View>
+          )}
         </ScrollView>
 
+  </LinearGradient>   
+
+     
         {/* Custom Movements Modal */}
         <Modal
           animationType="slide"
@@ -675,6 +705,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f4f4f4",
   },
+  container2: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 80,
+    marginHorizontal: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 3,
+    marginTop: 213,      // MUY IMPORTANTE para que no se sobrepongan visualmente
+    zIndex: 0,
+    position: 'relative',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: "#f4f4f4",
@@ -711,12 +756,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   clockFrame: {
-    width: 300,
-    height: 300,
-    alignSelf: 'center',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 25,
+  width: 300,
+  height: 300,
+  position: 'absolute',      // <- HACE QUE SE SOBREPINTE
+  
+  left: '50%',
+  transform: [{ translateX: -150 }], // centrado horizontal
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 10,
   },
   clockImageFrame: {
     width: '98%',
@@ -724,14 +772,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 25,
-    marginTop: 30,
+    marginTop: 20,
     overflow: 'hidden',
   },
   // Engrane en la esquina superior derecha del reloj
   gearIcon: {
+    alignContent: 'flex-end',
     position: 'absolute',
     top: 10,
-    right: 10,
+    right: 20,
     zIndex: 10,
     backgroundColor: '#fff',
     borderRadius: 20,
@@ -747,40 +796,46 @@ const styles = StyleSheet.create({
     marginTop: 54,
   },
   buttonContainer: {
-    marginTop: 30
+    marginTop: 45,
   },
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 18,
-    paddingHorizontal: 45,
+    marginBottom: 20,
     gap: 18,
     zIndex: 0,
   },
-  button: {
-    backgroundColor: "#fff",
-    flex: 1,
-    borderRadius: 30,
-    paddingVertical: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 100,
-    minHeight: 20,
-    elevation: 2,
-    overflow: "hidden",
-  },
-  activeButton: {
-    backgroundColor: "#660154",
-  },
+button: {
+  flex: 1,
+  backgroundColor: "#fff",
+  borderRadius: 30,
+  paddingVertical: 20,
+  paddingHorizontal: 10,
+  justifyContent: "center",
+  alignItems: "center",
+  minHeight: 50,
+  borderWidth: 2.5,
+  borderColor: "rgba(209, 148, 22, 0.5)",
+  shadowColor: "#660154",
+  elevation: 2,
+},
+activeButton: {
+  backgroundColor: "#fff",
+  shadowColor: "#660154",
+  elevation: 4,
+
+},
   buttonText: {
-    color: "#000",
+    color: "#660154",
     fontWeight: "600",
-    fontSize: 14,
+    fontSize: 16,
     textAlign: "center",
+    fontFamily: "Poppins_600SemiBold",
   },
   sliderContainer: {
     width: "100%",
     alignItems: "center",
+    marginTop: 20,
   },
   sliderBox: {
     backgroundColor: "#fff",
@@ -789,7 +844,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#fff",
     marginTop: 20,
-    elevation: 2,
+    shadowColor: "#660154",
+    elevation: 5,
     overflow: "hidden",
     paddingBottom: 20,
   },
@@ -813,7 +869,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 15,
+    marginTop: 15,
     gap: 8,
   },
   loadingText: {

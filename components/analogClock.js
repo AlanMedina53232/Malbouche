@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
+import { ImageBackground } from 'react-native';
+import FrameImage from '../assets/marcoReloj3.png'; // Asegúrate de que la ruta sea correcta
 
 const CLOCK_SIZE = 176;
 const CENTER = CLOCK_SIZE / 2;
@@ -146,7 +148,7 @@ const AnalogClock = ({ direction = 'normal', speed = 50, isCrazy = false, isSwin
     return Array(12).fill().map((_, i) => {
       const angle = ((i + 1) / 12) * 360 - 90;
       const rad = angle * (Math.PI / 180);
-      return (
+ /*      return (
         <SvgText
           key={i}
           x={CENTER + (RADIUS - 20) * Math.cos(rad)}
@@ -158,47 +160,64 @@ const AnalogClock = ({ direction = 'normal', speed = 50, isCrazy = false, isSwin
         >
           {i + 1}
         </SvgText>
-      );
+      ); */
     });
   };
 
-  return (
-    <View style={styles.container}>
-      <Svg width={CLOCK_SIZE} height={CLOCK_SIZE}>
-        <Circle cx={CENTER} cy={CENTER} r={RADIUS} stroke="white" strokeWidth="3" fill="white" />
-        {renderNumbers()}
-        <Line
-          x1={CENTER}
-          y1={CENTER}
-          x2={hourHand.x}
-          y2={hourHand.y}
-          stroke="#8c0200"
-          strokeWidth="6"
-          strokeLinecap="round"
-        />
-        <Line
-          x1={CENTER}
-          y1={CENTER}
-          x2={minuteHand.x}
-          y2={minuteHand.y}
-          stroke="#8c0200"
-          strokeWidth="4"
-          strokeLinecap="butt"
-        />
-        <Circle cx={CENTER} cy={CENTER} r={5} fill="#8c0200" />
-      </Svg>
-    </View>
-  );
+return (
+  <ImageBackground
+    source={FrameImage}
+    style={styles.frame}
+    resizeMode="contain"
+  >
+    <Svg width={CLOCK_SIZE} height={CLOCK_SIZE} style={styles.clockSvg}>
+      <Circle cx={CENTER} cy={CENTER} r={RADIUS} stroke="transparent" strokeWidth="3" fill="transparent" />
+      {renderNumbers()}
+      <Line
+        x1={CENTER}
+        y1={CENTER}
+        x2={hourHand.x}
+        y2={hourHand.y}
+        stroke="#8c0200"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+      <Line
+        x1={CENTER}
+        y1={CENTER}
+        x2={minuteHand.x}
+        y2={minuteHand.y}
+        stroke="#8c0200"
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
+      <Circle cx={CENTER} cy={CENTER} r={5} fill="#8c0200" />
+    </Svg>
+  </ImageBackground>
+);
+
 };
 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 25,
+    marginTop: 20,
     marginBottom: 25,
   },
-
+  frame: {
+    width: CLOCK_SIZE + 100,
+    height: CLOCK_SIZE + 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clockSvg: {
+    marginTop: 56, // Puedes ajustar este valor para bajar el reloj
+    marginLeft:3, // Ajusta el margen inferior si es necesario
+    
+    // Alternativamente:
+    // transform: [{ translateY: 20 }],
+  }
 });
 
 export default AnalogClock;

@@ -390,16 +390,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
     borderRadius: 12,
+    borderColor: "rgba(209, 148, 22,0.3)",
+    borderWidth: 1,
     padding: 15,
     marginVertical: 8,
+    shadowColor: "#660154",
+    elevation: 2,
  /*    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2, */
+    shadowRadius: 4,*/
   },
    userInfo: {
     flex: 1,
@@ -535,11 +538,11 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 20,
-    bottom: 80,
+    bottom: 100,
     backgroundColor: "#400135", 
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,

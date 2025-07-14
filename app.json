@@ -4,7 +4,7 @@
     "slug": "Malbouche",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/LogoBlanco.jpg",
+    "icon": "./assets/LogoBlancopng.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -21,7 +21,14 @@
         "backgroundColor": "#660154"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.amedina53.Malbouche"
+     "package": "com.tuempresa.malbouche",
+     "permissions": [
+       "INTERNET",
+       "ACCESS_WIFI_STATE",
+       "CHANGE_WIFI_STATE",
+       "ACCESS_FINE_LOCATION",
+       "ACCESS_NETWORK_STATE"
+     ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
+import * as Location from 'expo-location';
 import {
   View,
   Text,
@@ -46,19 +47,24 @@ const MainRest = ({ navigation }) => {
 const [alertMessage, setAlertMessage] = useState('');
 const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
-  // Cargar la IP guardada al iniciar
+  // Cargar la IP guardada al iniciar y pedir permisos de ubicación
   useEffect(() => {
-    const loadEspIp = async () => {
+    const loadEspIpAndRequestLocation = async () => {
       try {
+        // Solicitar permisos de ubicación en tiempo de ejecución
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permiso requerido', 'Se requiere el permiso de ubicación para comunicarse con el reloj por WiFi.');
+        }
         const savedIp = await AsyncStorage.getItem(ESP_IP_KEY);
         if (savedIp) {
           setEspIp(savedIp);
         }
       } catch (e) {
-        console.error("Error loading ESP IP:", e);
+        console.error("Error loading ESP IP o solicitando permisos:", e);
       }
     };
-    loadEspIp();
+    loadEspIpAndRequestLocation();
   }, []);
 
   // Actualizar la variable global ESP_IP cuando cambie espIp

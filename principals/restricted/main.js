@@ -22,11 +22,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
+
+
+
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
 // Dirección IP del ESP, se carga desde AsyncStorage
 const ESP_IP_KEY = 'esp_ip_address';
 let ESP_IP = "";
-
 
 const MainRest = ({ navigation }) => {
   const [selectedOption, setSelectedOption] = useState("Normal");
@@ -39,6 +41,11 @@ const MainRest = ({ navigation }) => {
   const [ipModalVisible, setIpModalVisible] = useState(false);
   const [espIp, setEspIp] = useState("");
   const [ipInput, setIpInput] = useState("");
+
+  
+const [alertMessage, setAlertMessage] = useState('');
+const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
+
   // Cargar la IP guardada al iniciar
   useEffect(() => {
     const loadEspIp = async () => {
@@ -79,14 +86,18 @@ const MainRest = ({ navigation }) => {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        Alert.alert("Authentication Error", "Please log in again.");
+        setAlertMessage("Authentication error, please log in again.");
+        setAlertType("error");
+        setTimeout(() => setAlertMessage(''), 4000);
         navigation.replace('Login');
         return null;
       }
       return token;
     } catch (error) {
       console.error("Error getting auth token:", error);
-      Alert.alert("Error", "Failed to get authentication token.");
+      setAlertMessage("Error, failed to get authentication token.");
+      setAlertType("error");
+      setTimeout(() => setAlertMessage(''), 4000);
       return null;
     }
   };
@@ -112,7 +123,9 @@ const MainRest = ({ navigation }) => {
 
       if (!response.ok) {
         console.error("Failed to fetch movements:", data);
-        Alert.alert("Error", data.error || "Failed to load custom movements.");
+        setAlertMessage(data.error || "Failed to load custom movements.");
+        setAlertType("error"); // puedes personalizar si deseas otro tipo
+        setTimeout(() => setAlertMessage(''), 4000);
         setLoadingMovements(false);
         return;
       }
@@ -125,11 +138,15 @@ const MainRest = ({ navigation }) => {
         setCustomMovements(filteredMovements);
       } else {
         console.error("Invalid movements data format:", data);
-        Alert.alert("Error", "Invalid data format from movements API.");
+        setAlertMessage("Error", "Invalid data format from movements API.");
+        setAlertType("error");
+        setTimeout(() => setAlertMessage(''), 4000);
       }
     } catch (error) {
       console.error("Network error fetching movements:", error);
-      Alert.alert("Network Error", "Failed to connect to server. Please check your internet connection.");
+      setAlertMessage("Network error failed to connect to server. Please check your internet connection.");
+      setAlertType("error");
+      setTimeout(() => setAlertMessage(''), 4000);
     } finally {
       setLoadingMovements(false);
     }
@@ -169,12 +186,18 @@ const MainRest = ({ navigation }) => {
       if (!response.ok) {
         console.error("Preset update error:", data);
         if (response.status === 404) {
-          Alert.alert("Error", `Movement preset '${preset}' not found.`);
+          setAlertMessage(`Movement preset '${preset}' not found.`);
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 4000);
         } else if (response.status === 401) {
-          Alert.alert("Authentication Error", "Please log in again.");
+          setAlertMessage("Authentication error please log in again.");
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 4000);
           navigation.replace('Login');
         } else {
-          Alert.alert("Error", data.error || "Failed to update movement preset.");
+          setAlertMessage("Error", data.error || "Failed to update movement preset.");
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 4000);
         }
         setLoading(false);
         return;
@@ -194,7 +217,9 @@ const MainRest = ({ navigation }) => {
 
     } catch (error) {
       console.error("Network error updating preset:", error);
-      Alert.alert("Network Error", "Failed to connect to server. Please check your internet connection.");
+      setAlertMessage("Network error failed to connect to server. Please check your internet connection.");
+      setAlertType("error");
+      setTimeout(() => setAlertMessage(''), 4000);
     } finally {
       setLoading(false);
     }
@@ -227,12 +252,18 @@ const MainRest = ({ navigation }) => {
       if (!response.ok) {
         console.error("Custom movement update error:", data);
         if (response.status === 404) {
-          Alert.alert("Error", `Movement '${movement.nombre}' not found.`);
+          setAlertMessage("Error", `Movement '${movement.nombre}' not found.`);
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 4000);
         } else if (response.status === 401) {
-          Alert.alert("Authentication Error", "Please log in again.");
+          setAlertMessage("Authentication erro please log in again.");
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 4000);
           navigation.replace('Login');
         } else {
-          Alert.alert("Error", data.error || "Failed to update movement.");
+          setAlertMessage("Error", data.error || "Failed to update movement.");
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 4000);
         }
         setLoading(false);
         return;
@@ -255,7 +286,9 @@ const MainRest = ({ navigation }) => {
 
     } catch (error) {
       console.error("Network error updating custom movement:", error);
-      Alert.alert("Network Error", "Failed to connect to server. Please check your internet connection.");
+     setAlertMessage("Network error failed to connect to server. Please check your internet connection.");
+      setAlertType("error");
+      setTimeout(() => setAlertMessage(''), 4000);
     } finally {
       setLoading(false);
     }
@@ -286,10 +319,14 @@ const MainRest = ({ navigation }) => {
           // Gracefully handle 404 - movement document might not exist yet
           console.log("Movement document not found, speed update skipped");
         } else if (response.status === 401) {
-          Alert.alert("Authentication Error", "Please log in again.");
+          setAlertMessage("Authentication error please log in again.");
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 4000);
           navigation.replace('Login');
         } else {
-          Alert.alert("Error", data.error || "Failed to update speed.");
+          setAlertMessage("Error", data.error || "Failed to update speed.");
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 4000);
         }
         return;
       }
@@ -302,7 +339,9 @@ const MainRest = ({ navigation }) => {
 
     } catch (error) {
       console.error("Network error updating speed:", error);
-      Alert.alert("Network Error", "Failed to update speed. Please check your internet connection.");
+      setAlertMessage("Network error failed to update speed. Please check your internet connection.");
+      setAlertType("error");
+      setTimeout(() => setAlertMessage(''), 4000);
     }
   };
 
@@ -325,9 +364,14 @@ const MainRest = ({ navigation }) => {
       const url = `http://${espIp}/${command.toLowerCase()}`;
       const response = await fetch(url);
       const text = await response.text();
-      Alert.alert("Respuesta", text);
+      setAlertMessage("Respuesta", text);
+      setAlertType("success");
+      setTimeout(() => setAlertMessage(''), 4000);
     } catch (error) {
-      Alert.alert("Error", "No se pudo conectar con el reloj");
+      setAlertMessage("Error, could not conect to the clock");
+      setAlertType("error");
+      setTimeout(() => setAlertMessage(''), 4000);
+
     }
   };
 
@@ -339,7 +383,10 @@ const MainRest = ({ navigation }) => {
       const text = await response.text();
       console.log("Velocidad ajustada:", text);
     } catch (error) {
-      Alert.alert("Error", "No se pudo ajustar la velocidad");
+      setAlertMessage("Error, could not adjust the speed");
+      setAlertType("error");
+      setTimeout(() => setAlertMessage(''), 4000);
+
     }
   };
 
@@ -413,17 +460,19 @@ const MainRest = ({ navigation }) => {
       </View>
 
       <View style={styles.container}>
-  <LinearGradient
-  colors={['rgba(51, 0, 42, 1)', 'rgba(254, 185, 220, 0.9)']}
-   start={{ x: 0, y: 0 }}
-  end={{ x: 1, y: 1 }}
-  style={styles.container}
->
+        <LinearGradient
+        colors={['#33002A', '#4F0E36', '#B76BA3']}
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.container}
+        >
 
      <ScrollView 
           contentContainerStyle={styles.scrollContainer} 
           showsVerticalScrollIndicator={false} 
         >
+
+
           {/* Engrane en la esquina superior derecha */}
           <TouchableOpacity
             style={styles.gearIcon}
@@ -434,6 +483,7 @@ const MainRest = ({ navigation }) => {
               >
                 <Ionicons name="settings-sharp" size={28} color="#660154" />
               </TouchableOpacity>   
+
           <View style={styles.clockFrame}>
               {/*<ImageBackground
                 source={FrameImage}
@@ -444,6 +494,7 @@ const MainRest = ({ navigation }) => {
               <View style={styles.clockInnerContainer}>
                 <AnalogClock {...getClockProps()} />
               </View>
+            
              {/*</ImageBackground> */}
           </View>
         <View style={styles.container2}>
@@ -509,19 +560,36 @@ const MainRest = ({ navigation }) => {
                 />
             </View> 
           </View>
-          
-            
-       
-        </View>       
-               {loading && (
+
+          {loading && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" color="#660154" />
-              <Text style={styles.loadingText}>Updating...</Text>
+              
             </View>
           )}
-        </ScrollView>
+          {alertMessage !== '' && (
+            <View
+              style={[
+                styles.alertContainer,
+                null
+              ]}
+            >
+            <Text
+              style={[
+                styles.alertText,
+                alertType === 'error' && { color: '#dd4e5cff' },
+                alertType === 'success' && { color: '#5a8d66ff' }
+              ]}
+            >
+              {alertMessage}
+            </Text>
 
-  </LinearGradient>   
+            </View>
+          )}
+        </View>       
+               
+      </ScrollView>
+    </LinearGradient>   
 
      
         {/* Custom Movements Modal */}
@@ -582,7 +650,7 @@ const MainRest = ({ navigation }) => {
           <View style={styles.modalOverlay}>
             <View style={styles.ipModalContent}>
               <View style={styles.ipModalHeader}>
-                <Text style={styles.modalTitle}>Configurar dirección IP del reloj</Text>
+                <Text style={styles.modalTitle}>Configure Clock IP Address</Text>
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setIpModalVisible(false)}
@@ -591,7 +659,7 @@ const MainRest = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
               <View style={styles.ipModalBody}>
-                <Text style={styles.ipCurrentLabel}>Dirección IP actual: <Text style={styles.ipCurrentValue}>{espIp || 'No configurada'}</Text></Text>
+                <Text style={styles.ipCurrentLabel}>Actual IP Address: <Text style={styles.ipCurrentValue}>{espIp || 'Not configured'}</Text></Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Ej: 192.168.0.175"
@@ -608,13 +676,15 @@ const MainRest = ({ navigation }) => {
                       await AsyncStorage.setItem(ESP_IP_KEY, ipInput);
                       setEspIp(ipInput);
                       setIpModalVisible(false);
-                      Alert.alert('IP guardada', 'La dirección IP se guardó correctamente.');
+                      setAlertMessage('Success, the IP address has been saved successfully.');
+                      setAlertType('success');
+                      setTimeout(() => setAlertMessage(''), 4000);
                     } catch (e) {
-                      Alert.alert('Error', 'No se pudo guardar la dirección IP.');
+                      setAlertMessage('Error, could not save the IP address.');
                     }
                   }}
                 >
-                  <Text style={styles.saveButtonText}>Guardar</Text>
+                  <Text style={styles.saveButtonText}>Save</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -706,19 +776,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#f4f4f4",
   },
   container2: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
+    backgroundColor: "#f4f4f4",
+    borderTopLeftRadius: 150,   
+    borderTopRightRadius: 150, 
+    borderBottomLeftRadius: 20, 
+    borderBottomRightRadius: 20,
     paddingHorizontal: 18,
-    paddingVertical: 80,
+    paddingVertical: 90,
     marginHorizontal: 15,
-    shadowColor: "#000",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 3,
-    marginTop: 213,      // MUY IMPORTANTE para que no se sobrepongan visualmente
+    elevation: 6,
+    marginTop: 180,
     zIndex: 0,
     position: 'relative',
+    
   },
   safeArea: {
     flex: 1,
@@ -758,10 +832,9 @@ const styles = StyleSheet.create({
   clockFrame: {
   width: 300,
   height: 300,
-  position: 'absolute',      // <- HACE QUE SE SOBREPINTE
-  
+  position: 'absolute',     
   left: '50%',
-  transform: [{ translateX: -150 }], // centrado horizontal
+  transform: [{ translateX: -150 }], 
   justifyContent: 'center',
   alignItems: 'center',
   zIndex: 10,
@@ -775,7 +848,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     overflow: 'hidden',
   },
-  // Engrane en la esquina superior derecha del reloj
+  
   gearIcon: {
     alignContent: 'flex-end',
     position: 'absolute',
@@ -793,10 +866,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight:2,
-    marginTop: 54,
+    marginTop: 15,
   },
   buttonContainer: {
     marginTop: 45,
+    width: "100%",
   },
   buttonRow: {
     flexDirection: "row",
@@ -810,20 +884,19 @@ button: {
   backgroundColor: "#fff",
   borderRadius: 30,
   paddingVertical: 20,
-  paddingHorizontal: 10,
   justifyContent: "center",
   alignItems: "center",
   minHeight: 50,
-  borderWidth: 2.5,
+  borderWidth: 0.8,
   borderColor: "rgba(209, 148, 22, 0.5)",
   shadowColor: "#660154",
-  elevation: 2,
+  elevation: 4,
 },
 activeButton: {
   backgroundColor: "#fff",
   shadowColor: "#660154",
   elevation: 4,
-
+  borderColor: "#660154",
 },
   buttonText: {
     color: "#660154",
@@ -843,7 +916,8 @@ activeButton: {
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#fff",
-    marginTop: 20,
+  
+   
     shadowColor: "#660154",
     elevation: 5,
     overflow: "hidden",
@@ -998,6 +1072,19 @@ activeButton: {
     fontWeight: 'bold',
     fontSize: 16,
   },
+alertContainer: {
+  padding: 10,
+  marginTop: 10,
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginHorizontal: 20,
+},
+alertText: {
+  fontSize: 14,
+  textAlign: 'center',
+},
+
+
 });
 
 export default MainRest;

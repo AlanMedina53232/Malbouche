@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList, S
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { LinearGradient } from 'expo-linear-gradient'
+
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api' // Fallback if env not set
 
@@ -36,7 +38,7 @@ const UsersScreen = ({ navigation }) => {
       try {
         const token = await AsyncStorage.getItem('token')
         if (!token) {
-          Alert.alert("Error", "No se encontró token de autenticación. Por favor inicie sesión nuevamente.")
+          Alert.alert("Error", "could not find authentication token. Please log in again.")
           setLoading(false)
           return
         }
@@ -47,7 +49,7 @@ const UsersScreen = ({ navigation }) => {
         })
         if (!response.ok) {
           const errorData = await response.json()
-          Alert.alert("Error", errorData.error || "Error al obtener usuarios")
+          Alert.alert("Error", errorData.error || "Error fetching users")
           setLoading(false)
           return
         }
@@ -55,7 +57,7 @@ const UsersScreen = ({ navigation }) => {
         setUsers(data.data || data)
       } catch (error) {
         console.error("Error fetching users:", error)
-        Alert.alert("Error", "No se pudo conectar con el servidor")
+        Alert.alert("Error", "Could not connect to server")
       } finally {
         setLoading(false)
       }
@@ -75,13 +77,13 @@ const UsersScreen = ({ navigation }) => {
 
   const handleSave = async () => {
     if (!editedName.trim() || !editedApellidos.trim() || !editedEmail.trim()) {
-      Alert.alert("Error", "Por favor complete los campos obligatorios: Nombre, Apellidos y Correo")
+      Alert.alert("Error", "Please complete the required fields: Name, Last Name, and Email")
       return
     }
     try {
       const token = await AsyncStorage.getItem('token')
       if (!token) {
-        Alert.alert("Error", "No se encontró token de autenticación. Por favor inicie sesión nuevamente.")
+        Alert.alert("Error", "could not find authentication token. Please log in again.")
         return
       }
       const userId = selectedUser.id || selectedUser._id
@@ -115,7 +117,7 @@ const UsersScreen = ({ navigation }) => {
       setModalVisible(false)
     } catch (error) {
       console.error("Error updating user:", error)
-      Alert.alert("Error", "No se pudo conectar con el servidor")
+      Alert.alert("Error", "Could not connect to server")
     }
   }
 
@@ -150,19 +152,27 @@ const UsersScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>USERS</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
-          >
-            <View style={styles.avatarSmall}>
-              <Ionicons name="person" size={20} color="#660154" />
-            </View>
-          </TouchableOpacity>
-        </View>
+        <LinearGradient
+          colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.headerGradient}
+        >
+  <View style={styles.headerContent}>
+    <View style={styles.titleContainer}>
+      <Text style={styles.titleGradient}>USERS</Text>
+    </View>
+    <TouchableOpacity
+      style={styles.profileButton}
+      onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+    >
+      <View style={styles.avatarSmall}>
+        <Ionicons name="person" size={20} color="#660154" />
+      </View>
+    </TouchableOpacity>
+  </View>
+</LinearGradient>
+
 
         <FlatList
           data={users}
@@ -190,7 +200,7 @@ const UsersScreen = ({ navigation }) => {
             })
             if (!response.ok) {
               const errorData = await response.json()
-              Alert.alert("Error", errorData.error || "Error al obtener usuarios")
+              Alert.alert("Error", errorData.error || "Error fetching users")
               setLoading(false)
               return
             }
@@ -198,7 +208,7 @@ const UsersScreen = ({ navigation }) => {
             setUsers(data.data || data)
           } catch (error) {
             console.error("Error fetching users:", error)
-            Alert.alert("Error", "No se pudo conectar con el servidor")
+            Alert.alert("Error", "Could not connect to server")
           } finally {
             setLoading(false)
           }
@@ -270,7 +280,7 @@ const UsersScreen = ({ navigation }) => {
                 <Text style={styles.label}>Rol</Text>
                 <TouchableOpacity 
                   style={styles.dropdownSelector}
-                  onPress={() => setShowRoleDropdown(!showRoleDropdown)} //esto cambia el estado del dropdown para mostrarlo/ocultarlo
+                  onPress={() => setShowRoleDropdown(!showRoleDropdown)} 
                 >
                   <Text style={styles.dropdownSelectorText}>
                     {editedRol || "Select Role"} 
@@ -338,6 +348,29 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
 
+  headerGradient: {
+  paddingTop: 45,
+  paddingBottom: 15,
+  paddingHorizontal: 20,
+  borderBottomWidth: 1,
+  borderBottomColor: "#eee",
+  borderBottomLeftRadius: 30,
+borderBottomRightRadius: 30,
+
+},
+
+headerContent: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+},
+
+titleGradient: {
+  fontSize: 22,
+  fontWeight: "700",
+  color: "#fff",
+},
+
   profileButton: {
     marginLeft: 10,
     marginBottom: 10,
@@ -352,11 +385,14 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
+    alignItems: 'center',
+    paddingLeft: 20,
   },
   title: {
     fontSize: 22,
     fontWeight: "700",
     color: "#333",
+
   },
   userList: {
     flex: 1,
@@ -380,10 +416,12 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flex: 1,
+    paddingTop: 12,
+
   },
   listContent: {
     paddingHorizontal: 15,
-    paddingBottom:70,
+    paddingBottom:80,
   },
   userCard: {
     flexDirection: "row",

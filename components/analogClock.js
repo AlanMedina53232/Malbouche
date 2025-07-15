@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 20,
-    marginBottom: 25,
+    marginBottom: 60,
   },
   frame: {
     width: CLOCK_SIZE + 100,

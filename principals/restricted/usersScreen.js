@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList, SafeAreaView, Alert } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
@@ -19,6 +19,7 @@ const UsersScreen = ({ navigation }) => {
   const [showRoleDropdown, setShowRoleDropdown] = useState(false)
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
 
 
   const currentUser = {
@@ -31,6 +32,23 @@ const UsersScreen = ({ navigation }) => {
     { label: "Admin", value: "admin" },
     { label: "VIP", value: "vip" },
   ]
+
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const searchLower = searchTerm.toLowerCase()
+      return (
+        (user.nombre?.toLowerCase().includes(searchLower) || 
+         user.name?.toLowerCase().includes(searchLower)) ||
+        (user.apellidos?.toLowerCase().includes(searchLower) ||
+          user.lastName?.toLowerCase().includes(searchLower)) || 
+        (user.correo?.toLowerCase().includes(searchLower) || 
+         user.email?.toLowerCase().includes(searchLower)) ||
+        (user.rol?.toLowerCase().includes(searchLower) || 
+         user.Rol?.toLowerCase().includes(searchLower))
+      )
+    })
+  }, [users, searchTerm])
+
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -122,15 +140,35 @@ const UsersScreen = ({ navigation }) => {
   }
 
   // Function to get role color based on role name
-  const getRoleColor = (role) => {
-    switch(role?.toLowerCase()) {
-      case 'vip': return '#fbb42a';
-      case 'admin': return '#660154';
-      default: return '#666';
+  const getRoleInfo = (role) => {
+    const roleLower = role?.toLowerCase();
+    
+    switch(roleLower) {
+      case 'vip': 
+        return {
+          color: '#fbb42a',
+          emoji: '👑', // Corona para VIP
+          label: 'VIP'
+        };
+      case 'admin': 
+        return {
+          color: '#660154',
+          emoji: '⚙️', // Engranaje para Admin
+          label: 'Admin'
+        };
+      default: 
+        return {
+          color: '#666',
+          emoji: '👤', // Emoji genérico para otros roles
+          label: role || 'User'
+        };
     }
   }
 
-  const renderItem = ({ item }) => (
+const renderItem = ({ item }) => {
+  const roleInfo = getRoleInfo(item.rol || item.Rol);
+  
+  return (
     <TouchableOpacity 
       style={styles.userCard} 
       onPress={() => openUserModal(item)}
@@ -139,15 +177,22 @@ const UsersScreen = ({ navigation }) => {
         <Ionicons name="person" size={24} color="#666" />
       </View>
       <View style={styles.userInfo}>
-        <Text style={styles.userName}>{item.nombre || item.name}</Text>
-        <Text style={styles.userEmail}>{item.correo || item.email}</Text>
-        <Text style={[styles.userRol,{ color: getRoleColor(item.rol || item.Rol) }]}>
-          {item.rol || item.Rol}
+        <Text style={[styles.userName, { fontFamily: 'Montserrat_700Bold' }]}>
+          {item.nombre || item.name}
         </Text>
+        <Text style={[styles.userEmail, { fontFamily: 'Montserrat_400Regular' }]}>
+          {item.correo || item.email}
+        </Text>
+        <View style={styles.roleContainer}>
+          <Text style={[styles.userRol, { color: roleInfo.color, fontFamily: 'Montserrat_400Regular' }]}>
+            {roleInfo.emoji} {roleInfo.label}
+          </Text>
+        </View>
       </View>
       <Ionicons name="create-outline" size={20} color="#666" />
     </TouchableOpacity>
-  )
+  );
+}
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -158,9 +203,9 @@ const UsersScreen = ({ navigation }) => {
           end={{ x: 0, y: 1 }}
           style={styles.headerGradient}
         >
-  <View style={styles.headerContent}>
+    <View style={styles.headerContent}>
     <View style={styles.titleContainer}>
-      <Text style={styles.titleGradient}>USERS</Text>
+      <Text style={[styles.titleGradient, { fontFamily: 'Cinzel_700Bold' }]}>USERS</Text>
     </View>
     <TouchableOpacity
       style={styles.profileButton}
@@ -173,9 +218,25 @@ const UsersScreen = ({ navigation }) => {
   </View>
 </LinearGradient>
 
+ <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search users..."
+            placeholderTextColor="#999"
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+            clearButtonMode="while-editing"
+          />
+          {searchTerm ? (
+            <TouchableOpacity onPress={() => setSearchTerm('')} style={styles.clearButton}>
+              <Ionicons name="close-circle" size={20} color="#999" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
 
         <FlatList
-          data={users}
+          data={filteredUsers}
           renderItem={renderItem}
           keyExtractor={item => (item.id || item._id).toString()}
           contentContainerStyle={styles.listContent}
@@ -189,7 +250,7 @@ const UsersScreen = ({ navigation }) => {
           try {
             const token = await AsyncStorage.getItem('token')
             if (!token) {
-              Alert.alert("Error", "No se encontró token de autenticación. Por favor inicie sesión nuevamente.")
+              Alert.alert("Error", "Authentication token not found. Please log in again.")
               setLoading(false)
               return
             }
@@ -233,7 +294,7 @@ const UsersScreen = ({ navigation }) => {
           <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setModalVisible(false)}>
             <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={() => {}}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Edit User</Text>
+                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>Edit User</Text>
                 <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
                   <Ionicons name="close" size={24} color="#666" />
                 </TouchableOpacity>
@@ -245,9 +306,9 @@ const UsersScreen = ({ navigation }) => {
                 </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Name</Text>
+                <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Name</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
                   value={editedName}
                   onChangeText={setEditedName}
                   placeholder="Insert Name"
@@ -255,9 +316,9 @@ const UsersScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Last name</Text>
+                <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Last name</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
                   value={editedApellidos}
                   onChangeText={setEditedApellidos}
                   placeholder="Insert Last Name"
@@ -265,9 +326,9 @@ const UsersScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Email</Text>
+                <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Email</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
                   value={editedEmail}
                   onChangeText={setEditedEmail}
                   placeholder="Insert Email"
@@ -277,12 +338,12 @@ const UsersScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Rol</Text>
+                <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Rol</Text>
                 <TouchableOpacity 
                   style={styles.dropdownSelector}
                   onPress={() => setShowRoleDropdown(!showRoleDropdown)} 
                 >
-                  <Text style={styles.dropdownSelectorText}>
+                  <Text style={[styles.dropdownSelectorText, { fontFamily: 'Montserrat_400Regular' }]}>
                     {editedRol || "Select Role"} 
                   </Text>
                   <Ionicons 
@@ -306,7 +367,7 @@ const UsersScreen = ({ navigation }) => {
                           setShowRoleDropdown(false);
                         }}
                       >
-                        <Text style={styles.dropdownOptionText}>{role.label}</Text>
+                        <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular' }]}>{role.label}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -314,7 +375,7 @@ const UsersScreen = ({ navigation }) => {
               </View>
 
               <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>Save Changes</Text>
+                <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>Save Changes</Text>
               </TouchableOpacity>
               </View>
             </TouchableOpacity>
@@ -368,7 +429,6 @@ headerContent: {
 
 titleGradient: {
   fontSize: 22,
-  fontWeight: "700",
   color: "#fff",
   paddingLeft: 35
 },
@@ -416,10 +476,39 @@ titleGradient: {
     alignItems: "center",
     marginRight: 15,
   },
+    searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginHorizontal: 15,
+    marginVertical: 10,
+    paddingHorizontal: 15,
+    height: 45,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    fontFamily: 'Montserrat_400Regular',
+    fontSize: 16,
+    color: '#333',
+  },
+  clearButton: {
+    padding: 5,
+    marginLeft: 5,
+  },
+
   listContainer: {
     flex: 1,
-    paddingTop: 12,
-
+   
   },
   listContent: {
     paddingHorizontal: 15,
@@ -459,9 +548,14 @@ titleGradient: {
     marginBottom: 2,
   },
   userRol: {
-    fontSize: 14,
-    color: "#660154",
-    fontWeight: "500",
+  fontSize: 14,
+  fontWeight: "500",
+  marginLeft: 4,
+  },
+  roleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
   },
   modalOverlay: {
     flex: 1,
@@ -499,7 +593,6 @@ titleGradient: {
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "bold",
     color: "white",
   },
   closeButton: {

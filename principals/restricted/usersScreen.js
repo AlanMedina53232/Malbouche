@@ -354,8 +354,8 @@ const styles = StyleSheet.create({
   paddingHorizontal: 20,
   borderBottomWidth: 1,
   borderBottomColor: "#eee",
-  borderBottomLeftRadius: 30,
-borderBottomRightRadius: 30,
+  borderBottomLeftRadius: 15,
+  borderBottomRightRadius: 15,
 
 },
 
@@ -363,12 +363,14 @@ headerContent: {
   flexDirection: 'row',
   justifyContent: 'space-between',
   alignItems: 'center',
+
 },
 
 titleGradient: {
   fontSize: 22,
   fontWeight: "700",
   color: "#fff",
+  paddingLeft: 35
 },
 
   profileButton: {
@@ -428,12 +430,12 @@ titleGradient: {
     alignItems: "center",
     backgroundColor: "#fff",
     borderRadius: 12,
-    borderColor: "rgba(209, 148, 22,0.3)",
-    borderWidth: 1,
+    borderColor: "rgba(209, 148, 22, 0.4)",
+    borderWidth: 1.,
     padding: 15,
     marginVertical: 8,
-    shadowColor: "#660154",
-    elevation: 2,
+    shadowColor: "rgba(102, 1, 84,0.8)",
+    elevation: 5,
  /*    shadowColor: "#000",
     shadowOffset: {
       width: 0,

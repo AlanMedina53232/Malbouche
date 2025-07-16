@@ -35,12 +35,13 @@ export default function Login({ navigation }) {
 
     // Validación de contraseña
     if (!password) {
-      newErrors.password = 'Passrword required';
+      newErrors.password = 'Password required';
       valid = false;
     } else if (password.length < 6) {
       newErrors.password = 'At least 6 characters required';
       valid = false;
     }
+
 
     setErrors(newErrors);
     return valid;
@@ -66,13 +67,20 @@ export default function Login({ navigation }) {
         }),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Login error response:', errorText);
-        Alert.alert('Error', `Error en el servidor: ${errorText}`);
+        if (!response.ok) {
+        const errorJson = await response.json().catch(() => ({ error: 'Login failed' }));
+        console.error('Login error response:', errorJson);
+
+        // Mostrar error directamente bajo el campo de contraseña
+        setErrors(prev => ({
+          ...prev,
+          password: errorJson.error || 'Incorrect email or password',
+        }));
+
         setIsLoading(false);
         return;
       }
+
 
       const data = await response.json();
 
@@ -85,22 +93,28 @@ export default function Login({ navigation }) {
         }
         navigation.replace('Home');
       } else {
-        Alert.alert('Error', data.error || 'Credenciales incorrectas');
+        setErrors(prev => ({
+          ...prev,
+          password: data.error || 'Incorrect email or password',
+        }));
       }
-    } catch (error) {
-      console.error('Fetch login error:', error);
-      Alert.alert('Error', `Ocurrió un problema al iniciar sesión: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      } catch (error) {
+        console.error('Fetch login error:', error);
+        setErrors(prev => ({
+        ...prev,
+        password: 'There was a connection problem. Try again.',
+      }));
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
- return (
+    return (
    
   <LinearGradient
-    colors={['rgba(51, 0, 42, 1)', 'rgba(254, 185, 220, 0.9)']}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
+    colors={['#33002A', '#4F0E36', '#B76BA3']}
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 1, y: 1 }}
     style={styles.container}
   >
     <KeyboardAvoidingView
@@ -266,18 +280,20 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     height: 48,
-    borderColor: 'rgba(204, 204, 204, 0.6)',
+    borderColor: 'rgba(209, 148, 22, 0.4)',
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
     marginBottom: 8,
     backgroundColor: '#f9fafb',
+    shadowColor: "rgba(102, 1, 84,0.8)",
+    elevation: 1.5,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    borderColor: 'rgba(204, 204, 204, 0.6)',
+    borderColor: 'rgba(209, 148, 22, 0.4)',
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
@@ -285,6 +301,8 @@ const styles = StyleSheet.create({
     height: 48,
     marginBottom: 8,
     justifyContent: 'space-between',
+    shadowColor: "rgba(102, 1, 84,0.8)",
+    elevation: 1.5,
   },
   passwordInput: {
     flex: 1,
@@ -297,6 +315,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     marginBottom: 14,
+    shadowColor: "rgba(102, 1, 84,0.8)",
+    elevation: 5,
   },
   buttonText: {
     color: '#fff',

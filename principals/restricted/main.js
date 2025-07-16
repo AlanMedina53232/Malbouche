@@ -453,7 +453,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>MALBOUCHE</Text>
+          <Text style={[styles.title, { fontFamily: 'Cinzel_700Bold' }]}>MALBOUCHE</Text>
         </View>
         <TouchableOpacity
           style={styles.profileButton}
@@ -533,7 +533,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   >
                     <Text
                       style={[
-                        styles.buttonText,
+                        [styles.buttonText, { fontFamily: 'Montserrat_400Regular' }],
                         selectedOption === item && { color: "white" },
                       ]}
                     >
@@ -549,7 +549,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
           <View style={styles.sliderContainer}>
             <View style={styles.sliderBox}>
-              <Text style={styles.sliderLabel}>Speed</Text>
+              <Text style={[styles.sliderLabel, { fontFamily: 'Montserrat_700Bold' }]}>Speed</Text>
                 <Slider
                   style={styles.slider}
                   minimumValue={1}
@@ -656,7 +656,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           <View style={styles.modalOverlay}>
             <View style={styles.ipModalContent}>
               <View style={styles.ipModalHeader}>
-                <Text style={styles.modalTitle}>Configure Clock IP Address</Text>
+                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>Configure Clock IP Address</Text>
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setIpModalVisible(false)}
@@ -665,9 +665,9 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                 </TouchableOpacity>
               </View>
               <View style={styles.ipModalBody}>
-                <Text style={styles.ipCurrentLabel}>Actual IP Address: <Text style={styles.ipCurrentValue}>{espIp || 'Not configured'}</Text></Text>
+                <Text style={[styles.ipCurrentLabel, { fontFamily: 'Montserrat_500Medium' }]}>Actual IP Address: <Text style={[styles.ipCurrentValue, { fontFamily: 'Montserrat_700SemiBold' }]}>{espIp || 'Not configured'}</Text></Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { fontFamily: 'Montserrat_500Medium' }]}
                   placeholder="Ej: 192.168.0.175"
                   value={ipInput}
                   onChangeText={setIpInput}
@@ -690,7 +690,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     }
                   }}
                 >
-                  <Text style={styles.saveButtonText}>Save</Text>
+                  <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>Save</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -817,10 +817,11 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
+    alignItems: 'center',
+    paddingLeft: 45,
   },
   title: {
     fontSize: 22,
-    fontWeight: "700",
     color: "#333",
   },
   profileButton: {
@@ -988,7 +989,6 @@ activeButton: {
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
     color: '#333',
   },
   closeButton: {
@@ -1075,7 +1075,6 @@ activeButton: {
   },
   saveButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
     fontSize: 16,
   },
 alertContainer: {

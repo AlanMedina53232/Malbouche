@@ -10,6 +10,8 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo-google-fonts/cinzel": "^0.4.1",
+    "@expo-google-fonts/montserrat": "^0.4.1",
     "@expo/metro-runtime": "~5.0.4",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
@@ -23,8 +25,10 @@
     "axios": "^1.10.0",
     "crypto-js": "^4.2.0",
     "expo": "^53.0.19",
+    "expo-font": "~13.3.2",
     "expo-linear-gradient": "~14.1.5",
     "expo-location": "^18.1.6",
+    "expo-splash-screen": "~0.30.10",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",

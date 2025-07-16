@@ -71,7 +71,6 @@ export default function Login({ navigation }) {
         const errorJson = await response.json().catch(() => ({ error: 'Login failed' }));
         console.error('Login error response:', errorJson);
 
-        // Mostrar error directamente bajo el campo de contraseña
         setErrors(prev => ({
           ...prev,
           password: errorJson.error || 'Incorrect email or password',
@@ -107,9 +106,9 @@ export default function Login({ navigation }) {
       } finally {
         setIsLoading(false);
       }
-    };
+    } ;
 
-    return (
+  return (
    
   <LinearGradient
     colors={['#33002A', '#4F0E36', '#B76BA3']}
@@ -129,18 +128,18 @@ export default function Login({ navigation }) {
       >
         <View style={styles.loginBox}>
           <View>
-            <Text style={styles.title}>MALBOUCHE</Text>
+            <Text style={[styles.title, { fontFamily: 'Cinzel_700Bold' }]}>MALBOUCHE</Text>
           </View>
           <Image
             source={reloj}
             style={styles.logo}
           />
-          <Text style={styles.loginTitle}>LOGIN</Text>
-          <Text style={styles.subtitle}>Enter your email and password to log in</Text>
+          <Text style={[styles.loginTitle, { fontFamily: 'Cinzel_600SemiBold' }]}>LOGIN</Text>
+          <Text style={[styles.subtitle, { fontFamily: 'Montserrat_400Regular' }]}>Enter your email and password to log in</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={[
-                styles.input,
+                [styles.input, { fontFamily: 'Montserrat_400Regular' }],
                 errors.email && styles.inputError
               ]}
               placeholder="Email Address"
@@ -164,7 +163,7 @@ export default function Login({ navigation }) {
                 errors.password && styles.inputError
               ]}>
                 <TextInput
-                  style={styles.passwordInput}
+                  style={[styles.passwordInput, { fontFamily: 'Montserrat_400Regular' }]}
                   placeholder="Password"
                   secureTextEntry={!showPassword}
                   value={password}
@@ -187,6 +186,7 @@ export default function Login({ navigation }) {
                 <Text style={styles.errorText}>{errors.password}</Text>
               ) : null}
             </View>
+        
 
             <TouchableOpacity
               style={styles.button}
@@ -196,7 +196,7 @@ export default function Login({ navigation }) {
               {isLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>Log In</Text>
+                <Text style={[styles.buttonText, { fontFamily: 'Cinzel_600SemiBold' }]}>Log In</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -237,11 +237,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 25,
-    fontWeight: 'bold',
+
     color: '#660154',
     textAlign: 'center',
     marginBottom: 10,
-    fontFamily: 'serif-bold',  
+    
   },
   logo: {
     width: 150,
@@ -251,10 +251,7 @@ const styles = StyleSheet.create({
   },
   loginTitle: {
     fontSize: 20,
-    fontWeight: '700',
     marginBottom: 20,
-    color: 'rgba(102, 1, 84,0.9)',
-    fontFamily: 'serif-bold',
   },
   subtitle: {
     fontSize: 14,

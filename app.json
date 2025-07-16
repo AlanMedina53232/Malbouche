@@ -39,6 +39,9 @@
         "projectId": "b9ce70bc-c10d-4fda-8e69-d23ec0c324e8"
       }
     },
-    "owner": "amedina53"
+    "owner": "amedina53",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

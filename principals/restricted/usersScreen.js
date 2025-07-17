@@ -4,13 +4,16 @@ import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api' // Fallback if env not set
 
 const UsersScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets()
   const [selectedUser, setSelectedUser] = useState(null)
-  const [modalVisible, setModalVisible] = useState(false)
+  const [viewModalVisible, setViewModalVisible] = useState(false); // Modal de visualización
+  const [editModalVisible, setEditModalVisible] = useState(false); // Modal de edición
   const [editedName, setEditedName] = useState("")
   const [editedApellidos, setEditedApellidos] = useState("")
   const [editedEmail, setEditedEmail] = useState("")
@@ -20,7 +23,6 @@ const UsersScreen = ({ navigation }) => {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-
 
   const currentUser = {
     id: 1,
@@ -32,6 +34,24 @@ const UsersScreen = ({ navigation }) => {
     { label: "Admin", value: "admin" },
     { label: "VIP", value: "vip" },
   ]
+
+  // Función para abrir modal de visualización
+  const openViewModal = (user) => {
+      setSelectedUser(user);
+      setViewModalVisible(true);
+    };
+
+      // Función para abrir modal de edición
+  const openEditModal = () => {
+    setEditedName(selectedUser.nombre || selectedUser.name);
+    setEditedApellidos(selectedUser.apellidos || "");
+    setEditedEmail(selectedUser.correo || selectedUser.email);
+    setEditedPuesto(selectedUser.puesto || "");
+    setEditedRol(selectedUser.rol || selectedUser.Rol);
+    setViewModalVisible(false);
+    setEditModalVisible(true);
+  };
+
 
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
@@ -83,35 +103,26 @@ const UsersScreen = ({ navigation }) => {
     fetchUsers()
   }, [])
 
-  const openUserModal = (user) => {
-    setSelectedUser(user)
-    setEditedName(user.name || user.nombre)
-    setEditedApellidos(user.apellidos || "")
-    setEditedEmail(user.email || user.correo)
-    setEditedPuesto(user.puesto || "")
-    setEditedRol(user.rol || user.Rol)
-    setModalVisible(true)
-  }
-
   const handleSave = async () => {
     if (!editedName.trim() || !editedApellidos.trim() || !editedEmail.trim()) {
-      Alert.alert("Error", "Please complete the required fields: Name, Last Name, and Email")
-      return
+      Alert.alert("Error", "Please complete the required fields: Name, Last Name, and Email");
+      return;
     }
     try {
-      const token = await AsyncStorage.getItem('token')
+      const token = await AsyncStorage.getItem('token');
       if (!token) {
-        Alert.alert("Error", "could not find authentication token. Please log in again.")
-        return
+        Alert.alert("Error", "Could not find authentication token. Please log in again.");
+        return;
       }
-      const userId = selectedUser.id || selectedUser._id
+      const userId = selectedUser.id || selectedUser._id;
       const updatedUser = {
         nombre: editedName.trim(),
         apellidos: editedApellidos.trim(),
         correo: editedEmail.trim(),
         puesto: editedPuesto.trim(),
         rol: editedRol,
-      }
+      };
+      
       const response = await fetch(`${BACKEND_URL}/users/${userId}`, {
         method: "PUT",
         headers: {
@@ -119,25 +130,30 @@ const UsersScreen = ({ navigation }) => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(updatedUser),
-      })
+      });
+
       if (!response.ok) {
-        const errorData = await response.json()
-        Alert.alert("Error", errorData.error || "Error while updating user")
-        return
+        const errorData = await response.json();
+        Alert.alert("Error", errorData.error || "Error while updating user");
+        return;
       }
-      // Update users state with updated user data
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
+
+      // Actualizar lista de usuarios
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
           (user.id === userId || user._id === userId) ? { ...user, ...updatedUser } : user
         )
-      )
-      Alert.alert("Éxito", "User successfully updated", )
-      setModalVisible(false)
+      );
+      
+      Alert.alert("Success", "User successfully updated");
+      setEditModalVisible(false); // Cerrar modal de edición
+      setViewModalVisible(false); // Cerrar modal de visualización por si acaso
+      
     } catch (error) {
-      console.error("Error updating user:", error)
-      Alert.alert("Error", "Could not connect to server")
+      console.error("Error updating user:", error);
+      Alert.alert("Error", "Could not connect to server");
     }
-  }
+  };
 
   // Function to get role color based on role name
   const getRoleInfo = (role) => {
@@ -165,26 +181,41 @@ const UsersScreen = ({ navigation }) => {
     }
   }
 
+  // Estilo dinámico para el FAB basado en los safe area insets
+  const fabDynamicStyle = {
+    ...styles.fab,
+    bottom: 80 + insets.bottom, // 80px base + espacio de navegación del sistema
+  }
+
+  // Estilo dinámico para el contenido de la lista
+  const listContentDynamicStyle = {
+    ...styles.listContent,
+    paddingBottom: 150 + insets.bottom, // Padding base + espacio de navegación del sistema
+  }
+
 const renderItem = ({ item }) => {
   const roleInfo = getRoleInfo(item.rol || item.Rol);
   
   return (
     <TouchableOpacity 
       style={styles.userCard} 
-      onPress={() => openUserModal(item)}
+      onPress={() => openViewModal(item)} // Cambiado a openViewModal
     >
       <View style={styles.avatar}>
         <Ionicons name="person" size={24} color="#666" />
       </View>
       <View style={styles.userInfo}>
         <Text style={[styles.userName, { fontFamily: 'Montserrat_700Bold' }]}>
-          {item.nombre || item.name}
+          {item.nombre || item.name || ''} {item.apellidos || item.lastName || ''}
         </Text>
         <Text style={[styles.userEmail, { fontFamily: 'Montserrat_400Regular' }]}>
           {item.correo || item.email}
         </Text>
         <View style={styles.roleContainer}>
-          <Text style={[styles.userRol, { color: roleInfo.color, fontFamily: 'Montserrat_400Regular' }]}>
+          <Text style={[styles.userRol, { 
+            color: roleInfo.color, 
+            fontFamily: 'Montserrat_400Regular' 
+          }]}>
             {roleInfo.emoji} {roleInfo.label}
           </Text>
         </View>
@@ -239,16 +270,16 @@ const renderItem = ({ item }) => {
           data={filteredUsers}
           renderItem={renderItem}
           keyExtractor={item => (item.id || item._id).toString()}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={listContentDynamicStyle}
           style={styles.listContainer}
           showsVerticalScrollIndicator={false}
-        refreshing={loading}
-        onRefresh={async () => {
-          // Refresh users list
-          setUsers([])
-          setLoading(true)
-          try {
-            const token = await AsyncStorage.getItem('token')
+          refreshing={loading}
+          onRefresh={async () => {
+            // Refresh users list
+            setUsers([])
+            setLoading(true)
+            try {
+              const token = await AsyncStorage.getItem('token')
             if (!token) {
               Alert.alert("Error", "Authentication token not found. Please log in again.")
               setLoading(false)
@@ -276,26 +307,91 @@ const renderItem = ({ item }) => {
         }}
         />
         <TouchableOpacity 
-          style={styles.fab} 
+          style={fabDynamicStyle} 
           onPress={() => navigation.navigate('CreateUsers')}
         >
           <Ionicons name="add" size={28} color="white" />
         </TouchableOpacity>
 
-        {/* MODAL */}
+  
+        {/* Modal de Visualización */}
         <Modal
           animationType="slide"
           transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => { 
-            setModalVisible(false); }}
-          style={styles.modalContainer}
+          visible={viewModalVisible}
+          onRequestClose={() => setViewModalVisible(false)}
         >
-          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setModalVisible(false)}>
+          <TouchableOpacity 
+            style={styles.modalOverlay} 
+            activeOpacity={1} 
+            onPress={() => setViewModalVisible(false)}
+          >
+            <View style={styles.viewModalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>User Details</Text>
+                <TouchableOpacity onPress={() => setViewModalVisible(false)}>
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.modalBody}>
+
+                <View style={styles.avatarNameContainers}>
+                  <View style={styles.avatarLarge}>
+                    <Ionicons name="person" size={50} color="#666" />
+                  </View>
+
+                <View style={styles.infoName}>
+                  <Text style={[styles.fullNameText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    {`${selectedUser?.nombre || selectedUser?.name || ''} ${selectedUser?.apellidos || ''}`}
+                  </Text>
+                </View>
+              </View>
+              <View>
+                <View style={{ borderBottomColor: 'rgba(209, 148, 22, 0.4)', borderBottomWidth: 1, marginTop: 5, marginBottom: 15, marginLeft:30,marginRight:30, }} />
+              </View>
+              <View style={styles.infoRow}>
+                <View style={styles.iconoContainer}>
+                  <Ionicons name="mail" size={20} color="#666" />
+                </View>
+                <Text style={styles.infoLabel}>Email:</Text>
+                  <Text style={styles.infoValue}>{selectedUser?.correo || selectedUser?.email}</Text>
+                </View>
+
+
+                <View style={styles.infoRow}>
+                  <View style={styles.iconoContainer}>
+                    <Ionicons name="person" size={20} color="#666"/>
+                  </View>
+                  <Text style={styles.infoLabel}>Role:</Text>
+                  <Text style={[styles.infoValue, { color: getRoleInfo(selectedUser?.rol || selectedUser?.Rol) }]}>
+                    {selectedUser?.rol || selectedUser?.Rol}
+                  </Text>
+                </View>
+
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={openEditModal}
+                >
+                  <Ionicons name="create-outline" size={20} color="white" />
+                  <Text style={[styles.buttonText, { fontFamily: 'Montserrat_600SemiBold' }]}>Edit User</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Modal de Edición */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={editModalVisible}
+          onRequestClose={() => setEditModalVisible(false)}
+        >
+          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setEditModalVisible(false)}>
             <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={() => {}}>
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>Edit User</Text>
-                <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                <TouchableOpacity style={styles.closeButton} onPress={() => setEditModalVisible(false)}>
                   <Ionicons name="close" size={24} color="#666" />
                 </TouchableOpacity>
               </View>
@@ -304,7 +400,7 @@ const renderItem = ({ item }) => {
                 <View style={styles.avatarLarge}>
                   <Ionicons name="person" size={50} color="#666" />
                 </View>
-
+                 <View style={{ borderBottomColor: 'rgba(209, 148, 22, 0.4)', borderBottomWidth: 1, marginTop: 5, marginBottom: 20, marginLeft:30,marginRight:30, }} />
               <View style={styles.inputContainer}>
                 <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Name</Text>
                 <TextInput
@@ -374,8 +470,13 @@ const renderItem = ({ item }) => {
                 )}
               </View>
 
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>Save Changes</Text>
+              <TouchableOpacity 
+                style={styles.saveButton} 
+                onPress={handleSave}
+              >
+                <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>
+                  Save Changes
+                </Text>
               </TouchableOpacity>
               </View>
             </TouchableOpacity>
@@ -410,8 +511,8 @@ const styles = StyleSheet.create({
   },
 
   headerGradient: {
-  paddingTop: 45,
-  paddingBottom: 15,
+  paddingTop: 38,
+  paddingBottom: 10,
   paddingHorizontal: 20,
   borderBottomWidth: 1,
   borderBottomColor: "#eee",
@@ -485,7 +586,7 @@ titleGradient: {
     marginVertical: 10,
     paddingHorizontal: 15,
     height: 45,
-    shadowColor: '#000',
+    shadowColor: '#660154',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -508,11 +609,10 @@ titleGradient: {
 
   listContainer: {
     flex: 1,
-   
   },
   listContent: {
     paddingHorizontal: 15,
-    paddingBottom:80,
+    // paddingBottom se define dinámicamente con listContentDynamicStyle
   },
   userCard: {
     flexDirection: "row",
@@ -520,18 +620,11 @@ titleGradient: {
     backgroundColor: "#fff",
     borderRadius: 12,
     borderColor: "rgba(209, 148, 22, 0.4)",
-    borderWidth: 1.,
+    borderWidth: 1,
     padding: 15,
     marginVertical: 8,
     shadowColor: "rgba(102, 1, 84,0.8)",
     elevation: 5,
- /*    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,*/
   },
    userInfo: {
     flex: 1,
@@ -583,11 +676,10 @@ titleGradient: {
     justifyContent: "space-between",
     alignItems: "center",
     padding: 20,
-    borderBottomRadius: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#660154",
   },
-
   modalBody: {
     padding: 20,
   },
@@ -615,16 +707,21 @@ titleGradient: {
     fontWeight: "500",
   },
   inputContainer: {
-    marginBottom: 15,
+    marginBottom: 8,
   },
     input: { 
-    /* borderWidth: 1,
-    borderColor: "#ddd", */
+    borderWidth: 1,
+    borderColor: "#ccc", 
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     backgroundColor: "#fff",
     marginBottom: 15,
+    shadowColor: "#660154",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
   },
 
   dropdownSelector: {
@@ -634,6 +731,10 @@ titleGradient: {
   borderRadius: 8,
   padding: 12,
   backgroundColor: '#fff',
+  borderWidth: 1,
+  borderColor: '#ccc',
+  shadowColor: '#660154',
+  elevation: 2,
 },
   dropdownSelectorText: {
     fontSize: 16,
@@ -651,7 +752,6 @@ titleGradient: {
 },
   dropdownOption: {
     padding: 12,
-
 },
   dropdownOptionText: {
     fontSize: 16,
@@ -663,6 +763,11 @@ titleGradient: {
     borderRadius: 8,
     alignItems: "center",
     marginTop: 10,
+    shadowColor: "#660154",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   saveButtonText: {
     color: "#fff",
@@ -671,7 +776,7 @@ titleGradient: {
   fab: {
     position: "absolute",
     right: 20,
-    bottom: 100,
+    // bottom se define dinámicamente con fabDynamicStyle
     backgroundColor: "#400135", 
     width: 70,
     height: 70,
@@ -684,6 +789,72 @@ titleGradient: {
     shadowOpacity: 0.25,
     shadowRadius: 5, 
     zIndex: 10,
+  },
+  viewModalContent: {
+    width: "90%",
+    backgroundColor: "#fff",
+    borderRadius: 15,
+ 
+  },
+  avatarNameContainers: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  infoName: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    width: '100%',
+    marginBottom: 15,
+  },
+  fullNameText: {
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    flexWrap: 'wrap',       // permite múltiples líneas
+    maxWidth: '100%',    
+  },
+  iconoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 5,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+  },
+  infoLabel: {
+    fontFamily: 'Montserrat_600SemiBold',
+    color: '#666',
+    fontSize: 16,
+    paddingRight: 10,
+  },
+  infoValue: {
+    fontFamily: 'Montserrat_400Regular',
+    color: '#333',
+    fontSize: 16,
+    width: '90%',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#660154',
+    paddingVertical: 12,
+    marginHorizontal:20,
+    borderRadius: 8,
+    marginTop: 35,
+    shadowColor: '#660154',
+    elevation: 3
+
+  },
+  buttonText: {
+    color: 'white',
+    marginLeft: 8,
+    fontFamily: 'Montserrat_600SemiBold',
   },
 })
 

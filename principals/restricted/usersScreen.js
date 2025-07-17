@@ -139,10 +139,51 @@ const UsersScreen = ({ navigation }) => {
     }
   }
 
+  // Function to delete a user
+  const handleDelete = async () => {
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this user? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+              if (!token) {
+                Alert.alert("Error", "Could not find authentication token. Please log in again.");
+                return;
+              }
+              const userId = selectedUser.id || selectedUser._id;
+              const response = await fetch(`${BACKEND_URL}/users/${userId}`, {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              if (!response.ok) {
+                const errorData = await response.json();
+                Alert.alert("Error", errorData.error || "Error deleting user");
+                return;
+              }
+              setUsers((prevUsers) => prevUsers.filter((user) => (user.id || user._id) !== userId));
+              Alert.alert("Éxito", "User successfully deleted");
+              setModalVisible(false);
+            } catch (error) {
+              console.error("Error deleting user:", error);
+              Alert.alert("Error", "Could not connect to server");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Function to get role color based on role name
   const getRoleInfo = (role) => {
     const roleLower = role?.toLowerCase();
-    
     switch(roleLower) {
       case 'vip': 
         return {
@@ -376,6 +417,9 @@ const renderItem = ({ item }) => {
 
               <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                 <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>Save Changes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                <Text style={[styles.deleteButtonText, { fontFamily: 'Montserrat_700Bold' }]}>Delete User</Text>
               </TouchableOpacity>
               </View>
             </TouchableOpacity>
@@ -684,6 +728,18 @@ titleGradient: {
     shadowOpacity: 0.25,
     shadowRadius: 5, 
     zIndex: 10,
+  },
+
+  deleteButton: {
+    backgroundColor: '#d32f2f',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: '600',
   },
 })
 

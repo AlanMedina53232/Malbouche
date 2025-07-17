@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import * as Location from 'expo-location';
+import * as Network from 'expo-network';
 import {
   View,
   Text,
@@ -51,14 +52,27 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   useEffect(() => {
     const loadEspIpAndRequestLocation = async () => {
       try {
+        // Verificar conectividad de red
+        const networkState = await Network.getNetworkStateAsync();
+        if (!networkState.isConnected) {
+          Alert.alert('Sin conexión', 'Por favor, conecta tu dispositivo a WiFi para comunicarse con el reloj.');
+          return;
+        }
+
         // Solicitar permisos de ubicación en tiempo de ejecución
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert('Permiso requerido', 'Se requiere el permiso de ubicación para comunicarse con el reloj por WiFi.');
         }
+        
         const savedIp = await AsyncStorage.getItem(ESP_IP_KEY);
         if (savedIp) {
           setEspIp(savedIp);
+          // Probar conexión con la IP guardada
+          await testEspConnection(savedIp);
+        } else {
+          // Si no hay IP guardada, mostrar el modal
+          setIpModalVisible(true);
         }
       } catch (e) {
         console.error("Error loading ESP IP o solicitando permisos:", e);
@@ -66,6 +80,37 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     };
     loadEspIpAndRequestLocation();
   }, []);
+
+  // Función para probar la conexión con el ESP32
+  const testEspConnection = async (ip) => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos timeout
+      
+      const response = await fetch(`http://${ip}/`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        console.log('Conexión exitosa con ESP32');
+        return true;
+      } else {
+        console.log('ESP32 no responde correctamente');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error probando conexión ESP32:', error);
+      if (error.name === 'AbortError') {
+        setAlertMessage('Timeout - El reloj no responde. Verifica la IP y que esté conectado a la misma red WiFi.');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 6000);
+      }
+      return false;
+    }
+  };
 
   // Actualizar la variable global ESP_IP cuando cambie espIp
   useEffect(() => {
@@ -366,33 +411,102 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   };
 
   const sendCommand = async (command) => {
-    try {
-      const url = `http://${espIp}/${command.toLowerCase()}`;
-      const response = await fetch(url);
-      const text = await response.text();
-      setAlertMessage("Respuesta", text);
-      setAlertType("success");
+    if (!espIp) {
+      setAlertMessage('No se ha configurado la IP del reloj. Configúrala primero.');
+      setAlertType('error');
       setTimeout(() => setAlertMessage(''), 4000);
-    } catch (error) {
-      setAlertMessage("Error, could not conect to the clock");
-      setAlertType("error");
-      setTimeout(() => setAlertMessage(''), 4000);
+      return;
+    }
 
+    try {
+      // Verificar conectividad antes de enviar comando
+      const networkState = await Network.getNetworkStateAsync();
+      if (!networkState.isConnected) {
+        setAlertMessage('Sin conexión a internet. Verifica tu conexión WiFi.');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 4000);
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+
+      const url = `http://${espIp}/${command.toLowerCase()}`;
+      console.log('Enviando comando a:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const text = await response.text();
+        setAlertMessage(`Comando enviado: ${text}`);
+        setAlertType('success');
+        setTimeout(() => setAlertMessage(''), 4000);
+      } else {
+        setAlertMessage(`Error HTTP: ${response.status} - ${response.statusText}`);
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 4000);
+      }
+    } catch (error) {
+      console.error('Error enviando comando:', error);
+      
+      if (error.name === 'AbortError') {
+        setAlertMessage('Timeout - El reloj no responde. Verifica que esté conectado a la misma red WiFi.');
+      } else if (error.message.includes('Network request failed')) {
+        setAlertMessage('Error de red. Verifica que tu dispositivo y el reloj estén en la misma red WiFi.');
+      } else {
+        setAlertMessage(`Error: ${error.message}`);
+      }
+      
+      setAlertType('error');
+      setTimeout(() => setAlertMessage(''), 6000);
     }
   };
 
-
   const sendSpeed = async (newSpeed) => {
-    try {
-      const url = `http://${espIp}/speed?value=${newSpeed}`;
-      const response = await fetch(url);
-      const text = await response.text();
-      console.log("Velocidad ajustada:", text);
-    } catch (error) {
-      setAlertMessage("Error, could not adjust the speed");
-      setAlertType("error");
-      setTimeout(() => setAlertMessage(''), 4000);
+    if (!espIp) {
+      console.log('No ESP IP configured for speed adjustment');
+      return;
+    }
 
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos timeout
+
+      const url = `http://${espIp}/speed?value=${newSpeed}`;
+      console.log('Enviando velocidad a:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const text = await response.text();
+        console.log("Velocidad ajustada:", text);
+      } else {
+        console.error(`Error ajustando velocidad: ${response.status}`);
+        setAlertMessage('Error ajustando velocidad del reloj');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 4000);
+      }
+    } catch (error) {
+      console.error('Error enviando velocidad:', error);
+      
+      if (error.name !== 'AbortError') {
+        setAlertMessage('Error ajustando velocidad del reloj');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 4000);
+      }
     }
   };
 
@@ -675,18 +789,57 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   autoFocus
                   placeholderTextColor="#aaa"
                 />
+                <Text style={[styles.ipHelpText, { fontFamily: 'Montserrat_400Regular' }]}>
+                  Asegúrate de que tu dispositivo y el reloj estén en la misma red WiFi.
+                </Text>
+                <TouchableOpacity
+                  style={styles.testButton}
+                  onPress={async () => {
+                    if (!ipInput.trim()) {
+                      setAlertMessage('Ingresa una dirección IP válida');
+                      setAlertType('error');
+                      setTimeout(() => setAlertMessage(''), 4000);
+                      return;
+                    }
+                    
+                    setAlertMessage('Probando conexión...');
+                    setAlertType('info');
+                    
+                    const isConnected = await testEspConnection(ipInput);
+                    
+                    if (isConnected) {
+                      setAlertMessage('¡Conexión exitosa! IP válida.');
+                      setAlertType('success');
+                    } else {
+                      setAlertMessage('No se pudo conectar. Verifica la IP y que el reloj esté encendido.');
+                      setAlertType('error');
+                    }
+                    setTimeout(() => setAlertMessage(''), 6000);
+                  }}
+                >
+                  <Text style={[styles.testButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>Probar Conexión</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.saveButton}
                   onPress={async () => {
+                    if (!ipInput.trim()) {
+                      setAlertMessage('Ingresa una dirección IP válida');
+                      setAlertType('error');
+                      setTimeout(() => setAlertMessage(''), 4000);
+                      return;
+                    }
+                    
                     try {
                       await AsyncStorage.setItem(ESP_IP_KEY, ipInput);
                       setEspIp(ipInput);
                       setIpModalVisible(false);
-                      setAlertMessage('Success, the IP address has been saved successfully.');
+                      setAlertMessage('IP guardada exitosamente.');
                       setAlertType('success');
                       setTimeout(() => setAlertMessage(''), 4000);
                     } catch (e) {
-                      setAlertMessage('Error, could not save the IP address.');
+                      setAlertMessage('Error al guardar la IP.');
+                      setAlertType('error');
+                      setTimeout(() => setAlertMessage(''), 4000);
                     }
                   }}
                 >
@@ -1065,6 +1218,24 @@ activeButton: {
     marginBottom: 16,
     fontSize: 16,
     backgroundColor: '#fafafa',
+  },
+  ipHelpText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 16,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  testButton: {
+    backgroundColor: '#007bff',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 14,
   },
   saveButton: {
     backgroundColor: '#660154',

@@ -2,110 +2,158 @@
 
 ## Problema: La aplicación no se conecta al Arduino ESP32 en la APK
 
-### Soluciones Implementadas:
+### Soluciones Implementadas (Versión 2.0):
 
 1. **Network Security Config mejorado**
    - Archivo: `res/xml/network_security_config.xml`
    - Permite tráfico HTTP (cleartext) para redes locales
-   - Incluye configuración para todas las redes privadas (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+   - Configuración base para permitir tráfico no seguro
 
 2. **Permisos adicionales en Android**
    - Archivo: `app.json`
-   - Agregados: `ACCESS_COARSE_LOCATION`, `CHANGE_NETWORK_STATE`, `WAKE_LOCK`
    - `usesCleartextTraffic: true` para permitir HTTP
+   - Permisos de red y ubicación completos
 
-3. **Verificación de conectividad**
-   - Archivo: `principals/restricted/main.js`
-   - Chequeo de estado de red antes de enviar comandos
-   - Manejo de timeouts y errores mejorado
-
-4. **Prueba de conexión**
-   - Botón "Probar Conexión" en el modal de configuración IP
+3. **Funciones de conexión mejoradas**
+   - Archivo: `utils/networkHelper.js`
+   - Múltiples métodos de conexión para Android
+   - Escaneo automático de red local
    - Validación de formato IP
-   - Timeout de 5-10 segundos para evitar bloqueos
+
+4. **Interface mejorada**
+   - Botón "Escanear Red" para encontrar automáticamente el ESP32
+   - Mejor manejo de errores y timeouts
+   - Debugging detallado
+
+### Nuevas Funcionalidades:
+
+#### 1. **Escaneo Automático de Red**
+- Botón "Escanear Red" en el modal de configuración
+- Escanea automáticamente redes comunes (192.168.1.x, 192.168.0.x, etc.)
+- Detecta automáticamente dispositivos que respondan en puerto 80
+
+#### 2. **Múltiples Métodos de Conexión**
+- Para Android: intenta 3 métodos diferentes de conexión
+- Headers personalizados para mejor compatibilidad
+- Timeouts ajustables por método
+
+#### 3. **Debugging Avanzado**
+- Endpoint `/status` en el ESP32 para información detallada
+- Endpoint `/test` para pruebas rápidas
+- Script de debugging (`debug_esp32.sh`) para diagnóstico
 
 ### Pasos para Resolver el Problema:
 
-1. **Instalar dependencias**:
-   ```bash
-   npm install expo-network
-   ```
+1. **Actualizar código del Arduino**:
+   - Usa el archivo `arduino_code_improved.ino`
+   - Incluye endpoints de debugging adicionales
+   - Mejor manejo de CORS
 
-2. **Verificar configuración del ESP32**:
-   - Asegúrate de que el Arduino esté conectado a la misma red WiFi
-   - Verifica que el servidor web esté funcionando (puerto 80)
-   - Comprueba que no haya firewall bloqueando el puerto
-
-3. **Configurar IP en la aplicación**:
+2. **Configurar IP en la aplicación**:
    - Abre la aplicación y ve a configuración de IP
-   - Ingresa la IP del Arduino ESP32
-   - Usa el botón "Probar Conexión" para verificar
+   - Usa "Escanear Red" para encontrar automáticamente el ESP32
+   - Si no funciona, ingresa la IP manualmente
+   - Usa "Probar Conexión" para verificar
 
-4. **Verificar red WiFi**:
-   - Dispositivo Android y ESP32 deben estar en la misma red
+3. **Verificar configuración de red**:
+   - Dispositivo Android y ESP32 deben estar en la misma red WiFi
    - Evita redes de invitados o con aislamiento de dispositivos
-   - Verifica que la red permite comunicación entre dispositivos
+   - Verifica que el router no tenga AP isolation activado
 
-5. **Crear nueva APK**:
+4. **Crear nueva APK**:
    ```bash
-   npx expo build:android
-   # o
+   # Instalar dependencias
+   npm install
+   
+   # Crear APK
    eas build --platform android
+   # o
+   npx expo build:android --type apk
    ```
 
-### Debugging Adicional:
-
-Si el problema persiste, usa estos comandos para debugging:
-
-1. **Verificar estado de red**:
-   ```javascript
-   import { checkNetworkStatus } from '../utils/networkHelper';
-   const networkStatus = await checkNetworkStatus();
-   console.log('Network status:', networkStatus);
+5. **Debugging con script**:
+   ```bash
+   # En Linux/Mac
+   chmod +x debug_esp32.sh
+   ./debug_esp32.sh 192.168.1.100
+   
+   # En Windows (PowerShell)
+   # Usar equivalente con curl o PowerShell
    ```
 
-2. **Obtener IP local**:
-   ```javascript
-   import { getLocalIP } from '../utils/networkHelper';
-   const localIP = await getLocalIP();
-   console.log('Local IP:', localIP);
+### Debugging Paso a Paso:
+
+1. **Verificar que el ESP32 responde**:
+   ```bash
+   curl http://192.168.1.100/test
+   # Debería responder: TEST_OK
    ```
 
-3. **Validar formato IP**:
-   ```javascript
-   import { validateIPFormat } from '../utils/networkHelper';
-   const isValid = validateIPFormat('192.168.1.100');
-   console.log('IP válida:', isValid);
+2. **Verificar estado del ESP32**:
+   ```bash
+   curl http://192.168.1.100/status
+   # Debería mostrar JSON con estado
    ```
 
-### Posibles Problemas Adicionales:
+3. **Probar comandos**:
+   ```bash
+   curl http://192.168.1.100/stop
+   curl http://192.168.1.100/left
+   curl http://192.168.1.100/speed?value=50
+   ```
 
-1. **Versión de Android**:
-   - Android 9+ tiene restricciones más estrictas de HTTP
-   - Asegúrate de que `usesCleartextTraffic` esté en `true`
+### Problemas Comunes y Soluciones:
 
-2. **Configuración del Router**:
-   - Algunos routers tienen aislamiento de dispositivos activado
-   - Verifica configuración AP isolation
+#### 1. **"Network request failed"**
+- **Causa**: Problema de conectividad de red
+- **Solución**: Verificar que ambos dispositivos estén en la misma red WiFi
+- **Test**: `ping [IP_DEL_ESP32]` desde el PC
 
-3. **Firewall del dispositivo**:
-   - Algunos dispositivos tienen firewall integrado
-   - Asegúrate de que no bloquee el puerto 80
+#### 2. **"AbortError" / Timeout**
+- **Causa**: ESP32 no responde en tiempo establecido
+- **Solución**: Verificar que el ESP32 esté encendido y funcionando
+- **Test**: Acceder a `http://[IP_DEL_ESP32]` desde un navegador
 
-4. **Configuración de DNS**:
-   - Usa IP directa en lugar de nombres de dominio
-   - Evita usar localhost o 127.0.0.1
+#### 3. **"HTTP 404"**
+- **Causa**: Endpoint no encontrado en el ESP32
+- **Solución**: Verificar que el código del Arduino esté actualizado
+- **Test**: Usar endpoints de debugging como `/test`
 
-### Códigos de Error Comunes:
+#### 4. **Funciona en desarrollo pero no en APK**
+- **Causa**: Restricciones de seguridad de Android
+- **Solución**: 
+  - Verificar `usesCleartextTraffic: true` en `app.json`
+  - Verificar `network_security_config.xml`
+  - Verificar permisos de red
+  - Usar la función `connectToESP32Android()`
 
-- **Network request failed**: Problema de conectividad de red
-- **AbortError**: Timeout de conexión
-- **HTTP 404**: Endpoint no encontrado en el ESP32
-- **Connection refused**: ESP32 no está escuchando en el puerto
+### Códigos de Error Específicos:
 
-### Notas Importantes:
+- **TEST_OK**: Conexión exitosa con ESP32
+- **Timeout**: ESP32 no responde (verificar IP y red)
+- **Network request failed**: Problema de conectividad
+- **HTTP 404**: Endpoint no encontrado (actualizar código Arduino)
+- **Connection refused**: Puerto 80 cerrado o ESP32 apagado
 
-- El problema NO ocurre en modo desarrollo (Expo Go) porque usa proxy
-- La APK ejecuta directamente en el dispositivo sin proxy
-- Las restricciones de seguridad son más estrictas en aplicaciones empaquetadas
-- Es importante probar en la misma red WiFi donde funcionó en desarrollo
+### Notas de Implementación:
+
+1. **Para Android**: Se usan múltiples métodos de conexión automáticamente
+2. **Para iOS**: Se usa el método estándar con timeouts
+3. **Para desarrollo**: Funciona normalmente con Expo proxy
+4. **Para producción**: Usa conexión directa con validaciones
+
+### Archivos Importantes:
+
+- `utils/networkHelper.js`: Funciones de conectividad
+- `res/xml/network_security_config.xml`: Configuración de seguridad
+- `app.json`: Permisos y configuración de Android
+- `arduino_code_improved.ino`: Código mejorado del ESP32
+- `debug_esp32.sh`: Script de debugging
+
+### Contacto y Soporte:
+
+Si el problema persiste después de seguir esta guía:
+1. Ejecuta el script de debugging
+2. Verifica los logs de la aplicación
+3. Comprueba que el ESP32 responda a los endpoints de test
+4. Verifica la configuración de red del router

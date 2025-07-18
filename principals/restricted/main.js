@@ -221,7 +221,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   const options = [
     ["Left", "Right"],
     ["Crazy", "Swing"],
-    ["Normal"]
+    ["Custom","Normal"]
   ];
 
   // Preset names to exclude from custom movements

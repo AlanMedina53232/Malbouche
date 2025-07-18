@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import * as Location from 'expo-location';
+import * as Network from 'expo-network';
+import { Platform } from 'react-native';
 import {
   View,
   Text,
@@ -21,6 +23,17 @@ import { Ionicons } from '@expo/vector-icons';
 import FrameImage from '../../assets/marcoReloj.png';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { 
+  checkNetworkStatus, 
+  validateIPFormat, 
+  pingESP32, 
+  connectToESP32Android, 
+  scanLocalNetwork,
+  scanLocalNetworkFast,
+  scanMultipleNetworks,
+  getScanStatistics,
+  isLocalNetwork
+} from '../../utils/networkHelper';
 
 
 
@@ -42,23 +55,96 @@ const MainRest = ({ navigation }) => {
   const [ipModalVisible, setIpModalVisible] = useState(false);
   const [espIp, setEspIp] = useState("");
   const [ipInput, setIpInput] = useState("");
-
+  const [isScanning, setIsScanning] = useState(false);
+  const [scannedDevices, setScannedDevices] = useState([]);
+  const [scanProgress, setScanProgress] = useState(null);
+  const [deviceSelectionVisible, setDeviceSelectionVisible] = useState(false);
+  const [fastScanMode, setFastScanMode] = useState(false);
   
 const [alertMessage, setAlertMessage] = useState('');
 const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
+
+  // Función para escanear red local
+  const scanForESP32 = async (fastMode = false) => {
+    setIsScanning(true);
+    setScannedDevices([]);
+    setScanProgress(null);
+    setAlertMessage(`Iniciando escaneo ${fastMode ? 'rápido' : 'completo'}...`);
+    setAlertType('info');
+    
+    try {
+      // Verificar conectividad
+      const networkStatus = await checkNetworkStatus();
+      if (!networkStatus.isConnected) {
+        setAlertMessage('Sin conexión WiFi. Conecta a una red primero.');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 4000);
+        return;
+      }
+
+      // Escanear múltiples redes con callback de progreso
+      const devices = await scanMultipleNetworks((progress) => {
+        setScanProgress(progress);
+        setAlertMessage(`${progress.message} ${fastMode ? '(Modo rápido)' : '(Modo completo)'}`);
+      }, fastMode);
+      
+      setScannedDevices(devices);
+      
+      if (devices.length > 0) {
+        setAlertMessage(`Encontrados ${devices.length} dispositivos. Selecciona el tuyo.`);
+        setAlertType('success');
+        setDeviceSelectionVisible(true);
+      } else {
+        setAlertMessage('No se encontraron dispositivos. Ingresa la IP manualmente.');
+        setAlertType('warning');
+      }
+      
+      setTimeout(() => setAlertMessage(''), 6000);
+    } catch (error) {
+      console.error('Error escaneando red:', error);
+      setAlertMessage('Error escaneando red. Intenta ingresar la IP manualmente.');
+      setAlertType('error');
+      setTimeout(() => setAlertMessage(''), 4000);
+    } finally {
+      setIsScanning(false);
+      setScanProgress(null);
+    }
+  };
+
+  // Función para seleccionar un dispositivo de la lista
+  const selectDevice = (device) => {
+    setIpInput(device.ip);
+    setDeviceSelectionVisible(false);
+    setAlertMessage(`Dispositivo seleccionado: ${device.ip}`);
+    setAlertType('success');
+    setTimeout(() => setAlertMessage(''), 3000);
+  };
 
   // Cargar la IP guardada al iniciar y pedir permisos de ubicación
   useEffect(() => {
     const loadEspIpAndRequestLocation = async () => {
       try {
+        // Verificar conectividad de red
+        const networkState = await Network.getNetworkStateAsync();
+        if (!networkState.isConnected) {
+          Alert.alert('Sin conexión', 'Por favor, conecta tu dispositivo a WiFi para comunicarse con el reloj.');
+          return;
+        }
+
         // Solicitar permisos de ubicación en tiempo de ejecución
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert('Permiso requerido', 'Se requiere el permiso de ubicación para comunicarse con el reloj por WiFi.');
         }
+        
         const savedIp = await AsyncStorage.getItem(ESP_IP_KEY);
         if (savedIp) {
           setEspIp(savedIp);
+          // Probar conexión con la IP guardada
+          await testEspConnection(savedIp);
+        } else {
+          // Si no hay IP guardada, mostrar el modal
+          setIpModalVisible(true);
         }
       } catch (e) {
         console.error("Error loading ESP IP o solicitando permisos:", e);
@@ -66,6 +152,60 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     };
     loadEspIpAndRequestLocation();
   }, []);
+
+  // Función para probar la conexión con el ESP32
+  const testEspConnection = async (ip) => {
+    try {
+      if (!validateIPFormat(ip)) {
+        setAlertMessage('Formato de IP inválido. Use formato: 192.168.1.100');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 4000);
+        return false;
+      }
+
+      if (!isLocalNetwork(ip)) {
+        setAlertMessage('Advertencia: La IP no parece ser de red local');
+        setAlertType('warning');
+        setTimeout(() => setAlertMessage(''), 4000);
+      }
+
+      // Verificar conectividad de red primero
+      const networkStatus = await checkNetworkStatus();
+      if (!networkStatus.isConnected) {
+        setAlertMessage('Sin conexión de red. Conecta a WiFi primero.');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 4000);
+        return false;
+      }
+
+      console.log('Probando conexión con ESP32:', ip);
+      
+      // Usar la función específica para Android
+      if (Platform.OS === 'android') {
+        const result = await connectToESP32Android(ip, '', 8000);
+        console.log('Resultado conexión Android:', result);
+        return result.success;
+      } else {
+        // Para iOS o desarrollo, usar ping normal
+        const result = await pingESP32(ip, 5000);
+        console.log('Resultado ping:', result);
+        return result.success;
+      }
+    } catch (error) {
+      console.error('Error probando conexión ESP32:', error);
+      
+      if (error.name === 'AbortError') {
+        setAlertMessage('Timeout - El reloj no responde. Verifica la IP y que esté conectado a la misma red WiFi.');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 6000);
+      } else {
+        setAlertMessage(`Error de conexión: ${error.message}`);
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 6000);
+      }
+      return false;
+    }
+  };
 
   // Actualizar la variable global ESP_IP cuando cambie espIp
   useEffect(() => {
@@ -81,7 +221,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   const options = [
     ["Left", "Right"],
     ["Crazy", "Swing"],
-    ["Normal"]
+    ["Custom","Normal"]
   ];
 
   // Preset names to exclude from custom movements
@@ -366,33 +506,131 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   };
 
   const sendCommand = async (command) => {
+    if (!espIp) {
+      setAlertMessage('No se ha configurado la IP del reloj. Configúrala primero.');
+      setAlertType('error');
+      setTimeout(() => setAlertMessage(''), 4000);
+      return;
+    }
+
     try {
-      const url = `http://${espIp}/${command.toLowerCase()}`;
-      const response = await fetch(url);
-      const text = await response.text();
-      setAlertMessage("Respuesta", text);
-      setAlertType("success");
+      // Verificar conectividad antes de enviar comando
+      const networkState = await checkNetworkStatus();
+      if (!networkState.isConnected) {
+        setAlertMessage('Sin conexión a internet. Verifica tu conexión WiFi.');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 4000);
+        return;
+      }
+
+      console.log('Enviando comando:', command, 'a IP:', espIp);
+      
+      // Usar función específica para Android
+      if (Platform.OS === 'android') {
+        const result = await connectToESP32Android(espIp, command, 10000);
+        
+        if (result.success) {
+          setAlertMessage(`Comando enviado exitosamente: ${result.data}`);
+          setAlertType('success');
+          console.log(`Comando enviado con método ${result.method}`);
+        } else {
+          throw new Error('Falló conexión con ESP32');
+        }
+      } else {
+        // Para iOS o desarrollo
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        const url = `http://${espIp}/${command.toLowerCase()}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const text = await response.text();
+          setAlertMessage(`Comando enviado: ${text}`);
+          setAlertType('success');
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      }
+      
       setTimeout(() => setAlertMessage(''), 4000);
     } catch (error) {
-      setAlertMessage("Error, could not conect to the clock");
-      setAlertType("error");
-      setTimeout(() => setAlertMessage(''), 4000);
-
+      console.error('Error enviando comando:', error);
+      
+      let errorMessage = 'Error de conexión con el reloj';
+      
+      if (error.name === 'AbortError') {
+        errorMessage = 'Timeout - El reloj no responde. Verifica que esté conectado a la misma red WiFi.';
+      } else if (error.message.includes('Network request failed')) {
+        errorMessage = 'Error de red. Verifica que tu dispositivo y el reloj estén en la misma red WiFi.';
+      } else if (error.message.includes('Falló conexión')) {
+        errorMessage = 'No se pudo establecer conexión con el reloj. Verifica la IP y que esté encendido.';
+      } else {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      setAlertMessage(errorMessage);
+      setAlertType('error');
+      setTimeout(() => setAlertMessage(''), 6000);
     }
   };
 
-
   const sendSpeed = async (newSpeed) => {
-    try {
-      const url = `http://${espIp}/speed?value=${newSpeed}`;
-      const response = await fetch(url);
-      const text = await response.text();
-      console.log("Velocidad ajustada:", text);
-    } catch (error) {
-      setAlertMessage("Error, could not adjust the speed");
-      setAlertType("error");
-      setTimeout(() => setAlertMessage(''), 4000);
+    if (!espIp) {
+      console.log('No ESP IP configured for speed adjustment');
+      return;
+    }
 
+    try {
+      // Usar función específica para Android
+      if (Platform.OS === 'android') {
+        const result = await connectToESP32Android(espIp, `speed?value=${newSpeed}`, 8000);
+        
+        if (result.success) {
+          console.log("Velocidad ajustada:", result.data);
+        } else {
+          throw new Error('Falló ajuste de velocidad');
+        }
+      } else {
+        // Para iOS o desarrollo
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+        const url = `http://${espIp}/speed?value=${newSpeed}`;
+        console.log('Enviando velocidad a:', url);
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const text = await response.text();
+          console.log("Velocidad ajustada:", text);
+        } else {
+          throw new Error(`HTTP ${response.status}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error enviando velocidad:', error);
+      
+      if (error.name !== 'AbortError') {
+        setAlertMessage('Error ajustando velocidad del reloj');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 4000);
+      }
     }
   };
 
@@ -445,6 +683,59 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={20} color="#666" />
+      </TouchableOpacity>
+    );
+  };
+
+  // Render device item for selection
+  const renderDeviceItem = ({ item }) => {
+    const deviceInfo = item.deviceInfo || {};
+    const isRecommended = deviceInfo.isTarget;
+    
+    return (
+      <TouchableOpacity
+        style={[
+          styles.deviceItem,
+          isRecommended && styles.deviceItemRecommended
+        ]}
+        onPress={() => selectDevice(item)}
+      >
+        <View style={styles.deviceInfo}>
+          <View style={styles.deviceHeader}>
+            <Text style={[
+              styles.deviceIP,
+              isRecommended && styles.deviceIPRecommended
+            ]}>
+              {item.ip}
+            </Text>
+            {isRecommended && (
+              <View style={styles.recommendedBadge}>
+                <Text style={styles.recommendedText}>RECOMENDADO</Text>
+              </View>
+            )}
+          </View>
+          
+          <Text style={styles.deviceDescription}>
+            {deviceInfo.description || 'Dispositivo HTTP'}
+          </Text>
+          
+          <View style={styles.deviceStats}>
+            <Text style={styles.deviceStat}>
+              Tiempo: {item.responseTime}ms
+            </Text>
+            <Text style={styles.deviceStat}>
+              Estado: {item.status}
+            </Text>
+          </View>
+        </View>
+        
+        <View style={styles.deviceAction}>
+          <Ionicons 
+            name="chevron-forward" 
+            size={20} 
+            color={isRecommended ? "#660154" : "#666"} 
+          />
+        </View>
       </TouchableOpacity>
     );
   };
@@ -675,22 +966,148 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   autoFocus
                   placeholderTextColor="#aaa"
                 />
+                <Text style={[styles.ipHelpText, { fontFamily: 'Montserrat_400Regular' }]}>
+                  Asegúrate de que tu dispositivo y el reloj estén en la misma red WiFi.
+                </Text>
+                
+                <View style={styles.scanButtonsContainer}>
+                  <TouchableOpacity
+                    style={[styles.scanButton, styles.scanButtonFast, isScanning && styles.scanButtonDisabled]}
+                    onPress={() => scanForESP32(true)}
+                    disabled={isScanning}
+                  >
+                    <Text style={[styles.scanButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                      {isScanning ? 'Escaneando...' : 'Escaneo Rápido'}
+                    </Text>
+                    <Text style={[styles.scanButtonSubtext, { fontFamily: 'Montserrat_400Regular' }]}>
+                      ~2 min
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.scanButton, styles.scanButtonComplete, isScanning && styles.scanButtonDisabled]}
+                    onPress={() => scanForESP32(false)}
+                    disabled={isScanning}
+                  >
+                    <Text style={[styles.scanButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                      {isScanning ? (scanProgress ? scanProgress.message : 'Escaneando...') : 'Escaneo Completo'}
+                    </Text>
+                    <Text style={[styles.scanButtonSubtext, { fontFamily: 'Montserrat_400Regular' }]}>
+                      ~4 min
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={styles.testButton}
+                  onPress={async () => {
+                    if (!ipInput.trim()) {
+                      setAlertMessage('Ingresa una dirección IP válida');
+                      setAlertType('error');
+                      setTimeout(() => setAlertMessage(''), 4000);
+                      return;
+                    }
+                    
+                    setAlertMessage('Probando conexión...');
+                    setAlertType('info');
+                    
+                    const isConnected = await testEspConnection(ipInput);
+                    
+                    if (isConnected) {
+                      setAlertMessage('¡Conexión exitosa! IP válida.');
+                      setAlertType('success');
+                    } else {
+                      setAlertMessage('No se pudo conectar. Verifica la IP y que el reloj esté encendido.');
+                      setAlertType('error');
+                    }
+                    setTimeout(() => setAlertMessage(''), 6000);
+                  }}
+                >
+                  <Text style={[styles.testButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>Probar Conexión</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.saveButton}
                   onPress={async () => {
+                    if (!ipInput.trim()) {
+                      setAlertMessage('Ingresa una dirección IP válida');
+                      setAlertType('error');
+                      setTimeout(() => setAlertMessage(''), 4000);
+                      return;
+                    }
+                    
                     try {
                       await AsyncStorage.setItem(ESP_IP_KEY, ipInput);
                       setEspIp(ipInput);
                       setIpModalVisible(false);
-                      setAlertMessage('Success, the IP address has been saved successfully.');
+                      setAlertMessage('IP guardada exitosamente.');
                       setAlertType('success');
                       setTimeout(() => setAlertMessage(''), 4000);
                     } catch (e) {
-                      setAlertMessage('Error, could not save the IP address.');
+                      setAlertMessage('Error al guardar la IP.');
+                      setAlertType('error');
+                      setTimeout(() => setAlertMessage(''), 4000);
                     }
                   }}
                 >
                   <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal para seleccionar dispositivo */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={deviceSelectionVisible}
+          onRequestClose={() => setDeviceSelectionVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.deviceModalContent}>
+              <View style={styles.deviceModalHeader}>
+                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
+                  Seleccionar Dispositivo
+                </Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setDeviceSelectionVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.deviceModalBody}>
+                <Text style={[styles.deviceModalSubtitle, { fontFamily: 'Montserrat_500Medium' }]}>
+                  Encontrados {scannedDevices.length} dispositivos:
+                </Text>
+                
+                {scannedDevices.length > 0 && (
+                  <View style={styles.scanInfoContainer}>
+                    <Text style={[styles.scanInfoText, { fontFamily: 'Montserrat_400Regular' }]}>
+                      💡 Los dispositivos marcados como "RECOMENDADO" son más probables de ser tu reloj ESP32
+                    </Text>
+                  </View>
+                )}
+                
+                <FlatList
+                  data={scannedDevices}
+                  renderItem={renderDeviceItem}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={false}
+                  style={styles.devicesList}
+                  contentContainerStyle={styles.devicesListContent}
+                />
+                
+                <TouchableOpacity
+                  style={styles.manualButton}
+                  onPress={() => {
+                    setDeviceSelectionVisible(false);
+                    // IP modal ya está abierto, solo cerramos este
+                  }}
+                >
+                  <Text style={[styles.manualButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    Ingresar IP Manualmente
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1066,6 +1483,59 @@ activeButton: {
     fontSize: 16,
     backgroundColor: '#fafafa',
   },
+  ipHelpText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 16,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  scanButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    gap: 10,
+  },
+  scanButton: {
+    flex: 1,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  scanButtonFast: {
+    backgroundColor: '#28a745',
+  },
+  scanButtonComplete: {
+    backgroundColor: '#007bff',
+  },
+  scanButtonDisabled: {
+    backgroundColor: '#6c757d',
+    opacity: 0.7,
+  },
+  scanButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  scanButtonSubtext: {
+    color: '#fff',
+    fontSize: 10,
+    opacity: 0.8,
+  },
+  testButton: {
+    backgroundColor: '#007bff',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 14,
+  },
   saveButton: {
     backgroundColor: '#660154',
     borderRadius: 8,
@@ -1076,6 +1546,117 @@ activeButton: {
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
+  },
+  // Estilos para el modal de selección de dispositivos
+  deviceModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    margin: 20,
+    maxHeight: '80%',
+  },
+  deviceModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  deviceModalBody: {
+    flex: 1,
+  },
+  deviceModalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 15,
+  },
+  scanInfoContainer: {
+    backgroundColor: '#e7f3ff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#007bff',
+  },
+  scanInfoText: {
+    fontSize: 12,
+    color: '#0056b3',
+    lineHeight: 16,
+  },
+  devicesList: {
+    flex: 1,
+    marginBottom: 15,
+  },
+  devicesListContent: {
+    paddingBottom: 10,
+  },
+  deviceItem: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  deviceItemRecommended: {
+    backgroundColor: '#f0f8ff',
+    borderColor: '#660154',
+    borderWidth: 2,
+  },
+  deviceInfo: {
+    flex: 1,
+  },
+  deviceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  deviceIP: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  deviceIPRecommended: {
+    color: '#660154',
+  },
+  recommendedBadge: {
+    backgroundColor: '#660154',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  recommendedText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  deviceDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  deviceStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  deviceStat: {
+    fontSize: 12,
+    color: '#888',
+  },
+  deviceAction: {
+    padding: 10,
+  },
+  manualButton: {
+    backgroundColor: '#6c757d',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  manualButtonText: {
+    color: '#fff',
+    fontSize: 14,
   },
 alertContainer: {
   padding: 10,

@@ -77,12 +77,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 5,
+    
   },
   navItem: {
     alignItems: "center",
     justifyContent: "center",
     flex: 1,
     paddingHorizontal: 10,
+  
   },
   navText: {
     fontSize: 12,

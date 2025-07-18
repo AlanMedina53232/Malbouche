@@ -22,12 +22,16 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.tuempresa.malbouche",
+      "usesCleartextTraffic": true,
       "permissions": [
         "INTERNET",
         "ACCESS_WIFI_STATE",
         "CHANGE_WIFI_STATE",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_NETWORK_STATE",
+        "CHANGE_NETWORK_STATE",
+        "WAKE_LOCK"
       ],
       "networkSecurityConfig": "res/xml/network_security_config.xml"
     },

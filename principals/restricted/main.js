@@ -232,7 +232,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        setAlertMessage("Authentication error, please log in again.");
+                  setAlertMessage("Authentication error please log in again.");
         setAlertType("error");
         setTimeout(() => setAlertMessage(''), 4000);
         navigation.replace('Login');
@@ -251,9 +251,13 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   // Fetch custom movements from backend
   const fetchCustomMovements = async () => {
     setLoadingMovements(true);
+    setCustomMovements([]); // Limpiar la lista antes de cargar nuevos datos
+    
     try {
+      console.log("Fetching custom movements...");
       const token = await getAuthToken();
       if (!token) {
+        console.log("No authentication token available");
         setLoadingMovements(false);
         return;
       }
@@ -281,10 +285,14 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         const filteredMovements = data.data.filter(movement => 
           !PRESET_NAMES.includes(movement.nombre?.toLowerCase())
         );
+        console.log("Custom movements loaded:", filteredMovements.length);
+        if (filteredMovements.length === 0) {
+          console.log("No custom movements after filtering");
+        }
         setCustomMovements(filteredMovements);
       } else {
         console.error("Invalid movements data format:", data);
-        setAlertMessage("Error", "Invalid data format from movements API.");
+        setAlertMessage("Invalid data format from movements API.");
         setAlertType("error");
         setTimeout(() => setAlertMessage(''), 4000);
       }
@@ -300,8 +308,8 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
   // Handle preset button press: POST /api/movimiento-actual/:preset with optional speed
   const handlePresetSelect = async (preset) => {
-    // If customized is selected, show modal instead of making API call
-    if (preset === "customized") {
+    // If Custom is selected, show modal instead of making API call
+    if (preset === "Custom") {
       setCustomModalVisible(true);
       fetchCustomMovements();
       return;
@@ -398,16 +406,16 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
       if (!response.ok) {
         console.error("Custom movement update error:", data);
         if (response.status === 404) {
-          setAlertMessage("Error", `Movement '${movement.nombre}' not found.`);
+          setAlertMessage(`Movement '${movement.nombre}' not found.`);
           setAlertType("error");
           setTimeout(() => setAlertMessage(''), 4000);
         } else if (response.status === 401) {
-          setAlertMessage("Authentication erro please log in again.");
+          setAlertMessage("Authentication error please log in again.");
           setAlertType("error");
           setTimeout(() => setAlertMessage(''), 4000);
           navigation.replace('Login');
         } else {
-          setAlertMessage("Error", data.error || "Failed to update movement.");
+          setAlertMessage(data.error || "Failed to update movement.");
           setAlertType("error");
           setTimeout(() => setAlertMessage(''), 4000);
         }
@@ -417,13 +425,13 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
       // Update local state with returned data
       if (data.success && data.data) {
-        setSelectedOption("customized");
+        setSelectedOption("Custom");
         if (data.data.movimiento?.horas?.velocidad) {
           setSpeed(data.data.movimiento.horas.velocidad);
         }
         console.log("Custom movement updated successfully:", movement.nombre);
       } else {
-        setSelectedOption("customized");
+        setSelectedOption("Custom");
         console.log("Custom movement updated (no data returned):", movement.nombre);
       }
 
@@ -637,7 +645,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
   const handleOptionSelect = (option) => {
     setSelectedOption(option);
-     if(option.toLowerCase() === "customized") {
+     if(option === "Custom") {
       sendCommand("stop");
     } else {
       sendCommand(option.toLowerCase());
@@ -803,8 +811,14 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                 <TouchableOpacity
                   key={item}
                   onPress={() => {
-                    handlePresetSelect(item);
-                    handleOptionSelect(item);
+                    if (item === "Custom") {
+                      setCustomModalVisible(true);
+                      fetchCustomMovements();
+                      setSelectedOption(item);
+                    } else {
+                      handlePresetSelect(item);
+                      handleOptionSelect(item);
+                    }
                   }}
                   disabled={loading}
                   style={{ flex: 1 }} // <- Esto es importante
@@ -850,6 +864,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   onSlidingComplete={(val) => {
                     setSpeed(val);
                     sendSpeed(val);
+                    sendSpeedUpdate(val); // Update speed in the database
                   }}
                   minimumTrackTintColor="#000"
                   maximumTrackTintColor="#aaa"
@@ -921,14 +936,27 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     <Text style={styles.emptyStateSubtext}>
                       Create custom movements in the Movements section
                     </Text>
+                    <TouchableOpacity 
+                      style={styles.refreshButton}
+                      onPress={fetchCustomMovements}
+                    >
+                      <Text style={styles.refreshButtonText}>Refresh</Text>
+                    </TouchableOpacity>
                   </View>
                 ) : (
                   <FlatList
                     data={customMovements}
                     renderItem={renderCustomMovementItem}
-                    keyExtractor={(item) => item.id}
-                    showsVerticalScrollIndicator={false}
+                    keyExtractor={(item) => item.id || item.nombre || Math.random().toString()}
+                    showsVerticalScrollIndicator={true}
                     style={styles.customMovementsList}
+                    contentContainerStyle={{paddingBottom: 20}}
+                    ListEmptyComponent={
+                      <View style={styles.emptyStateContainer}>
+                        <Ionicons name="folder-open-outline" size={48} color="#ccc" />
+                        <Text style={styles.emptyStateText}>No custom movements found</Text>
+                      </View>
+                    }
                   />
                 )}
               </View>
@@ -1380,10 +1408,12 @@ activeButton: {
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 20,
   },
   modalContent: {
     width: '90%',
     maxWidth: 400,
+    minHeight: 300, // Añadir altura mínima
     maxHeight: '80%',
     backgroundColor: 'white',
     borderRadius: 20,
@@ -1414,6 +1444,7 @@ activeButton: {
   modalBody: {
     flex: 1,
     padding: 20,
+    minHeight: 200, // Añadir altura mínima para el cuerpo
   },
   modalLoadingContainer: {
     flex: 1,
@@ -1446,8 +1477,21 @@ activeButton: {
     textAlign: 'center',
     paddingHorizontal: 20,
   },
+  refreshButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#660154',
+    borderRadius: 8,
+  },
+  refreshButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
   customMovementsList: {
     flex: 1,
+    minHeight: 150, // Asegurar una altura mínima para la lista
+    width: '100%',
   },
   customMovementItem: {
     flexDirection: 'row',

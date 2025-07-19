@@ -35,7 +35,7 @@ import {
   isLocalNetwork
 } from '../../utils/networkHelper';
 
-
+import ESP32Service from '../../utils/ESP32Service';
 
 
 
@@ -156,53 +156,28 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   // Función para probar la conexión con el ESP32
   const testEspConnection = async (ip) => {
     try {
-      if (!validateIPFormat(ip)) {
-        setAlertMessage('Formato de IP inválido. Use formato: 192.168.1.100');
-        setAlertType('error');
-        setTimeout(() => setAlertMessage(''), 4000);
-        return false;
-      }
-
-      if (!isLocalNetwork(ip)) {
-        setAlertMessage('Advertencia: La IP no parece ser de red local');
-        setAlertType('warning');
-        setTimeout(() => setAlertMessage(''), 4000);
-      }
-
-      // Verificar conectividad de red primero
-      const networkStatus = await checkNetworkStatus();
-      if (!networkStatus.isConnected) {
-        setAlertMessage('Sin conexión de red. Conecta a WiFi primero.');
-        setAlertType('error');
-        setTimeout(() => setAlertMessage(''), 4000);
-        return false;
-      }
-
-      console.log('Probando conexión con ESP32:', ip);
+      // Use our service to test the connection
+      const result = await ESP32Service.testESP32Connection(ip);
       
-      // Usar la función específica para Android
-      if (Platform.OS === 'android') {
-        const result = await connectToESP32Android(ip, '', 8000);
-        console.log('Resultado conexión Android:', result);
-        return result.success;
-      } else {
-        // Para iOS o desarrollo, usar ping normal
-        const result = await pingESP32(ip, 5000);
-        console.log('Resultado ping:', result);
-        return result.success;
+      if (!result.success) {
+        setAlertMessage(result.message);
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 6000);
+        return false;
       }
+      
+      // Connection successful
+      console.log('Conexión con ESP32 exitosa:', ip);
+      setAlertMessage('Conexión exitosa con el reloj');
+      setAlertType('success');
+      setTimeout(() => setAlertMessage(''), 4000);
+      return true;
     } catch (error) {
       console.error('Error probando conexión ESP32:', error);
       
-      if (error.name === 'AbortError') {
-        setAlertMessage('Timeout - El reloj no responde. Verifica la IP y que esté conectado a la misma red WiFi.');
-        setAlertType('error');
-        setTimeout(() => setAlertMessage(''), 6000);
-      } else {
-        setAlertMessage(`Error de conexión: ${error.message}`);
-        setAlertType('error');
-        setTimeout(() => setAlertMessage(''), 6000);
-      }
+      setAlertMessage(`Error inesperado: ${error.message}`);
+      setAlertType('error');
+      setTimeout(() => setAlertMessage(''), 6000);
       return false;
     }
   };
@@ -326,6 +301,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
       const payload = { velocidad: speed };
       
+      // 1. First, update the movement in the backend database
       const response = await fetch(`${BACKEND_URL}/movimiento-actual/${preset.toLowerCase()}`, {
         method: 'POST',
         headers: {
@@ -363,7 +339,23 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         if (data.data.movimiento?.horas?.velocidad) {
           setSpeed(data.data.movimiento.horas.velocidad);
         }
-        console.log("Preset updated successfully:", preset);
+        console.log("Preset updated successfully in backend:", preset);
+        
+        // 2. Now send the command directly to ESP32 using our new service
+        if (espIp) {
+          const result = await ESP32Service.sendPresetToESP32(espIp, preset, speed);
+          
+          if (!result.success) {
+            console.warn("ESP32 communication warning:", result.message);
+            setAlertMessage(`Movimiento actualizado en servidor, pero hubo un problema comunicándose con el reloj: ${result.message}`);
+            setAlertType("warning");
+            setTimeout(() => setAlertMessage(''), 4000);
+          } else {
+            console.log("ESP32 preset applied successfully");
+          }
+        } else {
+          console.log("No ESP32 IP configured, skipping direct command");
+        }
       } else {
         setSelectedOption(preset);
         console.log("Preset updated (no data returned):", preset);
@@ -392,6 +384,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
       const payload = { velocidad: speed };
       
+      // 1. First update the movement in the backend database
       const response = await fetch(`${BACKEND_URL}/movimiento-actual/${movement.nombre}`, {
         method: 'POST',
         headers: {
@@ -429,7 +422,39 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         if (data.data.movimiento?.horas?.velocidad) {
           setSpeed(data.data.movimiento.horas.velocidad);
         }
-        console.log("Custom movement updated successfully:", movement.nombre);
+        console.log("Custom movement updated successfully in backend:", movement.nombre);
+        
+        // 2. Now send the command directly to ESP32 using our new service
+        if (espIp) {
+          // Extract movement parameters for ESP32
+          const movimiento = data.data.movimiento || movement.movimiento || {};
+          const horas = movimiento.horas || {};
+          const minutos = movimiento.minutos || {};
+          
+          // Create movement options object
+          const movementOptions = {
+            ip: espIp,
+            nombre: movement.nombre,
+            dirHoras: horas.direccion || movimiento.direccionGeneral,
+            dirMinutos: minutos.direccion || movimiento.direccionGeneral,
+            velHoras: horas.velocidad !== undefined ? horas.velocidad : speed,
+            velMinutos: minutos.velocidad !== undefined ? minutos.velocidad : speed
+          };
+          
+          // Send movement to ESP32
+          const result = await ESP32Service.sendMovementToESP32(movementOptions);
+          
+          if (!result.success) {
+            console.warn("ESP32 communication warning:", result.message);
+            setAlertMessage(`Movimiento actualizado en servidor, pero hubo un problema comunicándose con el reloj: ${result.message}`);
+            setAlertType("warning");
+            setTimeout(() => setAlertMessage(''), 4000);
+          } else {
+            console.log("ESP32 custom movement applied successfully");
+          }
+        } else {
+          console.log("No ESP32 IP configured, skipping direct command");
+        }
       } else {
         setSelectedOption("Custom");
         console.log("Custom movement updated (no data returned):", movement.nombre);
@@ -440,7 +465,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
     } catch (error) {
       console.error("Network error updating custom movement:", error);
-     setAlertMessage("Network error failed to connect to server. Please check your internet connection.");
+      setAlertMessage("Network error failed to connect to server. Please check your internet connection.");
       setAlertType("error");
       setTimeout(() => setAlertMessage(''), 4000);
     } finally {
@@ -456,6 +481,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         return;
       }
 
+      // 1. First update the speed in the backend database
       const response = await fetch(`${BACKEND_URL}/movimiento-actual/velocidad`, {
         method: 'PATCH',
         headers: {
@@ -489,7 +515,25 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
       if (data.success && data.data?.movimiento?.horas?.velocidad) {
         setSpeed(data.data.movimiento.horas.velocidad);
       }
-      console.log("Speed updated successfully:", newSpeed);
+      console.log("Speed updated successfully in backend:", newSpeed);
+
+      // 2. Now send the speed update directly to ESP32 using our new service
+      if (espIp) {
+        // Send speed update to ESP32
+        const result = await ESP32Service.sendSpeedToESP32(espIp, newSpeed);
+        
+        if (!result.success) {
+          console.warn("ESP32 speed update warning:", result.message);
+          // Optionally show a warning message to the user
+          // setAlertMessage(`Velocidad actualizada en servidor, pero hubo un problema enviándola al reloj: ${result.message}`);
+          // setAlertType("warning");
+          // setTimeout(() => setAlertMessage(''), 4000);
+        } else {
+          console.log("ESP32 speed updated successfully");
+        }
+      } else {
+        console.log("No ESP32 IP configured, skipping direct speed update");
+      }
 
     } catch (error) {
       console.error("Network error updating speed:", error);
@@ -522,68 +566,28 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     }
 
     try {
-      // Verificar conectividad antes de enviar comando
-      const networkState = await checkNetworkStatus();
-      if (!networkState.isConnected) {
-        setAlertMessage('Sin conexión a internet. Verifica tu conexión WiFi.');
-        setAlertType('error');
-        setTimeout(() => setAlertMessage(''), 4000);
-        return;
-      }
-
       console.log('Enviando comando:', command, 'a IP:', espIp);
       
-      // Usar función específica para Android
-      if (Platform.OS === 'android') {
-        const result = await connectToESP32Android(espIp, command, 10000);
-        
-        if (result.success) {
-          setAlertMessage(`Comando enviado exitosamente: ${result.data}`);
-          setAlertType('success');
-          console.log(`Comando enviado con método ${result.method}`);
-        } else {
-          throw new Error('Falló conexión con ESP32');
-        }
+      // Use our service to send a preset command
+      const result = await ESP32Service.sendPresetToESP32(espIp, command, speed);
+      
+      if (result.success) {
+        setAlertMessage(`Comando enviado exitosamente: ${result.message}`);
+        setAlertType('success');
+        console.log('Comando enviado con éxito al ESP32');
       } else {
-        // Para iOS o desarrollo
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-        const url = `http://${espIp}/${command.toLowerCase()}`;
-        const response = await fetch(url, {
-          method: 'GET',
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          },
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const text = await response.text();
-          setAlertMessage(`Comando enviado: ${text}`);
-          setAlertType('success');
-        } else {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+        setAlertMessage(result.message);
+        setAlertType('error');
+        console.error('Error enviando comando al ESP32:', result.message);
       }
       
       setTimeout(() => setAlertMessage(''), 4000);
     } catch (error) {
       console.error('Error enviando comando:', error);
       
-      let errorMessage = 'Error de conexión con el reloj';
+      let errorMessage = 'Error inesperado al enviar comando al reloj';
       
-      if (error.name === 'AbortError') {
-        errorMessage = 'Timeout - El reloj no responde. Verifica que esté conectado a la misma red WiFi.';
-      } else if (error.message.includes('Network request failed')) {
-        errorMessage = 'Error de red. Verifica que tu dispositivo y el reloj estén en la misma red WiFi.';
-      } else if (error.message.includes('Falló conexión')) {
-        errorMessage = 'No se pudo establecer conexión con el reloj. Verifica la IP y que esté encendido.';
-      } else {
+      if (error.message) {
         errorMessage = `Error: ${error.message}`;
       }
       
@@ -600,45 +604,26 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     }
 
     try {
-      // Usar función específica para Android
-      if (Platform.OS === 'android') {
-        const result = await connectToESP32Android(espIp, `speed?value=${newSpeed}`, 8000);
-        
-        if (result.success) {
-          console.log("Velocidad ajustada:", result.data);
-        } else {
-          throw new Error('Falló ajuste de velocidad');
-        }
+      console.log('Enviando velocidad al ESP32:', newSpeed);
+      
+      // Use our service to send speed to ESP32
+      const result = await ESP32Service.sendSpeedToESP32(espIp, newSpeed);
+      
+      if (result.success) {
+        console.log("Velocidad ajustada con éxito:", newSpeed);
       } else {
-        // Para iOS o desarrollo
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-        const url = `http://${espIp}/speed?value=${newSpeed}`;
-        console.log('Enviando velocidad a:', url);
-        
-        const response = await fetch(url, {
-          method: 'GET',
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const text = await response.text();
-          console.log("Velocidad ajustada:", text);
-        } else {
-          throw new Error(`HTTP ${response.status}`);
-        }
+        console.warn("Error ajustando velocidad:", result.message);
+        // Optionally show error to user
+        // setAlertMessage(result.message);
+        // setAlertType('error');
+        // setTimeout(() => setAlertMessage(''), 4000);
       }
     } catch (error) {
       console.error('Error enviando velocidad:', error);
       
-      if (error.name !== 'AbortError') {
-        setAlertMessage('Error ajustando velocidad del reloj');
-        setAlertType('error');
-        setTimeout(() => setAlertMessage(''), 4000);
-      }
+      setAlertMessage('Error inesperado ajustando velocidad del reloj');
+      setAlertType('error');
+      setTimeout(() => setAlertMessage(''), 4000);
     }
   };
 

@@ -35,8 +35,7 @@ import {
   isLocalNetwork
 } from '../../utils/networkHelper';
 
-import ESP32Service from '../../utils/ESP32Service';
-
+import UnifiedClockService from '../../utils/UnifiedClockService';
 
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
@@ -60,6 +59,7 @@ const MainRest = ({ navigation }) => {
   const [scanProgress, setScanProgress] = useState(null);
   const [deviceSelectionVisible, setDeviceSelectionVisible] = useState(false);
   const [fastScanMode, setFastScanMode] = useState(false);
+  const [deviceType, setDeviceType] = useState(null); // Tipo de dispositivo detectado
   
 const [alertMessage, setAlertMessage] = useState('');
 const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
@@ -156,8 +156,8 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   // Función para probar la conexión con el ESP32
   const testEspConnection = async (ip) => {
     try {
-      // Use our service to test the connection
-      const result = await ESP32Service.testESP32Connection(ip);
+      // Use our unified service to test the connection
+      const result = await UnifiedClockService.testConnection(ip);
       
       if (!result.success) {
         setAlertMessage(result.message);
@@ -167,13 +167,23 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
       }
       
       // Connection successful
-      console.log('Conexión con ESP32 exitosa:', ip);
-      setAlertMessage('Conexión exitosa con el reloj');
+      console.log('Conexión con dispositivo exitosa:', ip);
+      
+      // Detectar el tipo de dispositivo
+      const detectedType = await UnifiedClockService.detectDeviceType(ip);
+      setDeviceType(detectedType);
+      
+      // Mostrar mensaje según el tipo de dispositivo
+      const deviceTypeName = detectedType === UnifiedClockService.DEVICE_TYPES.PROTOTYPE 
+        ? 'Prototipo (28BYJ-48)' 
+        : 'Estándar (motores paso a paso)';
+      
+      setAlertMessage(`Conexión exitosa con el reloj - Tipo: ${deviceTypeName}`);
       setAlertType('success');
       setTimeout(() => setAlertMessage(''), 4000);
       return true;
     } catch (error) {
-      console.error('Error probando conexión ESP32:', error);
+      console.error('Error probando conexión con dispositivo:', error);
       
       setAlertMessage(`Error inesperado: ${error.message}`);
       setAlertType('error');
@@ -343,7 +353,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         
         // 2. Now send the command directly to ESP32 using our new service
         if (espIp) {
-          const result = await ESP32Service.sendPresetToESP32(espIp, preset, speed);
+          const result = await UnifiedClockService.sendPreset(espIp, preset, speed);
           
           if (!result.success) {
             console.warn("ESP32 communication warning:", result.message);
@@ -442,7 +452,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           };
           
           // Send movement to ESP32
-          const result = await ESP32Service.sendMovementToESP32(movementOptions);
+          const result = await UnifiedClockService.sendMovement(movementOptions);
           
           if (!result.success) {
             console.warn("ESP32 communication warning:", result.message);
@@ -520,7 +530,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
       // 2. Now send the speed update directly to ESP32 using our new service
       if (espIp) {
         // Send speed update to ESP32
-        const result = await ESP32Service.sendSpeedToESP32(espIp, newSpeed);
+        const result = await UnifiedClockService.sendSpeed(espIp, newSpeed);
         
         if (!result.success) {
           console.warn("ESP32 speed update warning:", result.message);
@@ -568,17 +578,17 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     try {
       console.log('Enviando comando:', command, 'a IP:', espIp);
       
-      // Use our service to send a preset command
-      const result = await ESP32Service.sendPresetToESP32(espIp, command, speed);
+      // Use our unified service to send a preset command
+      const result = await UnifiedClockService.sendPreset(espIp, command, speed);
       
       if (result.success) {
         setAlertMessage(`Comando enviado exitosamente: ${result.message}`);
         setAlertType('success');
-        console.log('Comando enviado con éxito al ESP32');
+        console.log('Comando enviado con éxito al dispositivo');
       } else {
         setAlertMessage(result.message);
         setAlertType('error');
-        console.error('Error enviando comando al ESP32:', result.message);
+        console.error('Error enviando comando al dispositivo:', result.message);
       }
       
       setTimeout(() => setAlertMessage(''), 4000);
@@ -604,10 +614,10 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     }
 
     try {
-      console.log('Enviando velocidad al ESP32:', newSpeed);
+      console.log('Enviando velocidad al dispositivo:', newSpeed);
       
-      // Use our service to send speed to ESP32
-      const result = await ESP32Service.sendSpeedToESP32(espIp, newSpeed);
+      // Use our unified service to send speed to device
+      const result = await UnifiedClockService.sendSpeed(espIp, newSpeed);
       
       if (result.success) {
         console.log("Velocidad ajustada con éxito:", newSpeed);
@@ -1010,6 +1020,70 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     </Text>
                   </TouchableOpacity>
                 </View>
+                
+                {/* Selección de tipo de dispositivo */}
+                <View style={styles.deviceTypeContainer}>
+                  <Text style={[styles.deviceTypeLabel, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    Tipo de dispositivo:
+                  </Text>
+                  <View style={styles.deviceTypeButtons}>
+                    <TouchableOpacity 
+                      style={[
+                        styles.deviceTypeButton, 
+                        deviceType === UnifiedClockService.DEVICE_TYPES.STEPPER && styles.deviceTypeButtonActive
+                      ]}
+                      onPress={() => {
+                        setDeviceType(UnifiedClockService.DEVICE_TYPES.STEPPER);
+                        if (ipInput) {
+                          UnifiedClockService.setDeviceType(ipInput, UnifiedClockService.DEVICE_TYPES.STEPPER);
+                          setAlertMessage('Tipo de dispositivo configurado: Estándar (motores paso a paso)');
+                          setAlertType('info');
+                          setTimeout(() => setAlertMessage(''), 3000);
+                        }
+                      }}
+                    >
+                      <Text style={[
+                        styles.deviceTypeButtonText,
+                        deviceType === UnifiedClockService.DEVICE_TYPES.STEPPER && styles.deviceTypeButtonTextActive,
+                        { fontFamily: 'Montserrat_600SemiBold' }
+                      ]}>
+                        Estándar (Paso a Paso)
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={[
+                        styles.deviceTypeButton, 
+                        deviceType === UnifiedClockService.DEVICE_TYPES.PROTOTYPE && styles.deviceTypeButtonActive
+                      ]}
+                      onPress={() => {
+                        setDeviceType(UnifiedClockService.DEVICE_TYPES.PROTOTYPE);
+                        if (ipInput) {
+                          UnifiedClockService.setDeviceType(ipInput, UnifiedClockService.DEVICE_TYPES.PROTOTYPE);
+                          setAlertMessage('Tipo de dispositivo configurado: Prototipo (28BYJ-48)');
+                          setAlertType('info');
+                          setTimeout(() => setAlertMessage(''), 3000);
+                        }
+                      }}
+                    >
+                      <Text style={[
+                        styles.deviceTypeButtonText,
+                        deviceType === UnifiedClockService.DEVICE_TYPES.PROTOTYPE && styles.deviceTypeButtonTextActive,
+                        { fontFamily: 'Montserrat_600SemiBold' }
+                      ]}>
+                        Prototipo (28BYJ-48)
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={[styles.deviceTypeInfo, { fontFamily: 'Montserrat_400Regular' }]}>
+                    {deviceType ? 
+                      (deviceType === UnifiedClockService.DEVICE_TYPES.PROTOTYPE ? 
+                        'Prototipo con motores 28BYJ-48 seleccionado' : 
+                        'Dispositivo estándar con motores paso a paso seleccionado') : 
+                      'El tipo de dispositivo se detectará automáticamente al probar la conexión'}
+                  </Text>
+                </View>
+                
                 <TouchableOpacity
                   style={styles.testButton}
                   onPress={async () => {
@@ -1050,6 +1124,20 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     try {
                       await AsyncStorage.setItem(ESP_IP_KEY, ipInput);
                       setEspIp(ipInput);
+                      
+                      // Si se ha seleccionado un tipo de dispositivo manualmente, guardarlo
+                      if (deviceType) {
+                        UnifiedClockService.setDeviceType(ipInput, deviceType);
+                      } else {
+                        // Si no se ha seleccionado manualmente, intentar detectar
+                        try {
+                          const detectedType = await UnifiedClockService.detectDeviceType(ipInput);
+                          setDeviceType(detectedType);
+                        } catch (error) {
+                          console.warn("No se pudo detectar el tipo de dispositivo:", error);
+                        }
+                      }
+                      
                       setIpModalVisible(false);
                       setAlertMessage('IP guardada exitosamente.');
                       setAlertType('success');
@@ -1686,6 +1774,50 @@ activeButton: {
   manualButtonText: {
     color: '#fff',
     fontSize: 14,
+  },
+  deviceTypeContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  deviceTypeLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  deviceTypeButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  deviceTypeButton: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 5,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  deviceTypeButtonActive: {
+    backgroundColor: '#660154',
+    borderColor: '#4a0035',
+  },
+  deviceTypeButtonText: {
+    fontSize: 12,
+    color: '#333',
+    textAlign: 'center',
+  },
+  deviceTypeButtonTextActive: {
+    color: '#fff',
+  },
+  deviceTypeInfo: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 5,
   },
 alertContainer: {
   padding: 10,

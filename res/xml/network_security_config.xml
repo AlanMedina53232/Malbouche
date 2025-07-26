@@ -1,19 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Permitir tráfico HTTP para redes locales -->
-    <domain-config cleartextTrafficPermitted="true">
-        <!-- Redes locales comunes -->
-        <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">127.0.0.1</domain>
-        <domain includeSubdomains="true">192.168.0.0/16</domain>
-        <domain includeSubdomains="true">10.0.0.0/8</domain>
-        <domain includeSubdomains="true">172.16.0.0/12</domain>
-    </domain-config>
-    
-    <!-- Configuración base para permitir tráfico cleartext en desarrollo -->
-    <base-config cleartextTrafficPermitted="true">
-        <trust-anchors>
-            <certificates src="system"/>
-        </trust-anchors>
-    </base-config>
+  <base-config cleartexttrafficpermitted="true">
+  <domain-config cleartexttrafficpermitted="true">
+    <!-- Permite tráfico HTTP a IPs locales en el rango típico de redes domésticas -->
+    <domain includesubdomains="false">192.168.0.0</domain>
+    <domain includesubdomains="false">10.0.0.0</domain>
+    <domain includesubdomains="false">172.16.0.0</domain>
+    <!-- Puedes agregar aquí la IP específica de tu ESP32 si lo prefieres, por ejemplo: -->
+    <!-- <domain includeSubdomains="false">192.168.1.123</domain> -->
+  </domain-config>
+</base-config>
 </network-security-config>

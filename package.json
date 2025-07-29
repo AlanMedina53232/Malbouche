@@ -24,7 +24,7 @@
     "@react-navigation/native-stack": "^7.3.13",
     "axios": "^1.10.0",
     "crypto-js": "^4.2.0",
-    "expo": "^53.0.19",
+    "expo": "^53.0.20",
     "expo-font": "~13.3.2",
     "expo-linear-gradient": "~14.1.5",
     "expo-location": "^18.1.6",

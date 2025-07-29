@@ -36,6 +36,7 @@ import {
 } from '../../utils/networkHelper';
 
 import UnifiedClockService from '../../utils/UnifiedClockService';
+import { useEventScheduler } from '../../hooks/useEventScheduler';
 
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
@@ -63,6 +64,19 @@ const MainRest = ({ navigation }) => {
   
 const [alertMessage, setAlertMessage] = useState('');
 const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
+
+  // Estado para el modal de eventos
+  const [eventsModalVisible, setEventsModalVisible] = useState(false);
+
+  // Hook para el programador de eventos
+  const {
+    isSchedulerRunning,
+    schedulerStatus,
+    toggleScheduler,
+    updateESPIP,
+    refreshEvents,
+    getAllEvents
+  } = useEventScheduler();
 
   // Función para escanear red local
   const scanForESP32 = async (fastMode = false) => {
@@ -773,6 +787,24 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         >
 
 
+          {/* Indicador del programador de eventos */}
+          <TouchableOpacity
+            style={[styles.schedulerIndicator, isSchedulerRunning && styles.schedulerRunning]}
+            onPress={() => setEventsModalVisible(true)}
+          >
+            <Ionicons 
+              name={isSchedulerRunning ? "time" : "time-outline"} 
+              size={20} 
+              color={isSchedulerRunning ? "#fff" : "#660154"} 
+            />
+            <Text style={[
+              styles.schedulerText,
+              isSchedulerRunning && styles.schedulerTextActive
+            ]}>
+              {schedulerStatus.eventsCount}
+            </Text>
+          </TouchableOpacity>
+
           {/* Engrane en la esquina superior derecha */}
           <TouchableOpacity
             style={styles.gearIcon}
@@ -1125,6 +1157,9 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                       await AsyncStorage.setItem(ESP_IP_KEY, ipInput);
                       setEspIp(ipInput);
                       
+                      // Actualizar el programador de eventos con la nueva IP
+                      await updateESPIP(ipInput);
+                      
                       // Si se ha seleccionado un tipo de dispositivo manualmente, guardarlo
                       if (deviceType) {
                         UnifiedClockService.setDeviceType(ipInput, deviceType);
@@ -1210,6 +1245,128 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     Ingresar IP Manualmente
                   </Text>
                 </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal para ver lista de eventos */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={eventsModalVisible}
+          onRequestClose={() => setEventsModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.eventsModalContent}>
+              <View style={styles.eventsModalHeader}>
+                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
+                  Eventos Programados
+                </Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setEventsModalVisible(false)}
+                >
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.eventsModalBody}>
+                <View style={styles.schedulerStatusContainer}>
+                  <View style={styles.schedulerStatusRow}>
+                    <Ionicons 
+                      name={isSchedulerRunning ? "play-circle" : "pause-circle"} 
+                      size={20} 
+                      color={isSchedulerRunning ? "#28a745" : "#dc3545"} 
+                    />
+                    <Text style={[styles.schedulerStatusText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                      Programador: {isSchedulerRunning ? 'Activo' : 'Detenido'}
+                    </Text>
+                  </View>
+                  
+                  <TouchableOpacity
+                    style={[styles.toggleButton, isSchedulerRunning ? styles.stopButton : styles.startButton]}
+                    onPress={async () => {
+                      const result = await toggleScheduler();
+                      setAlertMessage(result.message);
+                      setAlertType(result.success ? 'success' : 'error');
+                      setTimeout(() => setAlertMessage(''), 3000);
+                    }}
+                  >
+                    <Text style={[styles.toggleButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                      {isSchedulerRunning ? 'Detener' : 'Iniciar'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={[styles.eventsListTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                  {getAllEvents().length} evento(s) configurado(s):
+                </Text>
+                
+                {getAllEvents().length === 0 ? (
+                  <View style={styles.emptyEventsContainer}>
+                    <Ionicons name="calendar-outline" size={48} color="#ccc" />
+                    <Text style={[styles.emptyEventsText, { fontFamily: 'Montserrat_500Medium' }]}>
+                      No hay eventos programados
+                    </Text>
+                    <Text style={[styles.emptyEventsSubtext, { fontFamily: 'Montserrat_400Regular' }]}>
+                      Ve a la sección de Eventos para crear nuevos horarios automatizados
+                    </Text>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={getAllEvents()}
+                    keyExtractor={(item) => item.id || item.nombreEvento}
+                    showsVerticalScrollIndicator={false}
+                    style={styles.eventsList}
+                    renderItem={({ item }) => (
+                      <View style={styles.eventItem}>
+                        <View style={styles.eventHeader}>
+                          <Text style={[styles.eventName, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                            {item.nombreEvento}
+                          </Text>
+                          <View style={[styles.eventStatusBadge, item.activo ? styles.activeBadge : styles.inactiveBadge]}>
+                            <Text style={[styles.eventStatusText, { fontFamily: 'Montserrat_500Medium' }]}>
+                              {item.activo ? 'Activo' : 'Inactivo'}
+                            </Text>
+                          </View>
+                        </View>
+                        
+                        <View style={styles.eventDetails}>
+                          <View style={styles.eventTimeRow}>
+                            <Ionicons name="time-outline" size={16} color="#666" />
+                            <Text style={[styles.eventTime, { fontFamily: 'Montserrat_500Medium' }]}>
+                              {item.horaInicio}
+                            </Text>
+                          </View>
+                          
+                          {item.descripcion && (
+                            <Text style={[styles.eventDescription, { fontFamily: 'Montserrat_400Regular' }]}>
+                              {item.descripcion}
+                            </Text>
+                          )}
+                          
+                          <View style={styles.eventDaysContainer}>
+                            <Text style={[styles.eventDaysLabel, { fontFamily: 'Montserrat_500Medium' }]}>
+                              Días: 
+                            </Text>
+                            <Text style={[styles.eventDays, { fontFamily: 'Montserrat_400Regular' }]}>
+                              {[
+                                item.lunes && 'L',
+                                item.martes && 'M', 
+                                item.miercoles && 'X',
+                                item.jueves && 'J',
+                                item.viernes && 'V',
+                                item.sabado && 'S',
+                                item.domingo && 'D'
+                              ].filter(Boolean).join(', ') || 'Ninguno'}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    )}
+                  />
+                )}
               </View>
             </View>
           </View>
@@ -1384,6 +1541,36 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 4,
     elevation: 3,
+  },
+  schedulerIndicator: {
+    position: 'absolute',
+    top: 10,
+    right: 70,
+    zIndex: 10,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    elevation: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#660154',
+  },
+  schedulerRunning: {
+    backgroundColor: '#660154',
+    borderColor: '#660154',
+  },
+  schedulerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#660154',
+    minWidth: 12,
+    textAlign: 'center',
+  },
+  schedulerTextActive: {
+    color: '#fff',
   },
   clockInnerContainer: {
     width: '100%',
@@ -1829,6 +2016,168 @@ alertContainer: {
 alertText: {
   fontSize: 14,
   textAlign: 'center',
+},
+
+// Estilos para el modal de eventos
+eventsModalContent: {
+  width: '92%',
+  maxWidth: 400,
+  backgroundColor: 'white',
+  borderRadius: 20,
+  maxHeight: '85%',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.25,
+  shadowRadius: 4,
+  elevation: 8,
+},
+eventsModalHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  paddingHorizontal: 20,
+  paddingVertical: 15,
+  borderBottomWidth: 1,
+  borderBottomColor: '#f0f0f0',
+  borderTopLeftRadius: 20,
+  borderTopRightRadius: 20,
+  backgroundColor: '#fafafa',
+},
+eventsModalBody: {
+  flex: 1,
+  paddingHorizontal: 20,
+  paddingVertical: 15,
+},
+schedulerStatusContainer: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  backgroundColor: '#f8f9fa',
+  borderRadius: 12,
+  padding: 15,
+  marginBottom: 20,
+  borderWidth: 1,
+  borderColor: '#e9ecef',
+},
+schedulerStatusRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 8,
+},
+schedulerStatusText: {
+  fontSize: 14,
+  color: '#333',
+},
+toggleButton: {
+  paddingHorizontal: 16,
+  paddingVertical: 8,
+  borderRadius: 20,
+  minWidth: 80,
+  alignItems: 'center',
+},
+startButton: {
+  backgroundColor: '#28a745',
+},
+stopButton: {
+  backgroundColor: '#dc3545',
+},
+toggleButtonText: {
+  color: '#fff',
+  fontSize: 12,
+},
+eventsListTitle: {
+  fontSize: 16,
+  color: '#333',
+  marginBottom: 15,
+},
+emptyEventsContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingVertical: 40,
+},
+emptyEventsText: {
+  fontSize: 16,
+  color: '#666',
+  marginTop: 15,
+  textAlign: 'center',
+},
+emptyEventsSubtext: {
+  fontSize: 12,
+  color: '#999',
+  marginTop: 8,
+  textAlign: 'center',
+  paddingHorizontal: 20,
+  lineHeight: 16,
+},
+eventsList: {
+  flex: 1,
+},
+eventItem: {
+  backgroundColor: '#f8f9fa',
+  borderRadius: 12,
+  padding: 15,
+  marginBottom: 12,
+  borderWidth: 1,
+  borderColor: '#e9ecef',
+},
+eventHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 10,
+},
+eventName: {
+  fontSize: 16,
+  color: '#333',
+  flex: 1,
+  marginRight: 10,
+},
+eventStatusBadge: {
+  paddingHorizontal: 8,
+  paddingVertical: 4,
+  borderRadius: 12,
+},
+activeBadge: {
+  backgroundColor: '#d4edda',
+},
+inactiveBadge: {
+  backgroundColor: '#f8d7da',
+},
+eventStatusText: {
+  fontSize: 10,
+  color: '#333',
+},
+eventDetails: {
+  gap: 8,
+},
+eventTimeRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 6,
+},
+eventTime: {
+  fontSize: 14,
+  color: '#666',
+},
+eventDescription: {
+  fontSize: 12,
+  color: '#888',
+  fontStyle: 'italic',
+},
+eventDaysContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 6,
+},
+eventDaysLabel: {
+  fontSize: 12,
+  color: '#666',
+},
+eventDays: {
+  fontSize: 12,
+  color: '#660154',
+  fontWeight: '600',
 },
 
 

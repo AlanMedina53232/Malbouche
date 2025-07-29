@@ -53,22 +53,22 @@ export const sendPrototypeCommand = async (options) => {
     return { success: false, message: 'Error verificando conexión de red', error };
   }
 
-  // Validar que el modo sea compatible con el prototipo
-  if (mode && !Object.values(PROTOTYPE_MODES).includes(mode.toLowerCase())) {
-    return { 
-      success: false, 
-      message: `Modo no soportado por el prototipo: ${mode}. Modos disponibles: ${Object.values(PROTOTYPE_MODES).join(', ')}` 
-    };
-  }
-
   // Construir el endpoint basado en el modo
   let endpoint = mode ? mode.toLowerCase() : '';
   
-  // Si se especifica velocidad, construir una URL diferente
+  // Si se especifica velocidad o el modo es "speed", construir una URL diferente
   if (mode === 'speed' || speed !== undefined) {
     endpoint = 'speed';
     if (speed !== undefined) {
       endpoint += `?value=${speed}`;
+    }
+  } else {
+    // Validar que el modo sea compatible con el prototipo (solo para modos que no son "speed")
+    if (mode && !Object.values(PROTOTYPE_MODES).includes(mode.toLowerCase())) {
+      return { 
+        success: false, 
+        message: `Modo no soportado por el prototipo: ${mode}. Modos disponibles: ${Object.values(PROTOTYPE_MODES).join(', ')}` 
+      };
     }
   }
 
@@ -152,6 +152,10 @@ export const sendSpeedToPrototype = async (ip, speed, timeout = 10000) => {
     return { success: false, message: 'No se ha configurado la IP del reloj' };
   }
 
+  if (!validateIPFormat(ip)) {
+    return { success: false, message: 'Formato de IP inválido. Use formato: 192.168.1.100' };
+  }
+
   try {
     const networkState = await checkNetworkStatus();
     if (!networkState.isConnected) {
@@ -161,18 +165,69 @@ export const sendSpeedToPrototype = async (ip, speed, timeout = 10000) => {
     // Validar que la velocidad esté dentro del rango permitido para este prototipo (1-100)
     const validatedSpeed = Math.min(Math.max(parseInt(speed) || 50, 1), 100);
     
-    // Enviar velocidad al prototipo
-    return await sendPrototypeCommand({
-      ip,
-      mode: 'speed',
-      speed: validatedSpeed,
-      timeout
-    });
+    // Construir el endpoint para velocidad
+    const endpoint = `speed?value=${validatedSpeed}`;
+    const url = `http://${ip}/${endpoint}`;
+    
+    console.log('Enviando velocidad al prototipo:', url);
+
+    // Usar implementación específica para la plataforma
+    if (Platform.OS === 'android') {
+      // Para Android, usar la función connectToESP32Android
+      const result = await connectToESP32Android(ip, endpoint, timeout);
+      
+      return {
+        success: result.success,
+        message: result.success 
+          ? `Velocidad ${validatedSpeed} configurada correctamente` 
+          : result.message || 'Error enviando velocidad al reloj'
+      };
+    } else {
+      // Para iOS u otras plataformas, usar fetch con timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const text = await response.text();
+        return {
+          success: true,
+          message: `Velocidad ${validatedSpeed} configurada correctamente`,
+          response: text
+        };
+      } else {
+        return {
+          success: false,
+          message: `Error ${response.status}: ${response.statusText}`,
+          statusCode: response.status
+        };
+      }
+    }
   } catch (error) {
     console.error('Error enviando velocidad al prototipo ESP32:', error);
+    
+    let errorMessage = 'Error enviando velocidad al reloj';
+    
+    if (error.name === 'AbortError') {
+      errorMessage = 'Timeout - El reloj no responde. Verifica que esté conectado a la misma red WiFi.';
+    } else if (error.message && error.message.includes('Network request failed')) {
+      errorMessage = 'Error de red - No se pudo conectar al reloj. Verifica la IP y la conexión WiFi.';
+    }
+    
     return {
       success: false,
-      message: 'Error enviando velocidad al reloj',
+      message: errorMessage,
       error
     };
   }

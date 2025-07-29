@@ -294,7 +294,7 @@ class EventSchedulerService {
     const timeDiff = Math.abs(currentMinutes - startMinutes);
     
     // También verificar que no se haya ejecutado recientemente
-    const eventKey = `${event.id}_${currentDay}_${horaInicio}`;
+    const eventKey = `${event.id}_${currentDayFormatted}_${horaInicio}`;
     const lastExecution = this.lastExecutions?.[eventKey];
     const now = Date.now();
     

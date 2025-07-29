@@ -5,7 +5,7 @@
  */
 
 import { Platform } from 'react-native';
-import { checkNetworkStatus, validateIPFormat, isLocalNetwork } from './networkHelper';
+import { checkNetworkStatus, validateIPFormat, isLocalNetwork, connectToESP32Android } from './networkHelper';
 
 // Modos de movimiento disponibles en el prototipo
 export const PROTOTYPE_MODES = {

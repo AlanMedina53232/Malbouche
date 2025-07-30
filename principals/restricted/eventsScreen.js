@@ -15,6 +15,7 @@ const EventsScreen = () => {
   // const { events, setEvents } = useContext(EventContext)
   const [movements, setMovements] = useState([])
   const [loading, setLoading] = useState(true)
+  const [updatingEvents, setUpdatingEvents] = useState(new Set()) // Track which events are being updated
 
   const [localEvents, setLocalEvents] = useState([])
 
@@ -49,7 +50,6 @@ const fetchData = async () => {
         headers: { Authorization: `Bearer ${token}` }
       })
       const movementsText = await movementsResponse.text();
-      console.log("Movements API response text:", movementsText);
       const movementsData = JSON.parse(movementsText);
 
       if (eventsData.success && movementsData.success) {
@@ -110,30 +110,92 @@ const toggleEventStatus = async (eventId) => {
     const event = localEvents.find(e => e.id === eventId)
     if (!event) return
 
+    // Prevenir múltiples actualizaciones simultáneas
+    if (updatingEvents.has(eventId)) return;
+
+    console.log('🔄 Toggling event status:', eventId, 'current enabled:', event.enabled);
+
+    // Marcar el evento como en proceso de actualización
+    setUpdatingEvents(prev => new Set([...prev, eventId]));
+
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         Alert.alert("Error", "No authentication token found. Please log in again.");
         return;
       }
+      
+      // Buscar el evento original en los datos que obtuvimos inicialmente
+      // Necesitamos volver a hacer fetch de todos los eventos para obtener los datos originales
+      const eventsResponse = await fetch(`${API_BASE_URL}/events`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!eventsResponse.ok) {
+        console.log('❌ Failed to fetch events for update');
+        Alert.alert("Error", "Failed to fetch events");
+        return;
+      }
+      
+      const eventsData = await eventsResponse.json();
+      if (!eventsData.success) {
+        console.log('❌ Failed to get events data');
+        Alert.alert("Error", "Failed to get events data");
+        return;
+      }
+      
+      // Encontrar el evento específico en los datos del backend
+      const originalEvent = eventsData.data.find(e => e.id === eventId);
+      if (!originalEvent) {
+        console.log('❌ Event not found in backend data');
+        Alert.alert("Error", "Event not found");
+        return;
+      }
+      
+      // Crear el objeto completo con todos los campos requeridos
+      const requestBody = {
+        nombreEvento: originalEvent.nombreEvento,
+        horaInicio: originalEvent.horaInicio,
+        horaFin: originalEvent.horaFin,
+        diasSemana: originalEvent.diasSemana,
+        movementId: originalEvent.movementId,
+        activo: !event.enabled // Solo cambiamos el estado activo
+      };
+      
+      console.log('📤 Sending complete request body:', requestBody);
+      
       const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ activo: !event.enabled }) // backend expects 'activo'
+        body: JSON.stringify(requestBody)
       })
+      
+      console.log('📥 Response status:', response.status);
       const data = await response.json()
+      console.log('📥 Response data:', data);
+      
       if (data.success) {
         setLocalEvents(prevEvents =>
           prevEvents.map(ev => ev.id === eventId ? { ...ev, enabled: !ev.enabled } : ev)
         )
+        console.log('✅ Event status updated successfully');
       } else {
+        console.log('❌ Backend returned success: false');
         Alert.alert("Error", "Failed to update event status")
       }
     } catch (error) {
+      console.log('🚨 Error in toggleEventStatus:', error);
       Alert.alert("Error", "Failed to update event status")
+    } finally {
+      // Remover el evento del estado de actualización
+      setUpdatingEvents(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(eventId);
+        return newSet;
+      });
     }
   }
 
@@ -146,36 +208,58 @@ const toggleEventStatus = async (eventId) => {
     return ongoingEvent ? `The ${ongoingEvent.name} event is ongoing` : "No ongoing event"
   }
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.eventCard}
-      onPress={() => handlePress(item)}
-      delayLongPress={500}
-      activeOpacity={0.7}
-    >
-      <View style={styles.eventHeader}>
-        <View style={styles.eventInfo}>
-          <Text style={styles.eventName}>{item.name}</Text>
-          <Text style={styles.eventTime}>
-            {item.startTime} - {item.endTime}
-          </Text>
-          <Text style={styles.eventDays}>{item.days.join(" ")}</Text>
-          {item.movement && (
-            <Text style={styles.movementInfo}>
-              Movement: {item.movement.type} | Speed: {item.movement.speed} | Time: {item.movement.time}
+  const renderItem = ({ item }) => {
+    const isUpdating = updatingEvents.has(item.id);
+    
+    return (
+      <TouchableOpacity
+        style={styles.eventCard}
+        onPress={() => handlePress(item)}
+        delayLongPress={500}
+        activeOpacity={0.7}
+      >
+        <View style={styles.eventHeader}>
+          <View style={styles.eventInfo}>
+            <Text style={styles.eventName}>{item.name}</Text>
+            <Text style={styles.eventTime}>
+              {item.startTime} - {item.endTime}
             </Text>
-          )}
+            <Text style={styles.eventDays}>{item.days.join(" ")}</Text>
+            {item.movement && (
+              <Text style={styles.movementInfo}>
+                Movement: {item.movement.type} | Speed: {item.movement.speed} | Time: {item.movement.time}
+              </Text>
+            )}
+          </View>
+          
+          <View style={styles.switchContainer}>
+            {isUpdating && (
+              <ActivityIndicator 
+                size="small" 
+                color="#660154" 
+                style={styles.loadingIndicator}
+              />
+            )}
+            <Switch
+              value={item.enabled}
+              onValueChange={() => toggleEventStatus(item.id)}
+              trackColor={{ false: "#e0e0e0", true: "#660154" }}
+              thumbColor={item.enabled ? "#ffffff" : "#660154"}
+              ios_backgroundColor="#e0e0e0"
+              disabled={isUpdating} // Disable switch while updating
+              style={[
+                styles.switch,
+                isUpdating && styles.switchDisabled
+              ]}
+            />
+            {isUpdating && (
+              <Text style={styles.updatingText}>Updating...</Text>
+            )}
+          </View>
         </View>
-        <Switch
-          value={item.enabled}
-          onValueChange={() => toggleEventStatus(item.id)}
-          trackColor={{ false: "#e0e0e0", true: "#660154" }}
-          thumbColor={item.enabled ? "#ffffff" : "#660154"}
-          ios_backgroundColor="#e0e0e0"
-        />
-      </View>
-    </TouchableOpacity>
-  )
+      </TouchableOpacity>
+    )
+  }
 
   if (loading) {
     return (
@@ -307,6 +391,28 @@ const styles = StyleSheet.create({
     },
     eventInfo: {
       flex: 1,
+    },
+    switchContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: 60,
+    },
+    switch: {
+      marginVertical: 4,
+    },
+    switchDisabled: {
+      opacity: 0.6,
+    },
+    loadingIndicator: {
+      position: "absolute",
+      top: -8,
+      right: 5,
+    },
+    updatingText: {
+      fontSize: 10,
+      color: "#666",
+      marginTop: 2,
+      textAlign: "center",
     },
     eventName: {
       fontSize: 18,

@@ -275,7 +275,6 @@ class EventSchedulerService {
     
     // Verificar si el día actual está en el array de días del evento
     if (!Array.isArray(diasSemana) || !diasSemana.includes(currentDayFormatted)) {
-      console.log(`📅 Evento "${event.nombreEvento}" no programado para ${currentDayFormatted}. Días: [${diasSemana.join(', ')}]`);
       return false;
     }
 

@@ -790,6 +790,8 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           {/* Indicador del programador de eventos */}
           <TouchableOpacity
             style={[styles.schedulerIndicator, isSchedulerRunning && styles.schedulerRunning]}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             onPress={() => setEventsModalVisible(true)}
           >
             <Ionicons 
@@ -1263,12 +1265,25 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                 <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
                   Eventos Programados
                 </Text>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setEventsModalVisible(false)}
-                >
-                  <Ionicons name="close" size={24} color="#666" />
-                </TouchableOpacity>
+                <View style={styles.headerActions}>
+                  {getAllEvents().length > 0 && (
+                    <TouchableOpacity
+                      style={styles.manageEventsButton}
+                      onPress={() => {
+                        setEventsModalVisible(false);
+                        navigation.navigate('Events');
+                      }}
+                    >
+                      <Ionicons name="settings-outline" size={20} color="#660154" />
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setEventsModalVisible(false)}
+                  >
+                    <Ionicons name="close" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
               </View>
               
               <View style={styles.eventsModalBody}>
@@ -1305,13 +1320,26 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                 
                 {getAllEvents().length === 0 ? (
                   <View style={styles.emptyEventsContainer}>
-                    <Ionicons name="calendar-outline" size={48} color="#ccc" />
-                    <Text style={[styles.emptyEventsText, { fontFamily: 'Montserrat_500Medium' }]}>
+                    <Ionicons name="calendar-outline" size={64} color="#660154" />
+                    <Text style={[styles.emptyEventsText, { fontFamily: 'Montserrat_600SemiBold' }]}>
                       No hay eventos programados
                     </Text>
                     <Text style={[styles.emptyEventsSubtext, { fontFamily: 'Montserrat_400Regular' }]}>
-                      Ve a la sección de Eventos para crear nuevos horarios automatizados
+                      Crea horarios automatizados para que tu reloj se mueva en momentos específicos
                     </Text>
+                    
+                    <TouchableOpacity 
+                      style={styles.createEventButton}
+                      onPress={() => {
+                        setEventsModalVisible(false);
+                        navigation.navigate('Events');
+                      }}
+                    >
+                      <Ionicons name="add-circle" size={20} color="#fff" />
+                      <Text style={[styles.createEventButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                        Crear Primer Evento
+                      </Text>
+                    </TouchableOpacity>
                   </View>
                 ) : (
                   <FlatList
@@ -1351,21 +1379,16 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                               Días: 
                             </Text>
                             <Text style={[styles.eventDays, { fontFamily: 'Montserrat_400Regular' }]}>
-                              {[
-                                item.lunes && 'L',
-                                item.martes && 'M', 
-                                item.miercoles && 'X',
-                                item.jueves && 'J',
-                                item.viernes && 'V',
-                                item.sabado && 'S',
-                                item.domingo && 'D'
-                              ].filter(Boolean).join(', ') || 'Ninguno'}
+                              {Array.isArray(item.diasSemana) && item.diasSemana.length > 0 
+                                ? item.diasSemana.join(', ')
+                                : 'Ninguno'
+                              }
                             </Text>
                           </View>
                         </View>
                       </View>
-                    )}
-                  />
+                        )}
+                    />
                 )}
               </View>
             </View>
@@ -1545,13 +1568,13 @@ const styles = StyleSheet.create({
   schedulerIndicator: {
     position: 'absolute',
     top: 10,
-    right: 70,
-    zIndex: 10,
+    right: 75, // Aumentar distancia del borde derecho
+    zIndex: 15, // Aumentar z-index para estar por encima
     backgroundColor: '#fff',
     borderRadius: 15,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    elevation: 3,
+    elevation: 5, // Aumentar elevation también
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -2022,6 +2045,7 @@ alertText: {
 eventsModalContent: {
   width: '92%',
   maxWidth: 400,
+  minHeight: 500,
   backgroundColor: 'white',
   borderRadius: 20,
   maxHeight: '85%',
@@ -2042,6 +2066,16 @@ eventsModalHeader: {
   borderTopLeftRadius: 20,
   borderTopRightRadius: 20,
   backgroundColor: '#fafafa',
+},
+headerActions: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 10,
+},
+manageEventsButton: {
+  padding: 8,
+  borderRadius: 20,
+  backgroundColor: '#f0f0f0',
 },
 eventsModalBody: {
   flex: 1,
@@ -2091,27 +2125,47 @@ eventsListTitle: {
   marginBottom: 15,
 },
 emptyEventsContainer: {
-  flex: 1,
   justifyContent: 'center',
   alignItems: 'center',
-  paddingVertical: 40,
+  paddingVertical: 60,
+  paddingHorizontal: 20,
+  minHeight: 300,
 },
 emptyEventsText: {
-  fontSize: 16,
-  color: '#666',
-  marginTop: 15,
+  fontSize: 18,
+  color: '#333',
+  marginTop: 20,
   textAlign: 'center',
 },
 emptyEventsSubtext: {
-  fontSize: 12,
-  color: '#999',
-  marginTop: 8,
+  fontSize: 14,
+  color: '#666',
+  marginTop: 10,
+  marginBottom: 25,
   textAlign: 'center',
+  lineHeight: 20,
+},
+createEventButton: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#660154',
   paddingHorizontal: 20,
-  lineHeight: 16,
+  paddingVertical: 12,
+  borderRadius: 25,
+  gap: 8,
+  elevation: 3,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.15,
+  shadowRadius: 3,
+},
+createEventButtonText: {
+  color: '#fff',
+  fontSize: 16,
 },
 eventsList: {
-  flex: 1,
+  maxHeight: 400,
+  minHeight: 200,
 },
 eventItem: {
   backgroundColor: '#f8f9fa',

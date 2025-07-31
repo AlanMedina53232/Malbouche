@@ -29,8 +29,8 @@ const MOVE_TYPES = [
 const CreateMovementScreen = ({ navigation }) => {
   const [moveName, setMoveName] = useState("")
  const [movements, setMovements] = useState([
-  { hand: "Hour", type: "Left", speed: "", showDropdown: false },
-  { hand: "Minute", type: "Right", speed: "", showDropdown: false },
+  { hand: "Hour", type: "Left", speed: "", angulo: "360", showDropdown: false },
+  { hand: "Minute", type: "Right", speed: "", angulo: "360", showDropdown: false },
 ])
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api'
@@ -74,21 +74,57 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
     const hour = movements.find(m => m.hand === 'Hour')
     const minute = movements.find(m => m.hand === 'Minute')
 
+    // Validate and convert values
+    const hourSpeed = parseInt(hour?.speed);
+    const minuteSpeed = parseInt(minute?.speed);
+    const hourAngulo = parseFloat(hour?.angulo);
+    const minuteAngulo = parseFloat(minute?.angulo);
+
+    // Validate converted values
+    if (isNaN(hourSpeed) || hourSpeed <= 0 || hourSpeed > 100) {
+      Alert.alert("Error", "Hour speed must be between 1 and 100");
+      return;
+    }
+
+    if (isNaN(minuteSpeed) || minuteSpeed <= 0 || minuteSpeed > 100) {
+      Alert.alert("Error", "Minute speed must be between 1 and 100");
+      return;
+    }
+
+    if (isNaN(hourAngulo) || hourAngulo < 0.1 || hourAngulo > 360) {
+      Alert.alert("Error", "Hour angle must be between 0.1 and 360 degrees");
+      return;
+    }
+
+    if (isNaN(minuteAngulo) || minuteAngulo < 0.1 || minuteAngulo > 360) {
+      Alert.alert("Error", "Minute angle must be between 0.1 and 360 degrees");
+      return;
+    }
+
+    // Validate direction values (backend expects exact strings)
+    const hourDirection = hour?.type.toLowerCase() === "left" ? "izquierda" : "derecha";
+    const minuteDirection = minute?.type.toLowerCase() === "left" ? "izquierda" : "derecha";
+
     const movimientoPayload = {
-      nombre: moveName,
-      duracion: 10,
+      nombre: moveName.trim(),
+      duracion: 10, // Required integer >= 1
       movimiento: {
-        direccionGeneral: hour.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
+        direccionGeneral: hourDirection,
         horas: {
-          direccion: hour.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
-          velocidad: parseInt(hour.speed)
+          direccion: hourDirection,
+          velocidad: hourSpeed, // Integer between 1-100
+          angulo: hourAngulo // Float between 0.1-360
         },
         minutos: {
-          direccion: minute.type.toLowerCase() === 'left' ? 'izquierda' : 'derecha',
-          velocidad: parseInt(minute.speed)
+          direccion: minuteDirection,
+          velocidad: minuteSpeed, // Integer between 1-100
+          angulo: minuteAngulo // Float between 0.1-360
         }
       }
     }
+
+    console.log("=== CREATE MOVEMENT DEBUG START ===");
+    console.log("Payload to send:", JSON.stringify(movimientoPayload, null, 2));
 
     try {
       const token = await AsyncStorage.getItem('token');
@@ -106,12 +142,23 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
         body: JSON.stringify(movimientoPayload),
       })
       const data = await response.json()
+      console.log("Response status:", response.status);
+      console.log("Response data:", data);
+      
       if (!response.ok) {
         console.error("Error creating movement:", data);
+        if (data.details) {
+          console.log("Validation details:", data.details);
+        }
+        if (data.errors) {
+          console.log("Validation errors:", data.errors);
+        }
         Alert.alert("Error", data.error || "Error creando movimiento")
         return
       }
 
+      console.log("SUCCESS: Movement created successfully");
+      console.log("=== CREATE MOVEMENT DEBUG END ===");
       Alert.alert("Éxito", "Movimiento creado exitosamente", [
         { text: "OK", onPress: () => navigation.goBack() }
       ])
@@ -172,47 +219,76 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
             {movements.map((movement, index) => (
   <View key={index} style={styles.movementBox}>
     <Text style={styles.movementLabel}>Move type for {movement.hand.toLowerCase()} hand</Text>
-    <View style={styles.dropdownRow}>
-      <View style={styles.dropdownContainer}>
-        <TouchableOpacity
-          style={styles.dropdown}
-          onPress={() => updateMovement(index, "showDropdown", !movement.showDropdown)}
-        >
-          <Text style={styles.dropdownText}>
-            {MOVE_TYPES.find((t) => t.value === movement.type)?.label || movement.type}
-          </Text>
-        </TouchableOpacity>
-        {movement.showDropdown && (
-          <View style={styles.dropdownList}>
-            {MOVE_TYPES.map((type) => (
-              <TouchableOpacity
-                key={type.value}
-                style={styles.dropdownItem}
-                onPress={() => {
-                  updateMovement(index, "type", type.value)
-                  updateMovement(index, "showDropdown", false)
-                }}
-              >
-                <Text style={styles.dropdownText}>{type.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+    <View style={styles.movementControls}>
+      <View style={styles.dropdownRow}>
+        <View style={styles.dropdownContainer}>
+          <TouchableOpacity
+            style={styles.dropdown}
+            onPress={() => updateMovement(index, "showDropdown", !movement.showDropdown)}
+          >
+            <Text style={styles.dropdownText}>
+              {MOVE_TYPES.find((t) => t.value === movement.type)?.label || movement.type}
+            </Text>
+          </TouchableOpacity>
+          {movement.showDropdown && (
+            <View style={styles.dropdownList}>
+              {MOVE_TYPES.map((type) => (
+                <TouchableOpacity
+                  key={type.value}
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    updateMovement(index, "type", type.value)
+                    updateMovement(index, "showDropdown", false)
+                  }}
+                >
+                  <Text style={styles.dropdownText}>{type.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
       </View>
-      <View pointerEvents="box-only" style={styles.sliderContainer}>
+      
+      <View style={styles.sliderRow}>
         <Text style={styles.sliderLabel}>Speed</Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={1}
-          maximumValue={100}
-          step={1}
-          value={movement.speed ? Number(movement.speed) : 1}
-          onSlidingComplete={(value) => updateMovement(index, "speed", String(value))}
-          minimumTrackTintColor="#660154"
-          maximumTrackTintColor="#ddd"
-          thumbTintColor="#660154"
-        />
-        <Text style={styles.sliderValue}>{movement.speed || 1}</Text>
+        <View style={styles.sliderWrapper}>
+          <Slider
+            style={styles.slider}
+            minimumValue={1}
+            maximumValue={100}
+            step={1}
+            value={movement.speed ? Number(movement.speed) : 1}
+            onSlidingComplete={(value) => updateMovement(index, "speed", String(value))}
+            minimumTrackTintColor="#660154"
+            maximumTrackTintColor="#ddd"
+            thumbTintColor="#660154"
+          />
+          <Text style={styles.sliderValue}>{movement.speed || 1}</Text>
+        </View>
+      </View>
+
+      <View style={styles.sliderRow}>
+        <Text style={styles.sliderLabel}>Angle (degrees) - Optional</Text>
+        <View style={styles.sliderWrapper}>
+          <Slider
+            style={styles.slider}
+            minimumValue={0.1}
+            maximumValue={360}
+            step={0.1}
+            value={movement.angulo ? Number(movement.angulo) : 360}
+            onSlidingComplete={(value) => updateMovement(index, "angulo", String(value))}
+            minimumTrackTintColor="#660154"
+            maximumTrackTintColor="#ddd"
+            thumbTintColor="#660154"
+          />
+          <Text style={styles.sliderValue}>{movement.angulo || 360}°</Text>
+        </View>
+        <Text style={styles.angleDescription}>
+          {movement.angulo == 360 ? "Full rotation" : 
+           movement.angulo == 180 ? "Half rotation" : 
+           movement.angulo == 90 ? "Quarter rotation" : 
+           movement.angulo < 90 ? "Oscillation movement" : "Partial rotation"}
+        </Text>
       </View>
     </View>
   </View>
@@ -321,10 +397,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: "#333",
   },
+  movementControls: {
+    gap: 16,
+  },
   dropdownRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
   },
   dropdownContainer: {
     flex: 1,
@@ -353,38 +431,39 @@ const styles = StyleSheet.create({
     borderColor: "rgba(204, 204, 204, 0.8)",
     borderRadius: 5,
     zIndex: 10,
- /*    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2, */
   },
   dropdownItem: {
     padding: 12,
   },
-  sliderContainer: {
-    flex: 2,
-    alignItems: "center",
-    flexDirection: "row",
+  sliderRow: {
     gap: 8,
-    marginLeft: 10,
+  },
+  sliderWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   sliderLabel: {
     fontSize: 13,
     color: "#666",
-    marginRight: 5,
+    marginBottom: 4,
   },
   slider: {
     flex: 1,
     height: 30,
-    marginHorizontal: 6,
   },
   sliderValue: {
-    width: 32,
+    width: 40,
     textAlign: "center",
     fontSize: 15,
     color: "#333",
-    marginLeft: 4,
+  },
+  angleDescription: {
+    fontSize: 11,
+    color: "#888",
+    fontStyle: "italic",
+    marginTop: 4,
+    textAlign: "center",
   },
   createButton: {
     backgroundColor: "#400135",

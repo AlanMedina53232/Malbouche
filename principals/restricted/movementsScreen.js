@@ -96,15 +96,24 @@ const MovementsScreen = () => {
   }, []);
 
     const renderItem = ({ item }) => {
-      // Determine display values for speed and type, prefer nested fields if present
+      // Extract data according to API structure
       const movimiento = item.movimiento || {};
       const horas = movimiento.horas || {};
       const minutos = movimiento.minutos || {};
 
-      const hourSpeed = horas.velocidad !== undefined ? horas.velocidad : (item.velocidadHora ?? item.velocidad ?? '');
-      const minuteSpeed = minutos.velocidad !== undefined ? minutos.velocidad : (item.velocidadMinuto ?? '');
-      const hourType = movimiento.direccionGeneral || item.tipoMovimientoHoras || item.tipoMovimiento || '';
-      const minuteType = minutos.direccion || item.tipoMovimientoMinutos || '';
+      // Values according to API_GUIDE structure
+      const duracion = item.duracion || 'N/A';
+      const direccionGeneral = movimiento.direccionGeneral || 'N/A';
+      
+      // Hours configuration
+      const horasDireccion = horas.direccion || 'N/A';
+      const horasVelocidad = horas.velocidad || 'N/A';
+      const horasAngulo = horas.angulo || 'N/A';
+      
+      // Minutes configuration
+      const minutosDireccion = minutos.direccion || 'N/A';
+      const minutosVelocidad = minutos.velocidad || 'N/A';
+      const minutosAngulo = minutos.angulo || 'N/A';
 
       return (
         <TouchableOpacity 
@@ -114,10 +123,13 @@ const MovementsScreen = () => {
           <Text style={styles.itemText}>{item.nombre}</Text>
           <View style={styles.itemDetails}>
             <Text style={styles.itemSubtext}>
-              Hour - Speed: {hourSpeed} | Type: {hourType}
+              Duration: {duracion}s | General Direction: {direccionGeneral}
             </Text>
             <Text style={styles.itemSubtext}>
-              Minute - Speed: {minuteSpeed} | Type: {minuteType}
+              Hours - Dir: {horasDireccion} | Speed: {horasVelocidad} | Angle: {horasAngulo}°
+            </Text>
+            <Text style={styles.itemSubtext}>
+              Minutes - Dir: {minutosDireccion} | Speed: {minutosVelocidad} | Angle: {minutosAngulo}°
             </Text>
           </View>
         </TouchableOpacity>

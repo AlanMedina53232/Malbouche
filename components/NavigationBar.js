@@ -4,12 +4,50 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faHouse, faCalendarWeek, faClock, faUsers } from '@fortawesome/free-solid-svg-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
 
 const NavigationBar = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("Home");
+  const [userRole, setUserRole] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+  // Fetch current user data to get role
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        const currentUserId = await AsyncStorage.getItem('currentUserId');
+        
+        if (!token || !currentUserId) {
+          setIsLoadingUser(false);
+          return;
+        }
+
+        const response = await fetch(`${BACKEND_URL}/users/${currentUserId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const user = data.data || data;
+          setUserRole(user.rol?.toLowerCase() || user.Rol?.toLowerCase() || 'user');
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
 
   // Sincroniza el tab activo con la ruta actual
   useEffect(() => {
@@ -18,12 +56,23 @@ const NavigationBar = () => {
     }
   }, [route.name]);
 
-  const navItems = [
-    { name: "Home", icon: faHouse },
-    { name: "Movements", icon: faClock },
-    { name: "Events", icon: faCalendarWeek },
-    { name: "Users", icon: faUsers },
-  ];
+  // Filter navigation items based on user role
+  const getNavItems = () => {
+    const baseItems = [
+      { name: "Home", icon: faHouse },
+      { name: "Movements", icon: faClock },
+      { name: "Events", icon: faCalendarWeek },
+    ];
+
+    // Only show Users button for Admin users
+    if (userRole === 'admin') {
+      baseItems.push({ name: "Users", icon: faUsers });
+    }
+
+    return baseItems;
+  };
+
+  const navItems = getNavItems();
 
   const handlePress = (tabName) => {
     setActiveTab(tabName);

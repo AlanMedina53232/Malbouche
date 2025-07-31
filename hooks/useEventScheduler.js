@@ -1,231 +1,139 @@
 /**
  * useEventScheduler.js
- * Hook personalizado para manejar el programador de eventos
+ * Hook simplificado para obtener eventos y configurar ESP32
+ * El programador corre 100% en el backend
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import eventScheduler from '../utils/EventSchedulerService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
 const ESP_IP_KEY = 'esp_ip_address';
 
 export const useEventScheduler = () => {
-  const [isSchedulerRunning, setIsSchedulerRunning] = useState(false);
-  const [schedulerStatus, setSchedulerStatus] = useState({
-    isRunning: false,
-    eventsCount: 0,
-    espIp: null,
-    nextCheck: null
-  });
+  const [allEvents, setAllEvents] = useState([]); // Solo cache de eventos para mostrar
 
   /**
-   * Inicia el programador de eventos
+   * Realiza petición a la API del backend con autenticación
    */
-  const startScheduler = useCallback(async () => {
+  const apiRequest = useCallback(async (endpoint, options = {}) => {
     try {
-      // Obtener la IP del ESP32 desde AsyncStorage
-      const espIp = await AsyncStorage.getItem(ESP_IP_KEY);
+      // Obtener token de autenticación
+      const token = await AsyncStorage.getItem('token');
       
-      if (!espIp) {
-        console.warn('No hay IP del ESP32 configurada para iniciar el programador');
-        return { success: false, message: 'IP del ESP32 no configurada' };
+      const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+          ...options.headers
+        },
+        ...options
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP ${response.status}`);
       }
 
-      await eventScheduler.start(espIp);
-      setIsSchedulerRunning(true);
-      updateStatus();
-      
-      return { success: true, message: 'Programador de eventos iniciado' };
+      return data;
     } catch (error) {
-      console.error('Error iniciando programador de eventos:', error);
-      return { success: false, message: error.message };
+      console.error(`Error en API ${endpoint}:`, error);
+      throw error;
     }
   }, []);
 
   /**
-   * Detiene el programador de eventos
+   * Configura la IP del ESP32 en el backend (función principal)
    */
-  const stopScheduler = useCallback(() => {
+  const updateESPIP = useCallback(async (newIp, deviceType = 'standard') => {
     try {
-      eventScheduler.stop();
-      setIsSchedulerRunning(false);
-      updateStatus();
+      // Configurar ESP32 en el backend
+      const result = await apiRequest('/scheduler/esp32/configure', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          ip: newIp, 
+          type: deviceType 
+        })
+      });
       
-      return { success: true, message: 'Programador de eventos detenido' };
+      console.log(`✅ ESP32 configurado en backend: ${newIp} (${deviceType})`);
+      return { success: true, message: result.message };
     } catch (error) {
-      console.error('Error deteniendo programador de eventos:', error);
+      console.error('❌ Error configurando ESP32 en backend:', error);
       return { success: false, message: error.message };
     }
-  }, []);
+  }, [apiRequest]);
 
   /**
-   * Actualiza la IP del ESP32 en el programador
+   * Carga eventos desde el backend (solo para mostrar en modal)
    */
-  const updateESPIP = useCallback(async (newIp) => {
+  const loadAllEvents = useCallback(async () => {
     try {
-      eventScheduler.updateESPIP(newIp);
-      
-      // Si el programador está corriendo, reiniciarlo con la nueva IP
-      if (isSchedulerRunning) {
-        eventScheduler.stop();
-        await eventScheduler.start(newIp);
-      }
-      
-      updateStatus();
-      
-      return { success: true, message: 'IP del ESP32 actualizada' };
+      const response = await apiRequest('/events');
+      const events = response.data || []; // Corregido: backend devuelve { success: true, data: eventos }
+      setAllEvents(events);
+      console.log(`📅 Eventos cargados: ${events.length}`);
+      return events;
     } catch (error) {
-      console.error('Error actualizando IP del ESP32:', error);
-      return { success: false, message: error.message };
+      console.error('❌ Error cargando eventos:', error);
+      setAllEvents([]);
+      return [];
     }
-  }, [isSchedulerRunning]);
+  }, [apiRequest]);
 
   /**
-   * Recarga los eventos desde el servidor
+   * Obtiene todos los eventos (síncrono para compatibilidad con renderizado)
+   */
+  const getAllEvents = useCallback(() => {
+    return allEvents;
+  }, [allEvents]);
+
+  /**
+   * Refresca la lista de eventos cuando hay cambios
    */
   const refreshEvents = useCallback(async () => {
     try {
-      await eventScheduler.refreshEvents();
-      updateStatus();
-      
+      await loadAllEvents();
       return { success: true, message: 'Eventos actualizados' };
     } catch (error) {
-      console.error('Error recargando eventos:', error);
+      console.error('❌ Error refrescando eventos:', error);
       return { success: false, message: error.message };
     }
-  }, []);
+  }, [loadAllEvents]);
 
-  /**
-   * Actualiza el estado del programador
-   */
-  const updateStatus = useCallback(() => {
-    const status = eventScheduler.getStatus();
-    setSchedulerStatus(status);
-    setIsSchedulerRunning(status.isRunning);
-  }, []);
-
-  /**
-   * Alternar el estado del programador (iniciar/detener)
-   */
-  const toggleScheduler = useCallback(async () => {
-    if (isSchedulerRunning) {
-      return stopScheduler();
-    } else {
-      return await startScheduler();
-    }
-  }, [isSchedulerRunning, startScheduler, stopScheduler]);
-
-  /**
-   * Ejecuta un evento específico inmediatamente (para testing)
-   */
-  const executeEventNow = useCallback(async (eventId) => {
-    try {
-      const result = await eventScheduler.executeEventNow(eventId);
-      updateStatus();
-      return result;
-    } catch (error) {
-      console.error('Error ejecutando evento inmediatamente:', error);
-      return { success: false, message: error.message };
-    }
-  }, [updateStatus]);
-
-  /**
-   * Obtiene todos los eventos activos
-   */
-  const getAllEvents = useCallback(() => {
-    try {
-      return eventScheduler.getAllEvents();
-    } catch (error) {
-      console.error('Error obteniendo todos los eventos:', error);
-      return [];
-    }
-  }, []);
-
-  /**
-   * Obtiene los próximos eventos programados
-   */
-  const getUpcomingEvents = useCallback((hours = 24) => {
-    try {
-      return eventScheduler.getUpcomingEvents(hours);
-    } catch (error) {
-      console.error('Error obteniendo próximos eventos:', error);
-      return [];
-    }
-  }, []);
-
-  /**
-   * Fuerza verificación inmediata de eventos
-   */
-  const checkEventsNow = useCallback(async () => {
-    try {
-      await eventScheduler.checkAndExecuteEvents();
-      updateStatus();
-      return { success: true, message: 'Verificación de eventos completada' };
-    } catch (error) {
-      console.error('Error verificando eventos:', error);
-      return { success: false, message: error.message };
-    }
-  }, [updateStatus]);
-
-  /**
-   * Notifica que se ha creado/modificado un evento para recarga inmediata
-   */
-  const notifyEventChanged = useCallback(async () => {
-    try {
-      await eventScheduler.notifyEventChanged();
-      updateStatus();
-      return { success: true, message: 'Eventos actualizados después del cambio' };
-    } catch (error) {
-      console.error('Error notificando cambio de evento:', error);
-      return { success: false, message: error.message };
-    }
-  }, [updateStatus]);
-
-  // Efecto para inicializar el estado al montar el componente
+  // Auto-configuración ESP32 al iniciar (si hay IP guardada)
   useEffect(() => {
-    updateStatus();
-    
-    // Actualizar el estado cada minuto
-    const statusInterval = setInterval(updateStatus, 60000);
-    
-    return () => {
-      clearInterval(statusInterval);
-    };
-  }, [updateStatus]);
-
-  // Efecto para auto-iniciar el programador si hay IP configurada
-  useEffect(() => {
-    const autoStartScheduler = async () => {
-      const espIp = await AsyncStorage.getItem(ESP_IP_KEY);
-      if (espIp && !isSchedulerRunning) {
-        console.log('Auto-iniciando programador de eventos...');
-        await startScheduler();
+    const autoConfigureESP = async () => {
+      try {
+        const savedIp = await AsyncStorage.getItem(ESP_IP_KEY);
+        if (savedIp) {
+          console.log(`🔧 Auto-configurando ESP32 con IP guardada: ${savedIp}`);
+          await updateESPIP(savedIp);
+        }
+      } catch (error) {
+        console.error('❌ Error auto-configurando ESP32:', error);
       }
     };
 
-    autoStartScheduler();
-  }, []);
+    autoConfigureESP();
+    loadAllEvents(); // Cargar eventos para el modal
+  }, [updateESPIP, loadAllEvents]);
+
+  // Recargar eventos cada 5 minutos para mantener modal actualizado
+  useEffect(() => {
+    const eventInterval = setInterval(loadAllEvents, 300000); // 5 minutos
+    
+    return () => {
+      clearInterval(eventInterval);
+    };
+  }, [loadAllEvents]);
 
   return {
-    // Estado
-    isSchedulerRunning,
-    schedulerStatus,
-    
-    // Acciones
-    startScheduler,
-    stopScheduler,
-    toggleScheduler,
-    updateESPIP,
-    refreshEvents,
-    updateStatus,
-    
-    // Funciones de debug/testing
-    executeEventNow,
-    getAllEvents,
-    getUpcomingEvents,
-    checkEventsNow,
-    
-    // Notificaciones
-    notifyEventChanged
+    // Solo las funciones esenciales
+    updateESPIP,     // Configurar IP del ESP32
+    getAllEvents,    // Obtener eventos para modal
+    refreshEvents,   // Refrescar eventos manualmente
+    allEvents        // Cache de eventos
   };
 };

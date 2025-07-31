@@ -68,14 +68,11 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   // Estado para el modal de eventos
   const [eventsModalVisible, setEventsModalVisible] = useState(false);
 
-  // Hook para el programador de eventos
+  // Hook simplificado para eventos y configuración ESP32
   const {
-    isSchedulerRunning,
-    schedulerStatus,
-    toggleScheduler,
     updateESPIP,
-    refreshEvents,
-    getAllEvents
+    getAllEvents,
+    refreshEvents
   } = useEventScheduler();
 
   // Función para escanear red local
@@ -787,23 +784,20 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         >
 
 
-          {/* Indicador del programador de eventos */}
+          {/* Indicador de eventos programados */}
           <TouchableOpacity
-            style={[styles.schedulerIndicator, isSchedulerRunning && styles.schedulerRunning]}
+            style={styles.eventsIndicator}
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             onPress={() => setEventsModalVisible(true)}
           >
             <Ionicons 
-              name={isSchedulerRunning ? "time" : "time-outline"} 
+              name="time" 
               size={20} 
-              color={isSchedulerRunning ? "#fff" : "#660154"} 
+              color="#660154" 
             />
-            <Text style={[
-              styles.schedulerText,
-              isSchedulerRunning && styles.schedulerTextActive
-            ]}>
-              {schedulerStatus.eventsCount}
+            <Text style={styles.eventsText}>
+              {getAllEvents().length}
             </Text>
           </TouchableOpacity>
 
@@ -1287,35 +1281,8 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
               </View>
               
               <View style={styles.eventsModalBody}>
-                <View style={styles.schedulerStatusContainer}>
-                  <View style={styles.schedulerStatusRow}>
-                    <Ionicons 
-                      name={isSchedulerRunning ? "play-circle" : "pause-circle"} 
-                      size={20} 
-                      color={isSchedulerRunning ? "#28a745" : "#dc3545"} 
-                    />
-                    <Text style={[styles.schedulerStatusText, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                      Programador: {isSchedulerRunning ? 'Activo' : 'Detenido'}
-                    </Text>
-                  </View>
-                  
-                  <TouchableOpacity
-                    style={[styles.toggleButton, isSchedulerRunning ? styles.stopButton : styles.startButton]}
-                    onPress={async () => {
-                      const result = await toggleScheduler();
-                      setAlertMessage(result.message);
-                      setAlertType(result.success ? 'success' : 'error');
-                      setTimeout(() => setAlertMessage(''), 3000);
-                    }}
-                  >
-                    <Text style={[styles.toggleButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                      {isSchedulerRunning ? 'Detener' : 'Iniciar'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
                 <Text style={[styles.eventsListTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                  {getAllEvents().length} evento(s) configurado(s):
+                  {getAllEvents().length} evento(s) configurado(s) en el servidor:
                 </Text>
                 
                 {getAllEvents().length === 0 ? (
@@ -1565,35 +1532,28 @@ const styles = StyleSheet.create({
     padding: 4,
     elevation: 3,
   },
-  schedulerIndicator: {
+  eventsIndicator: {
     position: 'absolute',
     top: 10,
-    right: 75, // Aumentar distancia del borde derecho
-    zIndex: 15, // Aumentar z-index para estar por encima
+    right: 75,
+    zIndex: 15,
     backgroundColor: '#fff',
     borderRadius: 15,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    elevation: 5, // Aumentar elevation también
+    elevation: 5,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     borderWidth: 1,
     borderColor: '#660154',
   },
-  schedulerRunning: {
-    backgroundColor: '#660154',
-    borderColor: '#660154',
-  },
-  schedulerText: {
+  eventsText: {
     fontSize: 12,
     fontWeight: '600',
     color: '#660154',
     minWidth: 12,
     textAlign: 'center',
-  },
-  schedulerTextActive: {
-    color: '#fff',
   },
   clockInnerContainer: {
     width: '100%',

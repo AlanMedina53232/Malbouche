@@ -1,14 +1,25 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <time.h>
+#include <Wire.h>
+#include <Adafruit_MLX90614.h>
+#include <DHT.h>
+#include <HTTPClient.h>
+
 
 // --- Configuración WiFi ---
-const char* ssid = "4-D";
-const char* password = "nachosconqueso";
+const char* ssid = "LARA GAMING";
+const char* password = "123456autoliv";
 
 // --- Pines motores 28BYJ-48 ---
 const int motorHoras[4] = {14, 27, 26, 25};
 const int motorMin[4] = {19, 18, 5, 4};
+
+// --- Variables para mandar lecturas a mongo ---
+unsigned long ultimoEnvioDHT11 = 0;
+unsigned long ultimoEnvioMLX = 0;
+unsigned long ultimoEnvioUltrasonico = 0;
+const unsigned long intervaloEnvioDHT11 = 3600000; // 10 minutos en ms
 
 // --- Secuencia medio paso ---
 const int steps[8][4] = {
@@ -53,7 +64,81 @@ const unsigned long swingIntervalo = 500; // 0.5 segundos
 // Velocidad (delay ms) entre pasos, default 2 ms
 int velocidadPaso = 2;
 
-// --- Declaración funciones ---
+// --- Sensores y LED RGB ---
+#define DHTPIN 32
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+
+#define TRIG_PIN 33
+#define ECHO_PIN 15
+
+#define LED_ROJO 13
+#define LED_VERDE 12
+#define LED_AZUL 23
+
+Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+
+void setupSensoresYLeds() {
+  dht.begin();
+  mlx.begin();
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  pinMode(LED_ROJO, OUTPUT);
+  pinMode(LED_VERDE, OUTPUT);
+  pinMode(LED_AZUL, OUTPUT);
+}
+
+float medirDistanciaCM() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  long duracion = pulseIn(ECHO_PIN, HIGH);
+  return duracion * 0.034 / 2;
+}
+
+void setColorRGB(int r, int g, int b) {
+  analogWrite(LED_ROJO, r);
+  analogWrite(LED_VERDE, g);
+  analogWrite(LED_AZUL, b);
+}
+
+void actualizarRGBsegunAmbiente() {
+  float tempAmbiente = dht.readTemperature();
+  float humedad = dht.readHumidity();
+  float tempCuerpo = mlx.readObjectTempC();
+  float distancia = medirDistanciaCM();
+
+  bool calido = tempCuerpo >= 30.0;
+
+  if (calido) {
+    // Colores cálidos
+    if (distancia < 10) {
+      setColorRGB(255, 0, 0);       // Rojo
+    } else if (distancia < 20) {
+      setColorRGB(0, 255, 0);       // Verde
+    } else {
+      setColorRGB(255, 255, 0);     // Amarillo
+    }
+  } else {
+    // Colores fríos
+    if (distancia < 10) {
+      setColorRGB(0, 0, 255);       // Azul
+    } else if (distancia < 20) {
+      setColorRGB(0, 255, 255);     // Celeste
+    } else {
+      setColorRGB(128, 0, 128);     // Morado
+    }
+  }
+
+  Serial.printf("TempAmb: %.1f °C, Humedad: %.1f %% | TempCuerpo: %.1f °C | Distancia: %.1f cm\n",
+    tempAmbiente, humedad, tempCuerpo, distancia);
+}
+
+// --- Declaración funciones motores ---
 void girarUnPaso(const int motorPins[4], int &stepIndex, bool sentidoHorario);
 void moverPasos(const int motorPins[4], int &stepIndex, int pasos, bool sentidoHorario);
 void apagarMotor(const int motorPins[4]);
@@ -70,6 +155,9 @@ void setup() {
     digitalWrite(motorMin[i], LOW);
   }
 
+  // Iniciar sensores y LEDs
+  setupSensoresYLeds();
+
   // Conectar WiFi
   WiFi.begin(ssid, password);
   Serial.print("Conectando a WiFi...");
@@ -78,11 +166,18 @@ void setup() {
     Serial.print(".");
   }
   Serial.println("\nConectado!");
-  Serial.print("IP: ");
+  Serial.println("=== INFORMACIÓN DE RED ===");
+  Serial.print("IP asignada: ");
   Serial.println(WiFi.localIP());
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+  Serial.print("Intensidad de señal: ");
+  Serial.print(WiFi.RSSI());
+  Serial.println(" dBm");
+  Serial.println("==========================")
 
   // Configurar NTP (GMT -6 sin horario verano)
-  configTime(-6 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+  configTzTime("PST8PDT", "pool.ntp.org", "time.nist.gov");
 
   // Rutas servidor web
   server.on("/", []() {
@@ -149,9 +244,60 @@ void setup() {
   server.begin();
 }
 
-// --- Loop principal ---
 void loop() {
   server.handleClient();
+
+  // Actualizar colores LED según sensores
+  actualizarRGBsegunAmbiente();
+  
+  unsigned long ahora = millis();
+if (ahora - ultimoEnvioDHT11 >= intervaloEnvioDHT11) {
+  ultimoEnvioDHT11 = ahora;
+  float tempAmb = dht.readTemperature();
+  float humedad = dht.readHumidity();
+
+  if (!isnan(tempAmb) && !isnan(humedad)) {
+    String id = String(millis());
+    String fechaISO = obtenerFechaISO();
+    String horaStr = obtenerHoraStr();
+    enviarDHT11(id, tempAmb, humedad, fechaISO, horaStr);
+    
+  } else {
+    Serial.println("Lectura inválida de DHT11");
+  }
+}
+
+  // Enviar datos del sensor MLX90614 (temperatura de cuerpo)
+  if (ahora - ultimoEnvioMLX >= intervaloEnvioDHT11) {
+    ultimoEnvioMLX = ahora;
+    float tempCuerpo = mlx.readObjectTempC();
+
+    if (!isnan(tempCuerpo)) {
+      String id = String(millis());
+      String fechaISO = obtenerFechaISO();
+      String horaStr = obtenerHoraStr();
+      enviarMLX(id, tempCuerpo, fechaISO, horaStr);
+    } else {
+      Serial.println("Lectura inválida de MLX90614");
+    }
+  }
+
+  // Enviar datos del sensor ultrasonido
+  if (ahora - ultimoEnvioUltrasonico >= intervaloEnvioDHT11) {
+    ultimoEnvioUltrasonico = ahora;
+    float distancia = medirDistanciaCM();
+
+    if (!isnan(distancia)) {
+      String id = String(millis());
+      String fechaISO = obtenerFechaISO();
+      String horaStr = obtenerHoraStr();
+      enviarUltrasonido(id, distancia, fechaISO, horaStr);
+    } else {
+      Serial.println("Lectura inválida del sensor ultrasonido");
+    }
+  }
+
+
 
   switch(modoActual) {
     case LEFT:
@@ -254,6 +400,88 @@ void apagarMotor(const int motorPins[4]) {
   }
 }
 
+// --- funciones para obtener la fecha y la hora reales en las lecturas ---
+String obtenerFechaISO() {
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) return "";
+  char fecha[25];
+  strftime(fecha, sizeof(fecha), "%Y-%m-%dT%H:%M:%S.000Z", &timeinfo);
+  return String(fecha);
+}
+
+String obtenerHoraStr() {
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) return "";
+  char hora[10];
+  strftime(hora, sizeof(hora), "%H:%M:%S", &timeinfo);
+  return String(hora);
+}
+
+void enviarDHT11(String id, float temperatura, float humedad, String fechaISO, String horaStr) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin("http://172.18.2.82:3000/adminBackend/sensores/dht11"); // AQUI SE DEBE CAMBIAR LA IP
+    http.addHeader("Content-Type", "application/json");
+
+    String payload = "{";
+    payload += "\"_id\":\"" + id + "\",";
+    payload += "\"temperaturaC\":" + String(temperatura, 1) + ",";
+    payload += "\"humedad\":" + String(humedad, 1) + ",";
+    payload += "\"fecha\":\"" + fechaISO + "\",";
+    payload += "\"hora\":\"" + horaStr + "\"";
+    payload += "}";
+
+    int responseCode = http.POST(payload);
+    Serial.printf("DHT11 → Código respuesta: %d\n", responseCode);
+    http.end();
+  } else {
+    Serial.println("WiFi no conectado para DHT11");
+  }
+}
+
+void enviarMLX(String id, float tempCuerpo, String fechaISO, String horaStr) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin("http://172.18.2.82:3000/adminBackend/sensores/mlx90614"); //AQUI SE DEBE CAMBIAR LA IP
+    http.addHeader("Content-Type", "application/json");
+
+    String payload = "{";
+      payload += "\"_id\":\""         + id                + "\",";  
+      payload += "\"temperaturaC\":"  + String(tempCuerpo, 1) + ","; // <== Este es el cambio clave
+      payload += "\"fecha\":\""       + fechaISO          + "\",";
+      payload += "\"hora\":\""        + horaStr           + "\"";
+    payload += "}";
+
+    int code = http.POST(payload);
+    Serial.printf("MLX90614 → Código: %d\n", code);
+    http.end();
+  } else {
+    Serial.println("WiFi no conectado para MLX90614");
+  }
+}
+
+
+void enviarUltrasonido(String id, float distancia, String fechaISO, String horaStr) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin("http://172.18.2.82:3000/adminBackend/sensores/ultrasonico"); //AQUI SE DEBE CAMBIAR LA IP
+    http.addHeader("Content-Type", "application/json");
+    String payload = "{";
+      payload += "\"_id\":\""       + id               + "\",";
+      payload += "\"distanciaCM\":" + String(distancia, 1) + ",";
+      payload += "\"fecha\":\""     + fechaISO         + "\",";
+      payload += "\"hora\":\""      + horaStr          + "\"";
+    payload += "}";
+    int code = http.POST(payload);
+    Serial.printf("Ultrasonido → Código: %d\n", code);
+    http.end();
+  } else {
+    Serial.println("WiFi no conectado para Ultrasonido");
+  }
+}
+
+
+
 // --- Sincronizar la hora real ---
 void sincronizarHoraReal() {
   struct tm timeinfo;
@@ -284,4 +512,3 @@ void sincronizarHoraReal() {
 
   Serial.printf("Sincronizado a %02d:%02d\n", hora, minuto);
 }
-

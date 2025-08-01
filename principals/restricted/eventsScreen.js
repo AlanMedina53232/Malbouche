@@ -3,10 +3,14 @@
 import { useState, useEffect, useContext } from "react"
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Switch, Alert, SafeAreaView, ActivityIndicator } from "react-native"
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useFocusEffect } from "@react-navigation/native"
 import { EventContext } from "../../context/eventContext"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
+import { getAllEvents, getAllMovements, updateEvent, handleApiError } from '../../utils/apiClient'
+import { showGenericErrorAlert } from '../../utils/eventErrorHandler'
+import { useCallback } from "react"
+import eventRefreshService from '../../utils/eventRefreshService'
 
 const API_BASE_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api' // Fallback if env not set
 
@@ -29,33 +33,37 @@ const EventsScreen = () => {
     fetchData()
   }, [])
 
+  // Auto-refresh when screen comes into focus (after navigation back)
+  useFocusEffect(
+    useCallback(() => {
+      fetchData()
+    }, [])
+  )
+
+  // Subscribe to refresh service for immediate updates
+  useEffect(() => {
+    const unsubscribe = eventRefreshService.subscribe(() => {
+      console.log('📱 EventsScreen: Received refresh request from service');
+      fetchData();
+    });
+
+    return unsubscribe;
+  }, [])
+
 const fetchData = async () => {
     try {
       setLoading(true)
       setLocalEvents([]) // Clear events before fetching new data
-      const token = await AsyncStorage.getItem('token')
-      if (!token) {
-        Alert.alert("Error", "No authentication token found. Please log in again.")
-        setLoading(false)
-        return
-      }
-      const eventsResponse = await fetch(`${API_BASE_URL}/events`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      const eventsText = await eventsResponse.text();
-      console.log("Events API response text:", eventsText);
-      const eventsData = JSON.parse(eventsText);
+      
+      const [eventsResult, movementsResult] = await Promise.all([
+        getAllEvents(),
+        getAllMovements()
+      ])
 
-      const movementsResponse = await fetch(`${API_BASE_URL}/movements`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      const movementsText = await movementsResponse.text();
-      const movementsData = JSON.parse(movementsText);
-
-      if (eventsData.success && movementsData.success) {
+      if (eventsResult.success && movementsResult.success) {
         // Map events to include movement details
-        const enrichedEvents = eventsData.data.map(event => {
-          const movement = movementsData.data.find(mov => mov.id === event.movementId)
+        const enrichedEvents = eventsResult.events.map(event => {
+          const movement = movementsResult.movements.find(mov => mov.id === event.movementId)
           if (!movement) {
             console.warn(`Movement with id ${event.movementId} not found`)
           }
@@ -66,21 +74,26 @@ const fetchData = async () => {
             endTime: event.horaFin,
             days: event.diasSemana.map(day => mapDayAbbreviation(day)),
             enabled: event.activo,
-movement: movement ? {
-  type: movement.nombre,
-  speed: (movement.movimiento?.horas?.velocidad ?? movement.velocidad)?.toString() || "",
-  time: movement.duracion?.toString() || ""
-} : null
+            movement: movement ? {
+              type: movement.nombre,
+              speed: (movement.movimiento?.horas?.velocidad ?? movement.velocidad)?.toString() || "",
+              time: movement.duracion?.toString() || ""
+            } : null
           }
         })
         setLocalEvents(enrichedEvents)
-        // setEvents(enrichedEvents)
       } else {
-        Alert.alert("Error", "Error loading events or movements")
+        const errorInfo = handleApiError({ 
+          response: { 
+            data: eventsResult.success ? movementsResult : eventsResult 
+          } 
+        })
+        showGenericErrorAlert(errorInfo)
       }
     } catch (error) {
       console.error("Fetch error:", error)
-      Alert.alert("Error", "Failed to fetch data from server")
+      const errorInfo = handleApiError(error)
+      showGenericErrorAlert(errorInfo)
     } finally {
       setLoading(false)
     }
@@ -112,83 +125,55 @@ const toggleEventStatus = async (eventId) => {
 
     // Prevenir múltiples actualizaciones simultáneas
     if (updatingEvents.has(eventId)) return;
-
+    
     console.log('🔄 Toggling event status:', eventId, 'current enabled:', event.enabled);
 
     // Marcar el evento como en proceso de actualización
     setUpdatingEvents(prev => new Set([...prev, eventId]));
 
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert("Error", "No authentication token found. Please log in again.");
+      // Get the original event data from the backend
+      const eventsResult = await getAllEvents()
+      if (!eventsResult.success) {
+        const errorInfo = handleApiError({ response: { data: eventsResult } })
+        showGenericErrorAlert(errorInfo)
         return;
       }
       
-      // Buscar el evento original en los datos que obtuvimos inicialmente
-      // Necesitamos volver a hacer fetch de todos los eventos para obtener los datos originales
-      const eventsResponse = await fetch(`${API_BASE_URL}/events`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (!eventsResponse.ok) {
-        console.log('❌ Failed to fetch events for update');
-        Alert.alert("Error", "Failed to fetch events");
-        return;
-      }
-      
-      const eventsData = await eventsResponse.json();
-      if (!eventsData.success) {
-        console.log('❌ Failed to get events data');
-        Alert.alert("Error", "Failed to get events data");
-        return;
-      }
-      
-      // Encontrar el evento específico en los datos del backend
-      const originalEvent = eventsData.data.find(e => e.id === eventId);
+      // Find the specific event in the backend data
+      const originalEvent = eventsResult.events.find(e => e.id === eventId);
       if (!originalEvent) {
-        console.log('❌ Event not found in backend data');
         Alert.alert("Error", "Event not found");
         return;
       }
       
-      // Crear el objeto completo con todos los campos requeridos
-      const requestBody = {
+      // Create the update object with all required fields
+      const updateData = {
         nombreEvento: originalEvent.nombreEvento,
         horaInicio: originalEvent.horaInicio,
         horaFin: originalEvent.horaFin,
         diasSemana: originalEvent.diasSemana,
         movementId: originalEvent.movementId,
-        activo: !event.enabled // Solo cambiamos el estado activo
+        activo: !event.enabled // Only toggle the active status
       };
       
-      console.log('📤 Sending complete request body:', requestBody);
+      console.log('📤 Sending update data:', updateData);
       
-      const response = await fetch(`${API_BASE_URL}/events/${eventId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(requestBody)
-      })
+      const result = await updateEvent(eventId, updateData)
       
-      console.log('📥 Response status:', response.status);
-      const data = await response.json()
-      console.log('📥 Response data:', data);
-      
-      if (data.success) {
+      if (result.success) {
         setLocalEvents(prevEvents =>
           prevEvents.map(ev => ev.id === eventId ? { ...ev, enabled: !ev.enabled } : ev)
         )
         console.log('✅ Event status updated successfully');
       } else {
-        console.log('❌ Backend returned success: false');
-        Alert.alert("Error", "Failed to update event status")
+        const errorInfo = handleApiError({ response: { data: result } })
+        showGenericErrorAlert(errorInfo)
       }
     } catch (error) {
       console.log('🚨 Error in toggleEventStatus:', error);
-      Alert.alert("Error", "Failed to update event status")
+      const errorInfo = handleApiError(error)
+      showGenericErrorAlert(errorInfo)
     } finally {
       // Remover el evento del estado de actualización
       setUpdatingEvents(prev => {

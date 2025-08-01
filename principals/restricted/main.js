@@ -1246,7 +1246,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           </View>
         </Modal>
 
-        {/* Modal para ver lista de eventos */}
+        {/* Modal to view active events list */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -1257,10 +1257,10 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
             <View style={styles.eventsModalContent}>
               <View style={styles.eventsModalHeader}>
                 <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
-                  Eventos Programados
+                  Active Events
                 </Text>
                 <View style={styles.headerActions}>
-                  {getAllEvents().length > 0 && (
+                  {getAllEvents().filter(event => event.activo).length > 0 && (
                     <TouchableOpacity
                       style={styles.manageEventsButton}
                       onPress={() => {
@@ -1282,17 +1282,17 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
               
               <View style={styles.eventsModalBody}>
                 <Text style={[styles.eventsListTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                  {getAllEvents().length} evento(s) configurado(s) en el servidor:
+                  {getAllEvents().filter(event => event.activo).length} active event(s) configured on the server:
                 </Text>
                 
-                {getAllEvents().length === 0 ? (
+                {getAllEvents().filter(event => event.activo).length === 0 ? (
                   <View style={styles.emptyEventsContainer}>
                     <Ionicons name="calendar-outline" size={64} color="#660154" />
                     <Text style={[styles.emptyEventsText, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                      No hay eventos programados
+                      No active events scheduled
                     </Text>
                     <Text style={[styles.emptyEventsSubtext, { fontFamily: 'Montserrat_400Regular' }]}>
-                      Crea horarios automatizados para que tu reloj se mueva en momentos específicos
+                      Create automated schedules for your clock to move at specific times
                     </Text>
                     
                     <TouchableOpacity 
@@ -1304,13 +1304,13 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     >
                       <Ionicons name="add-circle" size={20} color="#fff" />
                       <Text style={[styles.createEventButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                        Crear Primer Evento
+                        Create First Event
                       </Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
                   <FlatList
-                    data={getAllEvents()}
+                    data={getAllEvents().filter(event => event.activo)}
                     keyExtractor={(item) => item.id || item.nombreEvento}
                     showsVerticalScrollIndicator={false}
                     style={styles.eventsList}
@@ -1320,9 +1320,9 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                           <Text style={[styles.eventName, { fontFamily: 'Montserrat_600SemiBold' }]}>
                             {item.nombreEvento}
                           </Text>
-                          <View style={[styles.eventStatusBadge, item.activo ? styles.activeBadge : styles.inactiveBadge]}>
+                          <View style={[styles.eventStatusBadge, styles.activeBadge]}>
                             <Text style={[styles.eventStatusText, { fontFamily: 'Montserrat_500Medium' }]}>
-                              {item.activo ? 'Activo' : 'Inactivo'}
+                              Active
                             </Text>
                           </View>
                         </View>
@@ -1343,12 +1343,12 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                           
                           <View style={styles.eventDaysContainer}>
                             <Text style={[styles.eventDaysLabel, { fontFamily: 'Montserrat_500Medium' }]}>
-                              Días: 
+                              Days: 
                             </Text>
                             <Text style={[styles.eventDays, { fontFamily: 'Montserrat_400Regular' }]}>
                               {Array.isArray(item.diasSemana) && item.diasSemana.length > 0 
                                 ? item.diasSemana.join(', ')
-                                : 'Ninguno'
+                                : 'None'
                               }
                             </Text>
                           </View>

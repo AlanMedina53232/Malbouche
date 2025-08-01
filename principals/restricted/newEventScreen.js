@@ -19,6 +19,8 @@ import { Ionicons } from "@expo/vector-icons"
 import AnalogClock from "../../components/analogClock"
 import Slider from "@react-native-community/slider"
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { createEvent, getAllMovements, handleEventConflictError, handleApiError } from '../../utils/apiClient'
+import { useEventErrorHandler, showEventConflictAlert } from '../../utils/eventErrorHandler'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api'
 
@@ -36,6 +38,10 @@ const NewEventScreen = ({ navigation }) => {
   const [movementOptions, setMovementOptions] = useState([])
   const [showStartPicker, setShowStartPicker] = useState(false)
   const [showEndPicker, setShowEndPicker] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  // Use the new error handler hook
+  const { handleEventOperationResult } = useEventErrorHandler()
 
   useEffect(() => {
     fetchMovements()
@@ -43,18 +49,12 @@ const NewEventScreen = ({ navigation }) => {
 
   const fetchMovements = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`${BACKEND_URL}/movements`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      const data = await response.json()
-      if (data.success) {
-        setMovementOptions(data.data)
+      const result = await getAllMovements()
+      if (result.success) {
+        setMovementOptions(result.movements)
         // Initialize with first movement if available
-        if (data.data.length > 0) {
-          setSelectedMovementId(data.data[0].id)
+        if (result.movements.length > 0) {
+          setSelectedMovementId(result.movements[0].id)
         }
       } else {
         Alert.alert("Error", "Failed to load movements")
@@ -102,46 +102,47 @@ const NewEventScreen = ({ navigation }) => {
       horaFin: formatTimeForBackend(endTime),
       diasSemana: selectedDays, // Send as-is since we're using backend format
       movementId: selectedMovementId.toString(), // Ensure it's a string
-      enabled: true
+      activo: true // Use 'activo' instead of 'enabled' to match backend
     }
 
     console.log("Sending event data:", newEvent) // Debug log
 
+    setLoading(true)
+    
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert("Error", "No authentication token found. Please log in again.");
-        return;
-      }
-
-      const response = await fetch(`${BACKEND_URL}/events`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newEvent),
-      })
-
-      const data = await response.json()
-
-      if (response.ok && data.success) {
+      const result = await createEvent(newEvent)
+      
+      if (result.success) {
         Alert.alert("Success", "Event created successfully!", [
-          { text: "OK", onPress: () => navigation.goBack() }
+          { 
+            text: "OK", 
+            onPress: () => {
+              // Navigate back to Events screen which will auto-refresh
+              navigation.navigate('Events')
+            }
+          }
         ])
       } else {
-        console.error("Backend validation error:", data)
-        // Show specific validation errors if available
-        if (data.details && Array.isArray(data.details)) {
-          const errorMessages = data.details.map(detail => detail.msg).join('\n')
-          Alert.alert("Validation Error", errorMessages)
+        // Use the new conflict-aware error handling
+        const conflictInfo = handleEventConflictError(result)
+        
+        if (conflictInfo.isConflict) {
+          showEventConflictAlert(
+            conflictInfo,
+            () => navigation.navigate('Events'), // View existing events
+            null // Don't provide edit option for new event
+          )
         } else {
-          Alert.alert("Error", data.error || "Failed to create event")
+          // Handle other validation errors
+          const errorInfo = handleApiError({ response: { data: result } })
+          Alert.alert(errorInfo.title, errorInfo.message)
         }
       }
     } catch (error) {
       console.error("Error creating event:", error)
       Alert.alert("Error", "Failed to connect to server")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -230,8 +231,14 @@ const NewEventScreen = ({ navigation }) => {
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
-                <Text style={styles.createButtonText}>Create event</Text>
+              <TouchableOpacity 
+                style={[styles.createButton, loading && styles.createButtonDisabled]} 
+                onPress={handleCreate}
+                disabled={loading}
+              >
+                <Text style={styles.createButtonText}>
+                  {loading ? "Creating..." : "Create event"}
+                </Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -471,6 +478,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginBottom: 5,
+  },
+  createButtonDisabled: {
+    backgroundColor: "#cccccc",
   },
   createButtonText: {
     fontSize: 16,

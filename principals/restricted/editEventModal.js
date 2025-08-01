@@ -19,6 +19,8 @@ import AnalogClock from "../../components/analogClock";
 import { EventContext } from "../../context/eventContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { updateEvent, deleteEvent, getAllMovements, handleEventConflictError, handleApiError } from '../../utils/apiClient'
+import { useEventErrorHandler, showEventConflictAlert } from '../../utils/eventErrorHandler'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api';
 
@@ -41,6 +43,10 @@ const EditEventModal = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Use the new error handler hook
+  const { handleEventOperationResult } = useEventErrorHandler()
 
   useEffect(() => {
     fetchMovements();
@@ -81,35 +87,15 @@ const EditEventModal = () => {
 
   const fetchMovements = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert("Error", "No authentication token found. Please log in again.");
-        return;
-      }
-
-      const response = await fetch(`${BACKEND_URL}/movements`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Failed to fetch movements:", errorData);
-        Alert.alert("Error", errorData.error || "Failed to load movements");
-        return;
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setMovements(data.data);
+      const result = await getAllMovements()
+      if (result.success) {
+        setMovements(result.movements)
       } else {
-        Alert.alert("Error", "Failed to load movements");
+        Alert.alert("Error", "Failed to load movements")
       }
     } catch (error) {
-      console.error("Error fetching movements:", error);
-      Alert.alert("Error", "Failed to load movements");
+      console.error("Error fetching movements:", error)
+      Alert.alert("Error", "Failed to load movements")
     }
   };
 
@@ -155,45 +141,46 @@ const EditEventModal = () => {
 
     console.log("Updating event with data:", updatedEvent); // Debug log
 
+    setLoading(true)
+
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert("Error", "No authentication token found. Please log in again.");
-        return;
-      }
-
-      const response = await fetch(`${BACKEND_URL}/events/${event.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(updatedEvent),
-      });
-
-      const data = await response.json();
+      const result = await updateEvent(event.id, updatedEvent)
       
-      if (response.ok && data.success) {
+      if (result.success) {
         // Update local state if using context
         if (setEvents) {
           setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, ...updatedEvent } : e)));
         }
         Alert.alert("Success", "Event updated successfully!", [
-          { text: "OK", onPress: () => navigation.goBack() }
+          { 
+            text: "OK", 
+            onPress: () => {
+              // Navigate back to Events screen which will auto-refresh
+              navigation.navigate('Events')
+            }
+          }
         ]);
       } else {
-        console.error("Backend update error:", data);
-        // Show specific validation errors if available
-        if (data.details && Array.isArray(data.details)) {
-          const errorMessages = data.details.map(detail => detail.msg).join('\n');
-          Alert.alert("Validation Error", errorMessages);
+        // Use the new conflict-aware error handling
+        const conflictInfo = handleEventConflictError(result)
+        
+        if (conflictInfo.isConflict) {
+          showEventConflictAlert(
+            conflictInfo,
+            () => navigation.navigate('Events'), // View existing events
+            () => {} // Stay in current screen to edit
+          )
         } else {
-          Alert.alert("Error", data.error || "Failed to update event");
+          // Handle other validation errors
+          const errorInfo = handleApiError({ response: { data: result } })
+          Alert.alert(errorInfo.title, errorInfo.message)
         }
       }
     } catch (error) {
       console.error("Error updating event:", error);
       Alert.alert("Error", "Failed to connect to server");
+    } finally {
+      setLoading(false)
     }
   };
 
@@ -208,32 +195,24 @@ const EditEventModal = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              const token = await AsyncStorage.getItem('token');
-              if (!token) {
-                Alert.alert("Error", "No authentication token found. Please log in again.");
-                return;
-              }
-
-              const response = await fetch(`${BACKEND_URL}/events/${event.id}`, {
-                method: "DELETE",
-                headers: {
-                  "Authorization": `Bearer ${token}`,
-                },
-              });
-
-              const data = await response.json();
+              const result = await deleteEvent(event.id)
               
-              if (response.ok && data.success) {
+              if (result.success) {
                 // Update local state if using context
                 if (setEvents) {
                   setEvents((prev) => prev.filter((e) => e.id !== event.id));
                 }
                 Alert.alert("Success", "Event deleted successfully!", [
-                  { text: "OK", onPress: () => navigation.goBack() }
+                  { 
+                    text: "OK", 
+                    onPress: () => {
+                      // Navigate back to Events screen which will auto-refresh
+                      navigation.navigate('Events')
+                    }
+                  }
                 ]);
               } else {
-                console.error("Backend delete error:", data);
-                Alert.alert("Error", data.error || "Failed to delete event");
+                Alert.alert("Error", result.error || "Failed to delete event");
               }
             } catch (error) {
               console.error("Error deleting event:", error);
@@ -358,13 +337,20 @@ const EditEventModal = () => {
               )}
             </View>
 
-            <TouchableOpacity style={styles.createButton} onPress={handleUpdate}>
-              <Text style={styles.createButtonText}>Update Event</Text>
+            <TouchableOpacity 
+              style={[styles.createButton, loading && styles.createButtonDisabled]} 
+              onPress={handleUpdate}
+              disabled={loading}
+            >
+              <Text style={styles.createButtonText}>
+                {loading ? "Updating..." : "Update Event"}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.createButton, styles.deleteButton]}
               onPress={handleDelete}
+              disabled={loading}
             >
               <Text style={styles.createButtonText}>Delete Event</Text>
             </TouchableOpacity>
@@ -557,6 +543,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginBottom: 10,
+  },
+  createButtonDisabled: {
+    backgroundColor: "#cccccc",
   },
   deleteButton: {
     backgroundColor: "#ff6b6b",

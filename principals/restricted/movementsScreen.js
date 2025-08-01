@@ -101,19 +101,14 @@ const MovementsScreen = () => {
       const horas = movimiento.horas || {};
       const minutos = movimiento.minutos || {};
 
-      // Values according to API_GUIDE structure
+      // Simplified display values
       const duracion = item.duracion || 'N/A';
       const direccionGeneral = movimiento.direccionGeneral || 'N/A';
       
-      // Hours configuration
-      const horasDireccion = horas.direccion || 'N/A';
-      const horasVelocidad = horas.velocidad || 'N/A';
-      const horasAngulo = horas.angulo || 'N/A';
-      
-      // Minutes configuration
-      const minutosDireccion = minutos.direccion || 'N/A';
-      const minutosVelocidad = minutos.velocidad || 'N/A';
-      const minutosAngulo = minutos.angulo || 'N/A';
+      // Get average speed for display
+      const horasVelocidad = horas.velocidad || 0;
+      const minutosVelocidad = minutos.velocidad || 0;
+      const avgSpeed = Math.round((horasVelocidad + minutosVelocidad) / 2);
 
       return (
         <TouchableOpacity 
@@ -123,13 +118,7 @@ const MovementsScreen = () => {
           <Text style={styles.itemText}>{item.nombre}</Text>
           <View style={styles.itemDetails}>
             <Text style={styles.itemSubtext}>
-              Duration: {duracion}s | General Direction: {direccionGeneral}
-            </Text>
-            <Text style={styles.itemSubtext}>
-              Hours - Dir: {horasDireccion} | Speed: {horasVelocidad} | Angle: {horasAngulo}°
-            </Text>
-            <Text style={styles.itemSubtext}>
-              Minutes - Dir: {minutosDireccion} | Speed: {minutosVelocidad} | Angle: {minutosAngulo}°
+              Duration: {duracion}s • Direction: {direccionGeneral} • Speed: {avgSpeed}
             </Text>
           </View>
         </TouchableOpacity>

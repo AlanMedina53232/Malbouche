@@ -155,6 +155,55 @@ const UsersScreen = ({ navigation }) => {
     }
   };
 
+  // Function to delete a user
+  const handleDelete = async () => {
+    Alert.alert(
+      "Delete User",
+      `Are you sure you want to delete ${selectedUser?.nombre || selectedUser?.name}? This action cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+              if (!token) {
+                Alert.alert("Error", "No authentication token found. Please log in again.");
+                return;
+              }
+
+              const userId = selectedUser.id || selectedUser._id;
+              const response = await fetch(`${BACKEND_URL}/users/${userId}`, {
+                method: "DELETE",
+                headers: {
+                  "Authorization": `Bearer ${token}`,
+                },
+              });
+
+              const data = await response.json();
+              
+              if (response.ok && data.success) {
+                // Update local state
+                setUsers((prevUsers) => prevUsers.filter((user) => 
+                  (user.id !== userId && user._id !== userId)
+                ));
+                Alert.alert("Success", "User deleted successfully!");
+                setViewModalVisible(false);
+              } else {
+                console.error("Backend delete error:", data);
+                Alert.alert("Error", data.error || "Failed to delete user");
+              }
+            } catch (error) {
+              console.error("Error deleting user:", error);
+              Alert.alert("Error", "Failed to connect to server");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Function to get role color based on role name
   const getRoleInfo = (role) => {
     const roleLower = role?.toLowerCase();
@@ -373,6 +422,14 @@ const renderItem = ({ item }) => {
                 >
                   <Ionicons name="create-outline" size={20} color="white" />
                   <Text style={[styles.buttonText, { fontFamily: 'Montserrat_600SemiBold' }]}>Edit User</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.deleteButton}
+                  onPress={handleDelete}
+                >
+                  <Ionicons name="trash-outline" size={20} color="white" />
+                  <Text style={[styles.buttonText, { fontFamily: 'Montserrat_600SemiBold' }]}>Delete User</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -849,6 +906,18 @@ titleGradient: {
     shadowColor: '#660154',
     elevation: 3
 
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#dc2626',
+    paddingVertical: 12,
+    marginHorizontal:20,
+    borderRadius: 8,
+    marginTop: 15,
+    shadowColor: '#dc2626',
+    elevation: 3
   },
   buttonText: {
     color: 'white',

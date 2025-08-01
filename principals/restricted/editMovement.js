@@ -43,9 +43,6 @@ const EditMovementScreen = () => {
   // Precargar datos del movimiento
   useEffect(() => {
     if (movement) {
-      console.log("=== LOADING MOVEMENT DATA DEBUG START ===");
-      console.log("1. Original movement object:", JSON.stringify(movement, null, 2));
-
       setMoveName(movement.nombre || "");
 
       // Load nested movimiento fields according to API_GUIDE structure
@@ -53,10 +50,7 @@ const EditMovementScreen = () => {
       const horas = movimiento.horas || {};
       const minutos = movimiento.minutos || {};
 
-      console.log("2. Extracted movimiento:", movimiento);
-      console.log("3. Extracted horas:", horas);
-      console.log("4. Extracted minutos:", minutos);
-
+      // Correct mapping according to API_GUIDE: "derecha" = Right, "izquierda" = Left
       const hourType = horas.direccion === "izquierda" ? "Left" : "Right";
       const minuteType = minutos.direccion === "izquierda" ? "Left" : "Right";
 
@@ -65,14 +59,6 @@ const EditMovementScreen = () => {
       
       const hourAngulo = horas.angulo !== undefined ? String(horas.angulo) : "360";
       const minuteAngulo = minutos.angulo !== undefined ? String(minutos.angulo) : "360";
-
-      console.log("5. Mapped values:");
-      console.log("   - hourType:", hourType, "from direccion:", horas.direccion);
-      console.log("   - minuteType:", minuteType, "from direccion:", minutos.direccion);
-      console.log("   - hourSpeed:", hourSpeed, "from velocidad:", horas.velocidad);
-      console.log("   - minuteSpeed:", minuteSpeed, "from velocidad:", minutos.velocidad);
-      console.log("   - hourAngulo:", hourAngulo, "from angulo:", horas.angulo);
-      console.log("   - minuteAngulo:", minuteAngulo, "from angulo:", minutos.angulo);
 
       const newMovements = [
         {
@@ -91,9 +77,7 @@ const EditMovementScreen = () => {
         }
       ];
 
-      console.log("6. Final movements state to set:", newMovements);
       setMovements(newMovements);
-      console.log("=== LOADING MOVEMENT DATA DEBUG END ===");
     }
   }, [movement]);
 
@@ -105,20 +89,26 @@ const EditMovementScreen = () => {
 
   // Obtener callbacks del padre de manera segura
   const getParentCallbacks = () => {
-    const parent = navigation.getParent();
-    if (!parent) return {};
-    const parentState = parent.getState();
-    const parentRoute = parentState?.routes.find(r => r.name === "Movements");
-    return parentRoute?.params || {};
+    try {
+      const parent = navigation.getParent();
+      if (!parent) {
+        console.log("Warning: No parent navigator found");
+        return {};
+      }
+      const parentState = parent.getState();
+      const parentRoute = parentState?.routes.find(r => r.name === "Movements");
+      const callbacks = parentRoute?.params || {};
+      console.log("Parent callbacks found:", Object.keys(callbacks));
+      return callbacks;
+    } catch (error) {
+      console.log("Error getting parent callbacks:", error);
+      return {};
+    }
   };
 
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
-    console.log("=== EDIT MOVEMENT DEBUG START ===");
-    console.log("1. Movement name:", moveName);
-    console.log("2. Movements state:", movements);
-    
     if (!moveName.trim()) {
       Alert.alert("Error", "Please enter a movement name");
       return;
@@ -126,7 +116,6 @@ const EditMovementScreen = () => {
 
     const hasValidMovement = movements.some(m => m.speed && parseInt(m.speed) > 0);
     if (!hasValidMovement) {
-      console.log("2.1. ERROR: No valid movement with speed > 0");
       Alert.alert("Error", "Please fill at least one movement with speed greater than 0");
       return;
     }
@@ -136,21 +125,16 @@ const EditMovementScreen = () => {
     const minute = movements.find(m => m.hand === "Minute");
     
     if (!hour || !minute) {
-      console.log("2.2. ERROR: Missing hour or minute data");
       Alert.alert("Error", "Both hour and minute movements are required");
       return;
     }
 
     if (!hour.speed || !minute.speed) {
-      console.log("2.3. ERROR: Missing speed for hour or minute");
       Alert.alert("Error", "Both hour and minute movements need speed values");
       return;
     }
 
     setLoading(true);
-
-    console.log("3. Hour data:", hour);
-    console.log("4. Minute data:", minute);
 
     // Validate and convert values
     const hourSpeed = parseInt(hour?.speed);
@@ -160,110 +144,84 @@ const EditMovementScreen = () => {
 
     // Validate converted values according to API_GUIDE specifications
     if (isNaN(hourSpeed) || hourSpeed < 1 || hourSpeed > 100) {
-      console.log("4.1. ERROR: Invalid hour speed:", hourSpeed);
-      Alert.alert("Error", "Hour speed must be between 1-100 (API_GUIDE specification)");
+      Alert.alert("Error", "Hour speed must be between 1-100");
       setLoading(false);
       return;
     }
 
     if (isNaN(minuteSpeed) || minuteSpeed < 1 || minuteSpeed > 100) {
-      console.log("4.2. ERROR: Invalid minute speed:", minuteSpeed);
-      Alert.alert("Error", "Minute speed must be between 1-100 (API_GUIDE specification)");
+      Alert.alert("Error", "Minute speed must be between 1-100");
       setLoading(false);
       return;
     }
 
     if (isNaN(hourAngulo) || hourAngulo < 0.1 || hourAngulo > 360) {
-      console.log("4.3. ERROR: Invalid hour angle:", hourAngulo);
-      Alert.alert("Error", "Hour angle must be between 0.1-360 degrees (API_GUIDE specification)");
+      Alert.alert("Error", "Hour angle must be between 0.1-360 degrees");
       setLoading(false);
       return;
     }
 
     if (isNaN(minuteAngulo) || minuteAngulo < 0.1 || minuteAngulo > 360) {
-      console.log("4.4. ERROR: Invalid minute angle:", minuteAngulo);
-      Alert.alert("Error", "Minute angle must be between 0.1-360 degrees (API_GUIDE specification)");
+      Alert.alert("Error", "Minute angle must be between 0.1-360 degrees");
       setLoading(false);
       return;
     }
 
-    console.log("4.5. Validated values:");
-    console.log("   - hourSpeed:", hourSpeed);
-    console.log("   - minuteSpeed:", minuteSpeed);
-    console.log("   - hourAngulo:", hourAngulo);
-    console.log("   - minuteAngulo:", minuteAngulo);
-
-    // Additional validation for API_GUIDE compliance
     if (moveName.trim().length < 2 || moveName.trim().length > 100) {
-      console.log("4.6. ERROR: Invalid name length:", moveName.trim().length);
-      Alert.alert("Error", "Movement name must be between 2 and 100 characters (API_GUIDE requirement)");
+      Alert.alert("Error", "Movement name must be between 2 and 100 characters");
       setLoading(false);
       return;
     }
 
-    // Validate direction values (API_GUIDE expects exact strings: "derecha" or "izquierda")
+    // Validate direction values
     const hourDirection = hour?.type.toLowerCase() === "left" ? "izquierda" : "derecha";
     const minuteDirection = minute?.type.toLowerCase() === "left" ? "izquierda" : "derecha";
     
     if (!["derecha", "izquierda"].includes(hourDirection)) {
-      console.log("4.7. ERROR: Invalid hour direction:", hourDirection);
-      Alert.alert("Error", "Invalid hour direction - must be 'derecha' or 'izquierda'");
+      Alert.alert("Error", "Invalid hour direction");
       setLoading(false);
       return;
     }
 
     if (!["derecha", "izquierda"].includes(minuteDirection)) {
-      console.log("4.8. ERROR: Invalid minute direction:", minuteDirection);
-      Alert.alert("Error", "Invalid minute direction - must be 'derecha' or 'izquierda'");
+      Alert.alert("Error", "Invalid minute direction");
       setLoading(false);
       return;
     }
 
-    console.log("4.9. API_GUIDE validation passed successfully");
-    console.log("   - hourDirection:", hourDirection, "(API_GUIDE: 'derecha' or 'izquierda')");
-    console.log("   - minuteDirection:", minuteDirection, "(API_GUIDE: 'derecha' or 'izquierda')");
-
     // Build payload according to API_GUIDE structure
-    // For UPDATE (PUT), all fields are optional, but if provided must meet validation requirements
     const updatedMovement = {
-      nombre: moveName.trim(), // 2-100 characters, optional but included if changed
-      duracion: movement.duracion || 30, // Keep existing duration or default, positive integer
+      nombre: moveName.trim(),
+      duracion: movement.duracion || 30,
       movimiento: {
-        direccionGeneral: hourDirection, // "derecha" or "izquierda"
+        direccionGeneral: hourDirection,
         horas: {
-          direccion: hourDirection, // "derecha" or "izquierda"
-          velocidad: hourSpeed, // Integer 1-100
-          angulo: hourAngulo, // Float 0.1-360 (degrees of rotation)
+          direccion: hourDirection,
+          velocidad: hourSpeed,
+          angulo: hourAngulo
         },
         minutos: {
-          direccion: minuteDirection, // "derecha" or "izquierda"
-          velocidad: minuteSpeed, // Integer 1-100
-          angulo: minuteAngulo, // Float 0.1-360 (degrees of rotation)
+          direccion: minuteDirection,
+          velocidad: minuteSpeed,
+          angulo: minuteAngulo
         }
       }
     };
 
-    console.log("5. Final payload to send:", JSON.stringify(updatedMovement, null, 2));
-
     try {
       const token = await AsyncStorage.getItem('token');
+      
       if (!token) {
-        console.log("6. ERROR: No auth token found");
         Alert.alert("Error", "No se encontró token de autenticación. Por favor inicie sesión nuevamente.");
         setLoading(false);
         return;
       }
 
-      console.log("7. Token found, checking movement ID:", movement.id);
-      
-      if (!movement.id) {
-        console.log("7.1. ERROR: Movement ID is missing");
-        Alert.alert("Error", "Movement ID is required for update");
+      if (!movement || !movement.id) {
+        Alert.alert("Error", "Movement ID is required for update. Please go back and try again.");
         setLoading(false);
         return;
       }
-      
-      console.log("7.2. Making API request to:", `${BACKEND_URL}/movements/${movement.id}`);
       
       const response = await fetch(`${BACKEND_URL}/movements/${movement.id}`, {
         method: "PUT",
@@ -274,61 +232,69 @@ const EditMovementScreen = () => {
         body: JSON.stringify(updatedMovement)
       });
 
-      console.log("8. Response status:", response.status);
-      console.log("9. Response ok:", response.ok);
-      console.log("9.1. Response headers:", response.headers);
-
-      const data = await response.json();
-      console.log("10. Response data:", data);
+      const responseText = await response.text();
+      
+      let data;
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        if (!response.ok) {
+          Alert.alert("Error", `Server error (${response.status}): ${response.statusText}`);
+          setLoading(false);
+          return;
+        }
+        data = {};
+      }
 
       if (!response.ok) {
-        console.log("11. ERROR: API request failed - not matching API_GUIDE requirements");
-        console.log("12. Error details:", data.error || "Unknown error");
-        if (data.details) {
-          console.log("12.1. API_GUIDE validation details:", data.details);
-        }
-        if (data.errors) {
-          console.log("12.2. API_GUIDE validation errors array:", data.errors);
-        }
-        
-        // More specific error message referencing API_GUIDE
-        let errorMessage = `API_GUIDE Error: ${data.error || "Error actualizando movimiento"}`;
+        let errorMessage = `HTTP ${response.status}: ${data.error || response.statusText || "Error actualizando movimiento"}`;
         if (data.details) {
           errorMessage += `\nAPI Details: ${data.details}`;
         }
         if (data.errors && Array.isArray(data.errors)) {
-          errorMessage += `\nValidation errors (see API_GUIDE): ${data.errors.map(e => e.msg || e.message || e).join(', ')}`;
+          errorMessage += `\nValidation errors: ${data.errors.map(e => e.msg || e.message || e).join(', ')}`;
         }
         
-        Alert.alert("API_GUIDE Validation Error", errorMessage);
+        Alert.alert("API Error", errorMessage);
         setLoading(false);
         return;
       }
 
-      console.log("13. SUCCESS: Movement updated successfully according to API_GUIDE");
-
-      const { onMovementUpdated } = getParentCallbacks();
-      if (onMovementUpdated) {
-        console.log("14. Calling parent callback with:", { id: movement.id, ...updatedMovement });
-        onMovementUpdated({ id: movement.id, ...updatedMovement });
+      if (data.success === false) {
+        let errorMessage = `Backend Error: ${data.error || "Error actualizando movimiento"}`;
+        if (data.details) {
+          errorMessage += `\nDetails: ${data.details}`;
+        }
+        
+        Alert.alert("Error", errorMessage);
+        setLoading(false);
+        return;
       }
 
-      Alert.alert("Éxito", "Movimiento actualizado exitosamente");
-      navigation.goBack();
+      const updatedMovementData = data.data || data.movement || data;
+      
+      const { onMovementUpdated } = getParentCallbacks();
+      if (onMovementUpdated) {
+        onMovementUpdated({ id: movement.id, ...updatedMovementData });
+      }
+
+      Alert.alert("Éxito", "Movimiento actualizado exitosamente", [
+        {
+          text: "OK",
+          onPress: () => {
+            navigation.goBack();
+          }
+        }
+      ]);
     } catch (error) {
-      console.log("15. FETCH ERROR:", error);
       console.error("Error updating movement:", error);
       Alert.alert("Error", "No se pudo conectar con el servidor");
     } finally {
       setLoading(false);
-      console.log("=== EDIT MOVEMENT DEBUG END ===");
     }
   };
 
   const handleDelete = () => {
-    console.log("=== DELETE MOVEMENT DEBUG START ===");
-    console.log("1. Movement to delete:", movement);
-    
     Alert.alert(
       "Delete Movement",
       "Are you sure you want to delete this movement?",
@@ -337,18 +303,14 @@ const EditMovementScreen = () => {
         { 
           text: "Delete", 
           onPress: async () => {
-            console.log("2. User confirmed deletion");
             setLoading(true);
             try {
               const token = await AsyncStorage.getItem('token');
               if (!token) {
-                console.log("3. ERROR: No auth token found");
                 Alert.alert("Error", "No se encontró token de autenticación. Por favor inicie sesión nuevamente.");
                 setLoading(false);
                 return;
               }
-
-              console.log("4. Making DELETE request to:", `${BACKEND_URL}/movements/${movement.id}`);
 
               const response = await fetch(`${BACKEND_URL}/movements/${movement.id}`, {
                 method: "DELETE",
@@ -357,34 +319,43 @@ const EditMovementScreen = () => {
                 }
               });
 
-              console.log("5. DELETE response status:", response.status);
-              console.log("6. DELETE response ok:", response.ok);
-
               if (!response.ok) {
                 const data = await response.json();
-                console.log("7. DELETE ERROR response data:", data);
                 Alert.alert("Error", data.error || "Error eliminando movimiento");
                 setLoading(false);
                 return;
               }
 
-              console.log("8. DELETE SUCCESS");
+              // For DELETE, check if there's response body
+              let data = null;
+              try {
+                const responseText = await response.text();
+                if (responseText) {
+                  data = JSON.parse(responseText);
+                  
+                  // Check if backend returned success: false in response body
+                  if (data.success === false) {
+                    Alert.alert("Error", data.error || "Error eliminando movimiento");
+                    setLoading(false);
+                    return;
+                  }
+                }
+              } catch (parseError) {
+                // Response might be empty for successful delete, which is fine
+              }
 
               const { onMovementDeleted } = getParentCallbacks();
               if (onMovementDeleted) {
-                console.log("9. Calling parent callback with movement id:", movement.id);
                 onMovementDeleted(movement.id);
               }
 
               Alert.alert("Éxito", "Movimiento eliminado exitosamente");
               navigation.goBack();
             } catch (error) {
-              console.log("10. DELETE FETCH ERROR:", error);
               console.error("Error deleting movement:", error);
               Alert.alert("Error", "No se pudo conectar con el servidor");
             } finally {
               setLoading(false);
-              console.log("=== DELETE MOVEMENT DEBUG END ===");
             }
           }
         }
@@ -518,16 +489,18 @@ const EditMovementScreen = () => {
 
             <View style={styles.buttonContainer}>
               <TouchableOpacity 
-                style={[styles.actionButton, styles.deleteButton]} 
+                style={[styles.actionButton, styles.deleteButton, loading && styles.disabledButton]} 
                 onPress={handleDelete}
+                disabled={loading}
               >
-                <Text style={styles.buttonText}>Delete</Text>
+                <Text style={styles.buttonText}>{loading ? "Eliminando..." : "Delete"}</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.actionButton, styles.saveButton]} 
+                style={[styles.actionButton, styles.saveButton, loading && styles.disabledButton]} 
                 onPress={handleSave}
+                disabled={loading}
               >
-                <Text style={styles.buttonText}>Save Changes</Text>
+                <Text style={styles.buttonText}>{loading ? "Guardando..." : "Save Changes"}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -697,13 +670,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 20,
+    gap: 10,
   },
   actionButton: {
     flex: 1,
-    padding: 15,
+    padding: 12,
     borderRadius: 8,
     alignItems: "center",
-    marginHorizontal: 5,
   },
   saveButton: {
     backgroundColor: "#400135",
@@ -711,10 +684,13 @@ const styles = StyleSheet.create({
   deleteButton: {
     backgroundColor: "#ff4444",
   },
+  disabledButton: {
+    opacity: 0.6,
+  },
   buttonText: {
     color: "#fff",
     fontWeight: "600",
-    fontSize: 16,
+    fontSize: 14,
   },
 })
 

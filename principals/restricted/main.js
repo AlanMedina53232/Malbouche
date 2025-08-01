@@ -1,6 +1,4 @@
 import React, { useState, useCallback, useEffect } from "react";
-import * as Location from 'expo-location';
-import * as Network from 'expo-network';
 import { Platform } from 'react-native';
 import {
   View,
@@ -24,7 +22,6 @@ import FrameImage from '../../assets/marcoReloj.png';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
-  checkNetworkStatus, 
   validateIPFormat, 
   pingESP32, 
   connectToESP32Android, 
@@ -84,15 +81,6 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     setAlertType('info');
     
     try {
-      // Verificar conectividad
-      const networkStatus = await checkNetworkStatus();
-      if (!networkStatus.isConnected) {
-        setAlertMessage('Sin conexión WiFi. Conecta a una red primero.');
-        setAlertType('error');
-        setTimeout(() => setAlertMessage(''), 4000);
-        return;
-      }
-
       // Escanear múltiples redes con callback de progreso
       const devices = await scanMultipleNetworks((progress) => {
         setScanProgress(progress);
@@ -131,23 +119,10 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     setTimeout(() => setAlertMessage(''), 3000);
   };
 
-  // Cargar la IP guardada al iniciar y pedir permisos de ubicación
+  // Cargar la IP guardada al iniciar
   useEffect(() => {
-    const loadEspIpAndRequestLocation = async () => {
+    const loadEspIp = async () => {
       try {
-        // Verificar conectividad de red
-        const networkState = await Network.getNetworkStateAsync();
-        if (!networkState.isConnected) {
-          Alert.alert('Sin conexión', 'Por favor, conecta tu dispositivo a WiFi para comunicarse con el reloj.');
-          return;
-        }
-
-        // Solicitar permisos de ubicación en tiempo de ejecución
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert('Permiso requerido', 'Se requiere el permiso de ubicación para comunicarse con el reloj por WiFi.');
-        }
-        
         const savedIp = await AsyncStorage.getItem(ESP_IP_KEY);
         if (savedIp) {
           setEspIp(savedIp);
@@ -158,13 +133,16 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           setIpModalVisible(true);
         }
       } catch (e) {
-        console.error("Error loading ESP IP o solicitando permisos:", e);
+        console.error("Error loading ESP IP:", e);
       }
     };
-    loadEspIpAndRequestLocation();
+    loadEspIp();
   }, []);
 
-  // Función para probar la conexión con el ESP32
+  // Actualizar ESP_IP cuando cambie espIp
+  useEffect(() => {
+    ESP_IP = espIp;
+  }, [espIp]);
   const testEspConnection = async (ip) => {
     try {
       // Use our unified service to test the connection
@@ -308,6 +286,29 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     if (preset === "Custom") {
       setCustomModalVisible(true);
       fetchCustomMovements();
+      return;
+    }
+
+    // If stop command, just send directly to ESP32 without backend
+    if (preset === "stop") {
+      if (espIp) {
+        try {
+          const result = await UnifiedClockService.sendPreset(espIp, "stop", 0);
+          if (result.success) {
+            setAlertMessage("Movimiento detenido");
+            setAlertType("success");
+          } else {
+            setAlertMessage(`Error deteniendo movimiento: ${result.message}`);
+            setAlertType("error");
+          }
+          setTimeout(() => setAlertMessage(''), 3000);
+        } catch (error) {
+          console.error("Error stopping movement:", error);
+          setAlertMessage("Error deteniendo movimiento");
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 3000);
+        }
+      }
       return;
     }
 
@@ -578,44 +579,65 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     debouncedSpeedUpdate(newSpeed);
   };
 
-  const sendCommand = async (command) => {
-    if (!espIp) {
-      setAlertMessage('No se ha configurado la IP del reloj. Configúrala primero.');
-      setAlertType('error');
-      setTimeout(() => setAlertMessage(''), 4000);
-      return;
+  // Helper function to handle backend + ESP32 communication
+  const executeMovementCommand = async (preset, forceMethod = null) => {
+    // Determinar el método de envío
+    let useBackend;
+    
+    if (forceMethod === 'direct') {
+      useBackend = false;
+    } else if (forceMethod === 'backend') {
+      useBackend = true;
+    } else {
+      // Por defecto usar backend para todos excepto stop
+      useBackend = preset !== "stop";
     }
 
-    try {
-      console.log('Enviando comando:', command, 'a IP:', espIp);
-      
-      // Use our unified service to send a preset command
-      const result = await UnifiedClockService.sendPreset(espIp, command, speed);
-      
-      if (result.success) {
-        setAlertMessage(`Comando enviado exitosamente: ${result.message}`);
-        setAlertType('success');
-        console.log('Comando enviado con éxito al dispositivo');
-      } else {
-        setAlertMessage(result.message);
+    if (useBackend && preset !== "stop") {
+      // Use backend system for all movements except stop
+      try {
+        return await handlePresetSelect(preset);
+      } catch (error) {
+        console.warn('Backend failed, falling back to direct communication:', error);
+        // Fallback to direct communication
+        return await executeMovementCommand(preset, 'direct');
+      }
+    } else {
+      // Direct ESP32 communication for stop or when backend is disabled
+      if (!espIp) {
+        setAlertMessage('No se ha configurado la IP del reloj. Configúrala primero.');
         setAlertType('error');
-        console.error('Error enviando comando al dispositivo:', result.message);
+        setTimeout(() => setAlertMessage(''), 4000);
+        return;
       }
-      
-      setTimeout(() => setAlertMessage(''), 4000);
-    } catch (error) {
-      console.error('Error enviando comando:', error);
-      
-      let errorMessage = 'Error inesperado al enviar comando al reloj';
-      
-      if (error.message) {
-        errorMessage = `Error: ${error.message}`;
+
+      try {
+        console.log('Enviando comando directo:', preset, 'a IP:', espIp);
+        
+        const result = await UnifiedClockService.sendPreset(espIp, preset, speed);
+        
+        if (result.success) {
+          setAlertMessage(`Comando enviado exitosamente: ${result.message}`);
+          setAlertType('success');
+          console.log('Comando enviado con éxito al dispositivo');
+        } else {
+          setAlertMessage(result.message);
+          setAlertType('error');
+          console.error('Error enviando comando al dispositivo:', result.message);
+        }
+        
+        setTimeout(() => setAlertMessage(''), 4000);
+      } catch (error) {
+        console.error('Error enviando comando:', error);
+        setAlertMessage('Error inesperado al enviar comando al reloj');
+        setAlertType('error');
+        setTimeout(() => setAlertMessage(''), 4000);
       }
-      
-      setAlertMessage(errorMessage);
-      setAlertType('error');
-      setTimeout(() => setAlertMessage(''), 6000);
     }
+  };
+
+  const sendCommand = async (command) => {
+    return await executeMovementCommand(command, 'direct'); // Force direct communication
   };
 
   const sendSpeed = async (newSpeed) => {
@@ -649,12 +671,15 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   };
 
 
-  const handleOptionSelect = (option) => {
+  const handleOptionSelect = async (option) => {
     setSelectedOption(option);
-     if(option === "Custom") {
-      sendCommand("stop");
+    
+    if(option === "Custom") {
+      // Para Custom, simplemente detenemos cualquier movimiento actual
+      await handlePresetSelect("stop");
     } else {
-      sendCommand(option.toLowerCase());
+      // Para otros movimientos, usamos el sistema backend
+      await handlePresetSelect(option.toLowerCase());
     }
   };
 
@@ -760,6 +785,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         <View style={styles.titleContainer}>
           <Text style={[styles.title, { fontFamily: 'Cinzel_700Bold' }]}>MALBOUCHE</Text>
         </View>
+
         <TouchableOpacity
           style={styles.profileButton}
           onPress={() => navigation.navigate('UserDetail', { user: currentUser })}

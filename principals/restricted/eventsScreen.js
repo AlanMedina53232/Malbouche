@@ -18,7 +18,7 @@ const EventsScreen = () => {
   const navigation = useNavigation()
   // const { events, setEvents } = useContext(EventContext)
   const [movements, setMovements] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [updatingEvents, setUpdatingEvents] = useState(new Set()) // Track which events are being updated
 
   const [localEvents, setLocalEvents] = useState([])
@@ -246,14 +246,6 @@ const toggleEventStatus = async (eventId) => {
     )
   }
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#660154" />
-      </SafeAreaView>
-    )
-  }
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -307,12 +299,6 @@ const styles = StyleSheet.create({
     },
     safeArea: {
       flex: 1,
-      backgroundColor: "#f4f4f4",
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
       backgroundColor: "#f4f4f4",
     },
     header: {

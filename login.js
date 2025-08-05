@@ -86,9 +86,16 @@ export default function Login({ navigation }) {
       if (data.data && data.data.token) {
         // Guarda el token para futuras peticiones
         await AsyncStorage.setItem('token', data.data.token);
-        // Save the user ID for current user info
+        // Guarda el ID del usuario actual
         if (data.data && data.data.user && data.data.user.id) {
           await AsyncStorage.setItem('currentUserId', data.data.user.id);
+        }
+        // Guarda el rol del usuario en AsyncStorage
+        if (data.data && data.data.user && (data.data.user.rol || data.data.user.Rol)) {
+          const role = data.data.user.rol || data.data.user.Rol;
+          await AsyncStorage.setItem('userRole', role.toLowerCase());
+        } else {
+          await AsyncStorage.setItem('userRole', 'user');
         }
         navigation.replace('Home');
       } else {

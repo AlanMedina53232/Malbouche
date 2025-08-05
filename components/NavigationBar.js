@@ -14,39 +14,19 @@ const NavigationBar = () => {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("Home");
   const [userRole, setUserRole] = useState(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
-  // Fetch current user data to get role
+  // Solo lee el rol almacenado en AsyncStorage una vez al montar el componente
   useEffect(() => {
-    const fetchUserRole = async () => {
+    const getStoredUserRole = async () => {
       try {
-        const token = await AsyncStorage.getItem('token');
-        const currentUserId = await AsyncStorage.getItem('currentUserId');
-        
-        if (!token || !currentUserId) {
-          setIsLoadingUser(false);
-          return;
-        }
-
-        const response = await fetch(`${BACKEND_URL}/users/${currentUserId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const user = data.data || data;
-          setUserRole(user.rol?.toLowerCase() || user.Rol?.toLowerCase() || 'user');
-        }
+        const storedRole = await AsyncStorage.getItem('userRole');
+        setUserRole(storedRole ? storedRole.toLowerCase() : 'user');
       } catch (error) {
-        console.error('Error fetching user role:', error);
-      } finally {
-        setIsLoadingUser(false);
+        console.error('Error reading user role from storage:', error);
+        setUserRole('user');
       }
     };
-
-    fetchUserRole();
+    getStoredUserRole();
   }, []);
 
   // Sincroniza el tab activo con la ruta actual

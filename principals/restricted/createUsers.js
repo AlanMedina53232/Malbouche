@@ -17,8 +17,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DEFAULT_PASSWORD = "Malbouche2025!"
 const ROLE_OPTIONS = [
-  { label: "Admin", value: "Admin" },
-  { label: "VIP", value: "VIP" },
+  { label: "Admin", value: "admin" },
+  { label: "VIP", value: "vip" },
+  { label: "Usuario", value: "usuario" },
 ]
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api' // Fallback if env not set
@@ -32,8 +33,33 @@ const CreateUsers = ({ navigation }) => {
   const [showRoleDropdown, setShowRoleDropdown] = useState(false)
 
   const handleCreateUser = async () => {
+    // Validaciones del frontend que coinciden con el backend
     if (!nombre.trim() || !apellidos.trim() || !correo.trim()) {
       Alert.alert("Error", "Please complete the required fields: Name, Last Name and Email")
+      return
+    }
+
+    // Validar longitud del nombre (2-50 caracteres)
+    if (nombre.trim().length < 2 || nombre.trim().length > 50) {
+      Alert.alert("Error", "Name must be between 2 and 50 characters")
+      return
+    }
+
+    // Validar longitud de apellidos (2-50 caracteres)
+    if (apellidos.trim().length < 2 || apellidos.trim().length > 50) {
+      Alert.alert("Error", "Last name must be between 2 and 50 characters")
+      return
+    }
+
+    // Validar formato de correo
+    if (!/\S+@\S+\.\S+/.test(correo.trim())) {
+      Alert.alert("Error", "Must be a valid email")
+      return
+    }
+
+    // Validar que el rol sea válido
+    if (!["admin", "usuario", "vip"].includes(rol)) {
+      Alert.alert("Error", "Role must be: admin, usuario or vip")
       return
     }
 
@@ -41,8 +67,9 @@ const CreateUsers = ({ navigation }) => {
     const userData = {
       nombre: nombre.trim(),
       apellidos: apellidos.trim(),
-      correo: correo.trim(),
-      rol: ROLE_OPTIONS.some(r => r.value === rol) ? rol : "usuario",
+      correo: correo.trim().toLowerCase(),
+      puesto: "empleado", // Valor por defecto
+      rol: rol,
       password: DEFAULT_PASSWORD,
     }
 
@@ -70,7 +97,16 @@ const CreateUsers = ({ navigation }) => {
         ])
       } else {
         console.error("Error creating user:", data);
-        Alert.alert("Error", data.error || "Error creando usuario")
+        
+        // Manejo específico de errores de validación
+        if (data.details && Array.isArray(data.details)) {
+          const validationErrors = data.details.map(detail => detail.msg || detail.message).join('\n');
+          Alert.alert("Error de validación", validationErrors);
+        } else if (data.error) {
+          Alert.alert("Error", data.error);
+        } else {
+          Alert.alert("Error", "Error creando usuario");
+        }
       }
     } catch (error) {
       console.error("Fetch error creating user:", error);
@@ -132,14 +168,13 @@ const CreateUsers = ({ navigation }) => {
               autoCapitalize="none"
             />
 
-
             <Text style={styles.label}>Rol</Text>
             <TouchableOpacity
               style={styles.dropdown}
               onPress={() => setShowRoleDropdown(!showRoleDropdown)}
             >
               <Text style={styles.dropdownText}>
-                {ROLE_OPTIONS.find(r => r.value === rol)?.label || "Select Role"} 
+                {ROLE_OPTIONS.find(r => r.value === rol)?.label || "Usuario"} 
               </Text>
               <Ionicons name={showRoleDropdown ? "chevron-up" : "chevron-down"} size={20} color="#333" />
             </TouchableOpacity>

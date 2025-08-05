@@ -7,6 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 
+
+
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api' // Fallback if env not set
 
 const UsersScreen = ({ navigation }) => {
@@ -23,6 +25,8 @@ const UsersScreen = ({ navigation }) => {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState(null);
+
 
   const currentUser = {
     id: 1,
@@ -30,10 +34,11 @@ const UsersScreen = ({ navigation }) => {
     email: 'AlmIsaMedRam@gmail.com'
   };
 
-  const ROLE_OPTIONS = [
-    { label: "Admin", value: "admin" },
-    { label: "VIP", value: "vip" },
-  ]
+ const ROLE_OPTIONS = [
+  { label: "Admin", value: "admin" },
+  { label: "VIP", value: "vip" },
+  { label: "Usuario", value: "usuario" },
+]
 
   // Función para abrir modal de visualización
   const openViewModal = (user) => {
@@ -52,22 +57,24 @@ const UsersScreen = ({ navigation }) => {
     setEditModalVisible(true);
   };
 
+const filteredUsers = useMemo(() => {
+  return users.filter(user => {
+    const searchLower = searchTerm.toLowerCase();
+    const userRole = user.rol?.toLowerCase() || user.Rol?.toLowerCase();
+    const matchesSearch =
+      (user.nombre?.toLowerCase().includes(searchLower) || 
+       user.name?.toLowerCase().includes(searchLower)) ||
+      (user.apellidos?.toLowerCase().includes(searchLower) ||
+        user.lastName?.toLowerCase().includes(searchLower)) || 
+      (user.correo?.toLowerCase().includes(searchLower) || 
+       user.email?.toLowerCase().includes(searchLower)) ||
+      (userRole?.includes(searchLower));
+    const matchesRole = selectedRoleFilter ? userRole === selectedRoleFilter : true;
+    return matchesSearch && matchesRole;
+  });
+}, [users, searchTerm, selectedRoleFilter]);
 
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => {
-      const searchLower = searchTerm.toLowerCase()
-      return (
-        (user.nombre?.toLowerCase().includes(searchLower) || 
-         user.name?.toLowerCase().includes(searchLower)) ||
-        (user.apellidos?.toLowerCase().includes(searchLower) ||
-          user.lastName?.toLowerCase().includes(searchLower)) || 
-        (user.correo?.toLowerCase().includes(searchLower) || 
-         user.email?.toLowerCase().includes(searchLower)) ||
-        (user.rol?.toLowerCase().includes(searchLower) || 
-         user.Rol?.toLowerCase().includes(searchLower))
-      )
-    })
-  }, [users, searchTerm])
+  
 
 
   useEffect(() => {
@@ -205,29 +212,29 @@ const UsersScreen = ({ navigation }) => {
   };
 
   // Function to get role color based on role name
-  const getRoleInfo = (role) => {
-    const roleLower = role?.toLowerCase();
-    switch(roleLower) {
-      case 'vip': 
-        return {
-          color: '#fbb42a',
-          emoji: '👑', // Corona para VIP
-          label: 'VIP'
-        };
-      case 'admin': 
-        return {
-          color: '#660154',
-          emoji: '⚙️', // Engranaje para Admin
-          label: 'Admin'
-        };
-      default: 
-        return {
-          color: '#666',
-          emoji: '👤', // Emoji genérico para otros roles
-          label: role || 'User'
-        };
-    }
+const getRoleInfo = (role) => {
+  const roleLower = role?.toLowerCase();
+  switch(roleLower) {
+    case 'vip': 
+      return {
+        color: '#fbb42a',
+        icon: 'diamond',
+        label: 'VIP'
+      };
+    case 'admin': 
+      return {
+        color: '#660154',
+        icon: 'settings',
+        label: 'Admin'
+      };
+    default: 
+      return {
+        color: '#0b2b70ff',
+        icon: 'person',
+        label: 'Usuario'
+      };
   }
+}
 
   // Estilo dinámico para el FAB basado en los safe area insets
   const fabDynamicStyle = {
@@ -247,7 +254,7 @@ const renderItem = ({ item }) => {
   return (
     <TouchableOpacity 
       style={styles.userCard} 
-      onPress={() => openViewModal(item)} // Cambiado a openViewModal
+      onPress={() => openViewModal(item)}
     >
       <View style={styles.avatar}>
         <Ionicons name="person" size={24} color="#666" />
@@ -260,11 +267,14 @@ const renderItem = ({ item }) => {
           {item.correo || item.email}
         </Text>
         <View style={styles.roleContainer}>
+          <View style={[styles.roleBadge, { backgroundColor: roleInfo.color }]}>
+            <Ionicons name={roleInfo.icon} size={14} color="white" />
+          </View>
           <Text style={[styles.userRol, { 
             color: roleInfo.color, 
             fontFamily: 'Montserrat_400Regular' 
           }]}>
-            {roleInfo.emoji} {roleInfo.label}
+            {roleInfo.label}
           </Text>
         </View>
       </View>
@@ -297,23 +307,76 @@ const renderItem = ({ item }) => {
   </View>
 </LinearGradient>
 
- <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search users..."
-            placeholderTextColor="#999"
-            value={searchTerm}
-            onChangeText={setSearchTerm}
-            clearButtonMode="while-editing"
-          />
-          {searchTerm ? (
-            <TouchableOpacity onPress={() => setSearchTerm('')} style={styles.clearButton}>
-              <Ionicons name="close-circle" size={20} color="#999" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
+<View style={styles.searchContainer}>
+  <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+  <TextInput
+    style={styles.searchInput}
+    placeholder="Search users..."
+    placeholderTextColor="#999"
+    value={searchTerm}
+    onChangeText={setSearchTerm}
+    clearButtonMode="while-editing"
+  />
+  {searchTerm ? (
+    <TouchableOpacity onPress={() => setSearchTerm('')} style={styles.clearButton}>
+      <Ionicons name="close-circle" size={20} color="#999" />
+    </TouchableOpacity>
+  ) : null}
+  {/* Solo el icono de filtro aquí */}
+<TouchableOpacity
+  style={styles.filterIconContainer}
+  onPress={() => setShowRoleDropdown(!showRoleDropdown)}
+  activeOpacity={0.8}
+>
+  <Ionicons name="filter" size={22} color="#660154" />
+  {selectedRoleFilter ? (
+    <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(selectedRoleFilter).color, marginLeft: 4 }]}>
+      <Ionicons name={getRoleInfo(selectedRoleFilter).icon} size={12} color="white" />
+    </View>
+  ) : null}
+</TouchableOpacity>
+</View>
+{showRoleDropdown && (
+  <View style={styles.dropdownOverlay}>
+    <TouchableOpacity
+      style={styles.dropdownOptionsSearch}
+      activeOpacity={1}
+    >
+      <TouchableOpacity
+        style={styles.dropdownOption}
+        onPress={() => {
+          setSelectedRoleFilter(null);
+          setShowRoleDropdown(false);
+        }}
+      >
+        <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular' }]}>Todos</Text>
+      </TouchableOpacity>
+      {ROLE_OPTIONS.map((role, index) => (
+        <TouchableOpacity
+          key={role.value}
+          style={[
+            styles.dropdownOption,
+            index === ROLE_OPTIONS.length - 1 && { borderBottomWidth: 0 }
+          ]}
+          onPress={() => {
+            setSelectedRoleFilter(role.value);
+            setShowRoleDropdown(false);
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(role.value).color }]}>
+              <Ionicons name={getRoleInfo(role.value).icon} size={14} color="white" />
+            </View>
+            <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>{role.label}</Text>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </TouchableOpacity>
+  </View>
+)}
 
+
+ 
         <FlatList
           data={filteredUsers}
           renderItem={renderItem}
@@ -489,51 +552,68 @@ const renderItem = ({ item }) => {
                 />
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Rol</Text>
-                <TouchableOpacity 
-                  style={styles.dropdownSelector}
-                  onPress={() => setShowRoleDropdown(!showRoleDropdown)} 
-                >
-                  <Text style={[styles.dropdownSelectorText, { fontFamily: 'Montserrat_400Regular' }]}>
-                    {editedRol || "Select Role"} 
-                  </Text>
-                  <Ionicons 
-                    name={showRoleDropdown ? "chevron-up" : "chevron-down"} 
-                    size={20} 
-                    color="#666" 
-                  />
-                </TouchableOpacity>
-                
-                {showRoleDropdown && (
-                  <View style={styles.dropdownOptions}>
-                    {ROLE_OPTIONS.map((role, index) => (
-                      <TouchableOpacity
-                        key={role.value}
-                        style={[
-                          styles.dropdownOption,
-                          index === ROLE_OPTIONS.length - 1 && { borderBottomWidth: 0 }
-                        ]}
-                        onPress={() => {
-                          setEditedRol(role.value);
-                          setShowRoleDropdown(false);
-                        }}
-                      >
-                        <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular' }]}>{role.label}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
+             <View style={styles.inputContainer}>
+  <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Rol</Text>
+  <TouchableOpacity 
+  style={styles.dropdownSelector}
+  onPress={() => setShowRoleDropdown(!showRoleDropdown)} 
+  activeOpacity={0.8}
+>
+  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    {editedRol ? (
+      <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(editedRol).color }]}>
+        <Ionicons name={getRoleInfo(editedRol).icon} size={14} color="white" />
+      </View>
+    ) : null}
+    <Text style={[styles.dropdownSelectorText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>
+      {editedRol || "Select Role"} 
+    </Text>
+  </View>
+  <Ionicons 
+    name={showRoleDropdown ? "chevron-up" : "chevron-down"} 
+    size={20} 
+    color="#660154" 
+  />
+</TouchableOpacity>
+  
+  {showRoleDropdown && (
+  <View style={styles.dropdownOptions}>
+    {ROLE_OPTIONS.map((role, index) => (
+      <TouchableOpacity
+        key={role.value}
+        style={[
+          styles.dropdownOption,
+          index === ROLE_OPTIONS.length - 1 && { borderBottomWidth: 0 }
+        ]}
+        onPress={() => {
+          setEditedRol(role.value);
+          setShowRoleDropdown(false);
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(role.value).color }]}>
+            <Ionicons name={getRoleInfo(role.value).icon} size={14} color="white" />
+          </View>
+          <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>{role.label}</Text>
+        </View>
+      </TouchableOpacity>
+    ))}
+  </View>
+)}
+</View>
 
-              <TouchableOpacity 
-                style={styles.saveButton} 
-                onPress={handleSave}
-              >
-                <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>
-                  Save Changes
-                </Text>
-              </TouchableOpacity>
+<TouchableOpacity onPress={handleSave} activeOpacity={0.85}>
+  <LinearGradient
+    colors={['#a5639bff', '#660154']}
+    start={{ x: 1, y: 1 }}
+    end={{ x: 0, y: 0 }}
+    style={styles.saveButtonGradient}
+  >
+    <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>
+      Save Changes
+    </Text>
+  </LinearGradient>
+</TouchableOpacity>
               </View>
             </TouchableOpacity>
           </TouchableOpacity>
@@ -832,7 +912,6 @@ titleGradient: {
   fab: {
     position: "absolute",
     right: 20,
-    // bottom se define dinámicamente con fabDynamicStyle
     backgroundColor: "#400135", 
     width: 70,
     height: 70,
@@ -924,6 +1003,100 @@ titleGradient: {
     marginLeft: 8,
     fontFamily: 'Montserrat_600SemiBold',
   },
+roleBadge: {
+  width: 28,
+  height: 28,
+  borderRadius: 14,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginRight: 2,
+},
+roleBadgeText: {
+  fontSize: 18,
+},
+saveButtonGradient: {
+  padding: 15,
+  borderRadius: 8,
+  alignItems: "center",
+  marginTop: 10,
+  shadowColor: "#660154",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.25,
+  shadowRadius: 4,
+  elevation: 5,
+},
+
+roleFilterButton: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#fff',
+  borderRadius: 20,
+  borderWidth: 1,
+  borderColor: '#ccc',
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+  marginRight: 8,
+  marginBottom: 5,
+  shadowColor: '#660154',
+  elevation: 2,
+},
+roleFilterButtonActive: {
+  borderColor: '#660154',
+  backgroundColor: '#fbb42a22',
+},
+roleFilterText: {
+  fontSize: 15,
+  color: '#333',
+  marginLeft: 6,
+  fontFamily: 'Montserrat_600SemiBold',
+},
+roleFilterClear: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 8,
+  paddingVertical: 6,
+  borderRadius: 20,
+  backgroundColor: '#fff',
+  borderWidth: 1,
+  borderColor: '#660154',
+  marginLeft: 4,
+  marginBottom: 5,
+},
+roleFilterClearText: {
+  color: '#660154',
+  marginLeft: 4,
+  fontFamily: 'Montserrat_600SemiBold',
+  fontSize: 15,
+},
+filterIconContainer: {
+  marginLeft: 8,
+  flexDirection: 'row',
+  alignItems: 'center',
+  padding: 4,
+  borderRadius: 8,
+  backgroundColor: '#f4f4f4',
+  borderWidth: 1,
+  borderColor: '#eee',
+},
+dropdownOverlay: {
+  position: 'absolute',
+  top: 155, // ajusta según la altura de tu header + searchContainer
+  right: 15,
+  zIndex: 9999,
+  elevation: 20,
+},
+dropdownOptionsSearch: {
+  backgroundColor: '#fff',
+  borderRadius: 8,
+  shadowColor: '#660154',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.15,
+  shadowRadius: 4,
+  elevation: 15,
+  minWidth: 150,
+},
+
+  
 })
 
 export default UsersScreen

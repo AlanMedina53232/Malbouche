@@ -194,12 +194,17 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
   const options = [
     ["Left", "Right"],
-    ["Crazy", "Swing"],
-    ["Custom","Normal"]
+    ["Crazy", "Custom"],
+    ["Normal"]
   ];
 
+  // Function to map internal values to display labels
+  const getDisplayLabel = (value) => {
+    return value === "Normal" ? "Stop" : value;
+  };
+
   // Preset names to exclude from custom movements
-  const PRESET_NAMES = ["left", "right", "crazy", "swing", "normal"];
+  const PRESET_NAMES = ["left", "right", "crazy", "normal"];
 
   // Get authentication token from AsyncStorage
   const getAuthToken = async () => {
@@ -689,7 +694,6 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     return {
       direction: lowerOption === "left" ? "left" : lowerOption === "right" ? "right" : "normal",
       isCrazy: lowerOption === "crazy",
-      isSwing: lowerOption === "swing",
       speed: speed
     };
   };
@@ -781,20 +785,26 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Text style={[styles.title, { fontFamily: 'Cinzel_700Bold' }]}>MALBOUCHE</Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.profileButton}
-          onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
-        >
-          <View style={styles.avatarSmall}>
-            <Ionicons name="person" size={20} color="#660154" />
+      <LinearGradient
+        colors={['#fff', '#fff']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.titleContainer}>
+            <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>MALBOUCHE</Text>
           </View>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+          >
+            <View style={styles.avatarSmall}>
+              <Ionicons name="person" size={20} color="#660154" />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
 
       <View style={styles.container}>
         <LinearGradient
@@ -870,7 +880,8 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     }
                   }}
                   disabled={loading}
-                  style={{ flex: 1 }} // <- Esto es importante
+                  activeOpacity={0.8}
+                  style={{ flex: 1 }}
                 >
                   <LinearGradient
                     colors={
@@ -891,7 +902,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                         selectedOption === item && { color: "white" },
                       ]}
                     >
-                      {item}
+                      {getDisplayLabel(item)}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -1500,21 +1511,37 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 30,
+    paddingTop: 30, 
     backgroundColor: "#FAFAFA",
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
     zIndex: 100,
   },
-  titleContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingLeft: 45,
-  },
-  title: {
-    fontSize: 22,
-    color: "#333",
-  },
+
+  headerGradient: {
+  paddingTop: 38,
+  paddingBottom: 10,
+  paddingHorizontal: 20,
+  borderBottomWidth: 1,
+  borderBottomColor: "#eee",
+  borderBottomLeftRadius: 15,
+  borderBottomRightRadius: 15,
+
+},
+
+headerContent: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+
+},
+
+titleGradient: {
+  fontSize: 22,
+  color: "#660154",
+  paddingLeft: 35
+},
+
   profileButton: {
     marginLeft: 10,
     marginBottom: 10,
@@ -1526,6 +1553,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingLeft: 20,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#333",
+
   },
   clockFrame: {
   width: 300,
@@ -1608,16 +1646,12 @@ button: {
   justifyContent: "center",
   alignItems: "center",
   minHeight: 50,
-  borderWidth: 0.8,
-  borderColor: "rgba(209, 148, 22, 0.5)",
-  shadowColor: "#660154",
-  elevation: 4,
+  borderWidth: 0,
+  overflow: 'hidden',
 },
 activeButton: {
   backgroundColor: "#fff",
-  shadowColor: "#660154",
-  elevation: 4,
-  borderColor: "#660154",
+  borderWidth: 0,
 },
   buttonText: {
     color: "#660154",

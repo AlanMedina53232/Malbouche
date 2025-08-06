@@ -14,6 +14,7 @@ import {
   ScrollView
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { LinearGradient } from "expo-linear-gradient"
 import AnalogClock from "../../components/analogClock"
 import NavigationBar from "../../components/NavigationBar"
 import Slider from "@react-native-community/slider"
@@ -29,8 +30,8 @@ const MOVE_TYPES = [
 const CreateMovementScreen = ({ navigation }) => {
   const [moveName, setMoveName] = useState("")
  const [movements, setMovements] = useState([
-  { hand: "Hour", type: "Left", speed: "", angulo: "360", showDropdown: false },
-  { hand: "Minute", type: "Right", speed: "", angulo: "360", showDropdown: false },
+  { hand: "Hour", type: "Left", speed: "50", angulo: "360", showDropdown: false },
+  { hand: "Minute", type: "Right", speed: "50", angulo: "360", showDropdown: false },
 ])
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api'
@@ -63,10 +64,10 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
       return
     }
 
-    // Solo tomamos los movimientos con velocidad válida
+    // Only take movements with valid speed
     const validMovements = movements.filter((m) => m.speed)
     if (validMovements.length < 2) {
-      Alert.alert("Error", "Debes definir velocidad y sentido para ambas manecillas")
+      Alert.alert("Error", "You must define speed and direction for both hands")
       return
     }
 
@@ -129,7 +130,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
-        Alert.alert("Error", "No se encontró token de autenticación. Por favor inicie sesión nuevamente.");
+        Alert.alert("Error", "Authentication token not found. Please log in again.");
         return;
       }
 
@@ -153,13 +154,13 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
         if (data.errors) {
           console.log("Validation errors:", data.errors);
         }
-        Alert.alert("Error", data.error || "Error creando movimiento")
+        Alert.alert("Error", data.error || "Error creating movement")
         return
       }
 
       console.log("SUCCESS: Movement created successfully");
       console.log("=== CREATE MOVEMENT DEBUG END ===");
-      Alert.alert("Éxito", "Movimiento creado exitosamente", [
+      Alert.alert("Success", "Movement created successfully", [
         { text: "OK", onPress: () => navigation.goBack() }
       ])
       if (onMovementCreated) {
@@ -167,7 +168,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
       }
     } catch (error) {
       console.error("Fetch error creating movement:", error);
-      Alert.alert("Error", "No se pudo conectar con el servidor")
+      Alert.alert("Error", "Could not connect to server")
     }
   }
 
@@ -180,125 +181,195 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.arrowButton}
-            onPress={() => navigation.goBack()}>
-            <View style={styles.iconSmall}>
-              <Ionicons name="arrow-back" size={24} color="black" />
+        <LinearGradient
+          colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>CREATE MOVEMENT</Text>
             </View>
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>MOVEMENT CREATION</Text>
           </View>
-        </View>
+        </LinearGradient>
 
-        <View style={styles.clockContainer}>
-          <AnalogClock 
-            direction={moveType.toLowerCase()}
-            speed={movements.find(m => m.hand === "Hour")?.speed || 50}
-          />
+        {/* Reloj estático fuera del scroll */}
+        <View style={styles.fixedClockSection}>
+          <View style={[styles.fixedClockContainer, { height: clockSize }]}>
+            <AnalogClock 
+              direction={movements.find(m => m.hand === "Hour")?.type?.toLowerCase() || "left"}
+              speed={Number(movements.find(m => m.hand === "Hour")?.speed) || 50}
+              minuteDirection={movements.find(m => m.hand === "Minute")?.type?.toLowerCase() || "right"}
+              minuteSpeed={Number(movements.find(m => m.hand === "Minute")?.speed) || 50}
+            />
+          </View>
+          
         </View>
-        <View style={styles.divider} />
+        
         <ScrollView 
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          nestedScrollEnabled={true}
-          scrollEnabled={true}
-          >
-          <View style={styles.formContainer}>
-            <Text style={styles.sectionTitle}>Move Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter movement name"
-              value={moveName}
-              onChangeText={setMoveName}
-            />
+        >
+          <View >
+            <View style={styles.inputContainer}>
+              <Text style={[styles.fixedSectionTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                Configure Movement Settings
+              </Text>
+              <Text style={[styles.inputLabel, { fontFamily: 'Montserrat_500Medium' }]}>
+                Movement Name<Text style={{ color: "#af0808ff" }}> *</Text>
+              </Text>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="time-outline" size={20} color="#660154" style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
+                  placeholder="Enter movement name"
+                  placeholderTextColor="#999"
+                  value={moveName}
+                  onChangeText={setMoveName}
+                />
+              </View>
+            </View>
             {/* Movement controls */}
             {movements.map((movement, index) => (
-  <View key={index} style={styles.movementBox}>
-    <Text style={styles.movementLabel}>Move type for {movement.hand.toLowerCase()} hand</Text>
-    <View style={styles.movementControls}>
-      <View style={styles.dropdownRow}>
-        <View style={styles.dropdownContainer}>
-          <TouchableOpacity
-            style={styles.dropdown}
-            onPress={() => updateMovement(index, "showDropdown", !movement.showDropdown)}
-          >
-            <Text style={styles.dropdownText}>
-              {MOVE_TYPES.find((t) => t.value === movement.type)?.label || movement.type}
-            </Text>
-          </TouchableOpacity>
-          {movement.showDropdown && (
-            <View style={styles.dropdownList}>
-              {MOVE_TYPES.map((type) => (
-                <TouchableOpacity
-                  key={type.value}
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    updateMovement(index, "type", type.value)
-                    updateMovement(index, "showDropdown", false)
-                  }}
-                >
-                  <Text style={styles.dropdownText}>{type.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-      </View>
-      
-      <View style={styles.sliderRow}>
-        <Text style={styles.sliderLabel}>Speed</Text>
-        <View style={styles.sliderWrapper}>
-          <Slider
-            style={styles.slider}
-            minimumValue={1}
-            maximumValue={100}
-            step={1}
-            value={movement.speed ? Number(movement.speed) : 1}
-            onSlidingComplete={(value) => updateMovement(index, "speed", String(value))}
-            minimumTrackTintColor="#660154"
-            maximumTrackTintColor="#ddd"
-            thumbTintColor="#660154"
-          />
-          <Text style={styles.sliderValue}>{movement.speed || 1}</Text>
-        </View>
-      </View>
+              <View key={index} style={styles.movementCard}>
+                <View style={styles.movementHeader}>
+                  <View style={styles.movementIcon}>
+                    <Ionicons 
+                      name={movement.hand === 'Hour' ? 'time-outline' : 'time-outline'} 
+                      size={24} 
+                      color="#660154" 
+                    />
+                  </View>
+                  <View style={styles.movementTitleContainer}>
+                    <Text style={[styles.movementTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                      {movement.hand} Hand Configuration
+                    </Text>
+                    <Text style={[styles.movementSubtitle, { fontFamily: 'Montserrat_400Regular' }]}>
+                      Set direction, speed and angle
+                    </Text>
+                  </View>
+                </View>
 
-      <View style={styles.sliderRow}>
-        <Text style={styles.sliderLabel}>Angle (degrees) - Optional</Text>
-        <View style={styles.sliderWrapper}>
-          <Slider
-            style={styles.slider}
-            minimumValue={0.1}
-            maximumValue={360}
-            step={0.1}
-            value={movement.angulo ? Number(movement.angulo) : 360}
-            onSlidingComplete={(value) => updateMovement(index, "angulo", String(value))}
-            minimumTrackTintColor="#660154"
-            maximumTrackTintColor="#ddd"
-            thumbTintColor="#660154"
-          />
-          <Text style={styles.sliderValue}>{movement.angulo || 360}°</Text>
-        </View>
-        <Text style={styles.angleDescription}>
-          {movement.angulo == 360 ? "Full rotation" : 
-           movement.angulo == 180 ? "Half rotation" : 
-           movement.angulo == 90 ? "Quarter rotation" : 
-           movement.angulo < 90 ? "Oscillation movement" : "Partial rotation"}
-        </Text>
-      </View>
-    </View>
-  </View>
-))}
+                <View style={styles.movementControls}>
+                  <View style={styles.controlSection}>
+                    <Text style={[styles.controlLabel, { fontFamily: 'Montserrat_500Medium' }]}>Direction</Text>
+                    <View style={styles.dropdownContainer}>
+                      <TouchableOpacity
+                        style={styles.dropdown}
+                        onPress={() => updateMovement(index, "showDropdown", !movement.showDropdown)}
+                      >
+                        <View style={styles.dropdownContent}>
+                          <Ionicons 
+                            name={movement.type === 'Left' ? 'arrow-back' : 'arrow-forward'} 
+                            size={16} 
+                            color="#660154" 
+                            style={styles.dropdownIcon}
+                          />
+                          <Text style={[styles.dropdownText, { fontFamily: 'Montserrat_400Regular' }]}>
+                            {MOVE_TYPES.find((t) => t.value === movement.type)?.label || movement.type}
+                          </Text>
+                        </View>
+                        <Ionicons name={movement.showDropdown ? "chevron-up" : "chevron-down"} size={20} color="#660154" />
+                      </TouchableOpacity>
+                      {movement.showDropdown && (
+                        <View style={styles.dropdownList}>
+                          {MOVE_TYPES.map((type, typeIndex) => (
+                            <TouchableOpacity
+                              key={type.value}
+                              style={[
+                                styles.dropdownItem,
+                                typeIndex === MOVE_TYPES.length - 1 && styles.dropdownItemLast
+                              ]}
+                              onPress={() => {
+                                updateMovement(index, "type", type.value)
+                                updateMovement(index, "showDropdown", false)
+                              }}
+                            >
+                              <Ionicons 
+                                name={type.value === 'Left' ? 'arrow-back' : 'arrow-forward'} 
+                                size={16} 
+                                color="#660154" 
+                                style={{ marginRight: 8 }}
+                              />
+                              <Text style={[styles.dropdownItemText, { fontFamily: 'Montserrat_400Regular' }]}>
+                                {type.label}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  </View>
 
+                  <View style={styles.controlSection}>
+                    <Text style={[styles.controlLabel, { fontFamily: 'Montserrat_500Medium' }]}>Speed</Text>
+                    <View style={styles.sliderContainer}>
+                      <Slider
+                        style={styles.slider}
+                        minimumValue={1}
+                        maximumValue={100}
+                        step={1}
+                        value={movement.speed ? Number(movement.speed) : 1}
+                        onSlidingComplete={(value) => updateMovement(index, "speed", String(value))}
+                        minimumTrackTintColor="#660154"
+                        maximumTrackTintColor="#ddd"
+                        thumbTintColor="#660154"
+                      />
+                      <View style={styles.sliderValueContainer}>
+                        <Text style={[styles.sliderValue, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                          {movement.speed || 1}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.controlSection}>
+                    <Text style={[styles.controlLabel, { fontFamily: 'Montserrat_500Medium' }]}>Angle (degrees)</Text>
+                    <View style={styles.sliderContainer}>
+                      <Slider
+                        style={styles.slider}
+                        minimumValue={0.1}
+                        maximumValue={360}
+                        step={0.1}
+                        value={movement.angulo ? Number(movement.angulo) : 360}
+                        onSlidingComplete={(value) => updateMovement(index, "angulo", String(value))}
+                        minimumTrackTintColor="#660154"
+                        maximumTrackTintColor="#ddd"
+                        thumbTintColor="#660154"
+                      />
+                      <View style={styles.sliderValueContainer}>
+                        <Text style={[styles.sliderValue, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                          {movement.angulo || 360}°
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.angleDescription, { fontFamily: 'Montserrat_400Regular' }]}>
+                      {movement.angulo == 360 ? "Full rotation" : 
+                       movement.angulo == 180 ? "Half rotation" : 
+                       movement.angulo == 90 ? "Quarter rotation" : 
+                       movement.angulo < 90 ? "Oscillation movement" : "Partial rotation"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))}
 
             <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
-              <Text style={styles.createButtonText}>Create</Text>
+              <View style={styles.buttonContent}>
+                <Ionicons name="add-circle" size={20} color="#fff" />
+                <Text style={[styles.createButtonText, { fontFamily: 'Montserrat_700Bold' }]}>
+                  Create Movement
+                </Text>
+              </View>
             </TouchableOpacity>
-
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -316,169 +387,289 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f4f4f4",
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  headerGradient: {
+    paddingTop: 38,
+    paddingBottom: 10,
     paddingHorizontal: 20,
-    paddingTop: 30, 
-    backgroundColor: "#FAFAFA",
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    zIndex: 100,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
   },
-   arrowButton: {
-    marginRight: 10,
-    marginBottom: 10,
-  },
-  iconSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
-   titleContainer: {
-    flex: 1,
+  arrowButton: {
+    marginRight: 15,
+    padding: 8,
+    borderRadius: 20,
   },
-  title: {
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    marginRight: 40,
+  },
+  titleGradient: {
     fontSize: 22,
-    fontWeight: "700",
-    color: "#333",
+    color: "#fff",
+    fontWeight: '700',
+  },
+  scrollContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingBottom: 120,
+    paddingTop: 300, // Espacio para el reloj fijo
+  },
+  fixedClockSection: {
+    position: 'absolute',
+    top: 90, // Debajo del header
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    backgroundColor: '#f4f4f4',
+    paddingVertical: 25,
+    paddingHorizontal: 20,
+    zIndex: 10,
+ 
+  },
+  fixedClockContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 55,
+    marginBottom: 55,
+    width: '100%',
+
+  },
+  fixedSectionTitle: {
+    fontSize: 18,
+    color: "#660154",
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  clockSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 5,
+    paddingVertical: 15,
   },
   clockContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 5,
-  },
-  divider: {
-    borderBottomWidth: 0.6,
-    borderBottomColor: '#ddd', 
+    marginBottom: 20,
+    width: '100%',
+    paddingHorizontal: 20,
   },
   formContainer: {
-    flex: 1,
-    justifyContent: "flex-start",
-    backgroundColor: "#f4f4f4",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 30,
-   
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  sectionTitle: {
+  inputContainer: {
+    marginBottom: 25,
+  },
+  inputLabel: {
     fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 5,
     color: "#333",
-    marginTop: 5,
+    marginBottom: 8,
+    fontWeight: "600",
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    backgroundColor: "#f9f9f9",
+    paddingHorizontal: 15,
+    shadowColor: "#660154",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    borderRadius: 10,
-    backgroundColor: "#fff",
+    flex: 1,
     paddingVertical: 15,
     fontSize: 16,
-    marginBottom: 18,
-  },
-  movementBox: {
-    backgroundColor: "#FFF",
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 18,
-/*  borderWidth: 0.5,
-    borderColor: "#eee",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1, */
-  },
-  movementLabel: {
-    fontSize: 15,
-    fontWeight: "500",
-    marginBottom: 10,
     color: "#333",
   },
-  movementControls: {
-    gap: 16,
+  movementCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderColor: "rgba(209, 148, 22, 0.4)",
+    borderWidth: 1,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "rgba(102, 1, 84,0.8)",
+    elevation: 3,
   },
-  dropdownRow: {
+  movementHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 20,
+  },
+  movementIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(102, 1, 84, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  movementTitleContainer: {
+    flex: 1,
+  },
+  movementTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  movementSubtitle: {
+    fontSize: 14,
+    color: "#666",
+  },
+  movementControls: {
+    gap: 20,
+  },
+  controlSection: {
+    marginBottom: 5,
+  },
+  controlLabel: {
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 12,
+    fontWeight: "600",
   },
   dropdownContainer: {
-    flex: 1,
-    position: "relative",
+    position: 'relative',
   },
   dropdown: {
-    borderWidth: 0.8,
-    borderColor: "rgba(204, 204, 204, 0.8)",
-    borderRadius: 6,
-    padding: 10,
-    backgroundColor: "#fff",
-    minWidth: 90,
-    zIndex: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    backgroundColor: "#f9f9f9",
+    shadowColor: "#660154",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  dropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  dropdownIcon: {
+    marginRight: 12,
   },
   dropdownText: {
-    fontSize: 15,
+    fontSize: 16,
     color: "#333",
   },
   dropdownList: {
-    position: "absolute",
-    top: 44,
+    position: 'absolute',
+    top: '100%',
     left: 0,
     right: 0,
     backgroundColor: "#fff",
-    borderWidth: 0.8,
-    borderColor: "rgba(204, 204, 204, 0.8)",
-    borderRadius: 5,
-    zIndex: 10,
+    borderRadius: 12,
+    marginTop: 5,
+    maxHeight: 120,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 1000,
   },
   dropdownItem: {
-    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    backgroundColor: "#fff",
   },
-  sliderRow: {
-    gap: 8,
+  dropdownItemLast: {
+    borderBottomWidth: 0,
   },
-  sliderWrapper: {
+  dropdownItemText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  sliderContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-  },
-  sliderLabel: {
-    fontSize: 13,
-    color: "#666",
-    marginBottom: 4,
+    gap: 15,
   },
   slider: {
     flex: 1,
-    height: 30,
+    height: 40,
+  },
+  sliderValueContainer: {
+    minWidth: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(102, 1, 84, 0.1)',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   sliderValue: {
-    width: 40,
+    fontSize: 16,
+    color: "#660154",
     textAlign: "center",
-    fontSize: 15,
-    color: "#333",
   },
   angleDescription: {
-    fontSize: 11,
-    color: "#888",
+    fontSize: 12,
+    color: "#666",
     fontStyle: "italic",
-    marginTop: 4,
+    marginTop: 8,
     textAlign: "center",
+    backgroundColor: "#f8f9fa",
+    padding: 8,
+    borderRadius: 8,
   },
   createButton: {
-    backgroundColor: "#400135",
-    paddingVertical: 13,
-    borderRadius: 10,
+    backgroundColor: "#660154",
+    paddingVertical: 18,
+    borderRadius: 12,
     alignItems: "center",
     marginTop: 10,
-    marginBottom: 30,
-
+    shadowColor: "#660154",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   createButtonText: {
-    fontSize: 17,
-    fontWeight: "600",
     color: "#fff",
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: "700",
+    marginLeft: 8,
   },
 })
 

@@ -37,7 +37,6 @@ const UsersScreen = ({ navigation }) => {
  const ROLE_OPTIONS = [
   { label: "Admin", value: "admin" },
   { label: "VIP", value: "vip" },
-  { label: "Usuario", value: "usuario" },
 ]
 
   // Función para abrir modal de visualización
@@ -74,7 +73,6 @@ const filteredUsers = useMemo(() => {
   });
 }, [users, searchTerm, selectedRoleFilter]);
 
-  
 
 
   useEffect(() => {
@@ -292,93 +290,91 @@ const renderItem = ({ item }) => {
           end={{ x: 0, y: 1 }}
           style={styles.headerGradient}
         >
-    <View style={styles.headerContent}>
-    <View style={styles.titleContainer}>
-      <Text style={[styles.titleGradient, { fontFamily: 'Cinzel_700Bold' }]}>USERS</Text>
-    </View>
-    <TouchableOpacity
-      style={styles.profileButton}
-      onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
-    >
-      <View style={styles.avatarSmall}>
-        <Ionicons name="person" size={20} color="#660154" />
-      </View>
-    </TouchableOpacity>
-  </View>
-</LinearGradient>
-
-<View style={styles.searchContainer}>
-  <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-  <TextInput
-    style={styles.searchInput}
-    placeholder="Search users..."
-    placeholderTextColor="#999"
-    value={searchTerm}
-    onChangeText={setSearchTerm}
-    clearButtonMode="while-editing"
-  />
-  {searchTerm ? (
-    <TouchableOpacity onPress={() => setSearchTerm('')} style={styles.clearButton}>
-      <Ionicons name="close-circle" size={20} color="#999" />
-    </TouchableOpacity>
-  ) : null}
-  {/* Solo el icono de filtro aquí */}
-<TouchableOpacity
-  style={styles.filterIconContainer}
-  onPress={() => setShowRoleDropdown(!showRoleDropdown)}
-  activeOpacity={0.8}
->
-  <Ionicons name="filter" size={22} color="#660154" />
-  {selectedRoleFilter ? (
-    <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(selectedRoleFilter).color, marginLeft: 4 }]}>
-      <Ionicons name={getRoleInfo(selectedRoleFilter).icon} size={12} color="white" />
-    </View>
-  ) : null}
-</TouchableOpacity>
-</View>
-{showRoleDropdown && (
-  <View style={styles.dropdownOverlay}>
-    <TouchableOpacity
-      style={styles.dropdownOptionsSearch}
-      activeOpacity={1}
-    >
-      <TouchableOpacity
-        style={styles.dropdownOption}
-        onPress={() => {
-          setSelectedRoleFilter(null);
-          setShowRoleDropdown(false);
-        }}
-      >
-        <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular' }]}>Todos</Text>
-      </TouchableOpacity>
-      {ROLE_OPTIONS.map((role, index) => (
+        <View style={styles.headerContent}>
+        <View style={styles.titleContainer}>
+          <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>USERS</Text>
+        </View>
         <TouchableOpacity
-          key={role.value}
-          style={[
-            styles.dropdownOption,
-            index === ROLE_OPTIONS.length - 1 && { borderBottomWidth: 0 }
-          ]}
-          onPress={() => {
-            setSelectedRoleFilter(role.value);
-            setShowRoleDropdown(false);
-          }}
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(role.value).color }]}>
-              <Ionicons name={getRoleInfo(role.value).icon} size={14} color="white" />
-            </View>
-            <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>{role.label}</Text>
+          <View style={styles.avatarSmall}>
+            <Ionicons name="person" size={20} color="#660154" />
           </View>
         </TouchableOpacity>
-      ))}
+      </View>
+    </LinearGradient>
+
+    <View style={styles.searchContainer}>
+      <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search users..."
+        placeholderTextColor="#999"
+        value={searchTerm}
+        onChangeText={setSearchTerm}
+        clearButtonMode="while-editing"
+      />
+      {searchTerm ? (
+        <TouchableOpacity onPress={() => setSearchTerm('')} style={styles.clearButton}>
+          <Ionicons name="close-circle" size={20} color="#999" />
+        </TouchableOpacity>
+      ) : null}
+      {/* Solo el icono de filtro aquí */}
+    <TouchableOpacity
+      style={styles.filterIconContainer}
+      onPress={() => setShowRoleDropdown(!showRoleDropdown)}
+      activeOpacity={0.8}
+    >
+      <Ionicons name="filter" size={22} color="#660154" />
+      {selectedRoleFilter ? (
+        <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(selectedRoleFilter).color, marginLeft: 4 }]}>
+          <Ionicons name={getRoleInfo(selectedRoleFilter).icon} size={12} color="white" />
+        </View>
+      ) : null}
     </TouchableOpacity>
-  </View>
-)}
+    </View>
+    {showRoleDropdown && (
+      <View style={styles.dropdownOverlay}>
+        <TouchableOpacity
+          style={styles.dropdownOptionsSearch}
+          activeOpacity={1}
+        >
+          <TouchableOpacity
+            style={styles.dropdownOption}
+            onPress={() => {
+              setSelectedRoleFilter(null);
+              setShowRoleDropdown(false);
+            }}
+          >
+            <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular' }]}>All</Text>
+          </TouchableOpacity>
+          {ROLE_OPTIONS.map((role, index) => (
+            <TouchableOpacity
+              key={role.value}
+              style={[
+                styles.dropdownOption,
+                index === ROLE_OPTIONS.length - 1 && { borderBottomWidth: 0 }
+              ]}
+              onPress={() => {
+                setSelectedRoleFilter(role.value);
+                setShowRoleDropdown(false);
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(role.value).color }]}>
+                  <Ionicons name={getRoleInfo(role.value).icon} size={14} color="white" />
+                </View>
+                <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>{role.label}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </TouchableOpacity>
+      </View>
+    )}
 
-
- 
-        <FlatList
-          data={filteredUsers}
+    <FlatList
+      data={filteredUsers}
           renderItem={renderItem}
           keyExtractor={item => (item.id || item._id).toString()}
           contentContainerStyle={listContentDynamicStyle}
@@ -438,62 +434,104 @@ const renderItem = ({ item }) => {
             onPress={() => setViewModalVisible(false)}
           >
             <View style={styles.viewModalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>User Details</Text>
-                <TouchableOpacity onPress={() => setViewModalVisible(false)}>
-                  <Ionicons name="close" size={24} color="#666" />
+              {/* Header con gradiente */}
+              <LinearGradient
+                colors={['#660154', '#a5639bff']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.modalHeaderGradient}
+              >
+                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
+                  User Details
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => setViewModalVisible(false)}
+                  style={styles.closeButtonModal}
+                >
+                  <Ionicons name="close" size={24} color="#fff" />
                 </TouchableOpacity>
-              </View>
+              </LinearGradient>
+              
               <View style={styles.modalBody}>
-
-                <View style={styles.avatarNameContainers}>
-                  <View style={styles.avatarLarge}>
-                    <Ionicons name="person" size={50} color="#666" />
+                {/* Avatar y nombre */}
+                <View style={styles.avatarNameSection}>
+                  <View style={styles.avatarLargeImproved}>
+                    <View style={styles.avatarInner}>
+                      <Ionicons name="person" size={50} color="#660154" />
+                    </View>
                   </View>
-
-                <View style={styles.infoName}>
-                  <Text style={[styles.fullNameText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                  <Text style={[styles.fullNameText, { fontFamily: 'Montserrat_700Bold' }]}>
                     {`${selectedUser?.nombre || selectedUser?.name || ''} ${selectedUser?.apellidos || ''}`}
                   </Text>
-                </View>
-              </View>
-              <View>
-                <View style={{ borderBottomColor: 'rgba(209, 148, 22, 0.4)', borderBottomWidth: 1, marginTop: 5, marginBottom: 15, marginLeft:30,marginRight:30, }} />
-              </View>
-              <View style={styles.infoRow}>
-                <View style={styles.iconoContainer}>
-                  <Ionicons name="mail" size={20} color="#666" />
-                </View>
-                <Text style={styles.infoLabel}>Email:</Text>
-                  <Text style={styles.infoValue}>{selectedUser?.correo || selectedUser?.email}</Text>
-                </View>
-
-
-                <View style={styles.infoRow}>
-                  <View style={styles.iconoContainer}>
-                    <Ionicons name="person" size={20} color="#666"/>
+                  {/* Badge del rol */}
+                    <View style={[styles.roleBadgeLarge, { backgroundColor: getRoleInfo(selectedUser?.rol || selectedUser?.Rol).color }]}>
+                      <Ionicons 
+                        name={getRoleInfo(selectedUser?.rol || selectedUser?.Rol).icon} 
+                        size={16} 
+                        color="white" 
+                      />
+                        <Text style={[styles.roleBadgeText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                          {getRoleInfo(selectedUser?.rol || selectedUser?.Rol).label}
+                        </Text>
+                    </View>
                   </View>
-                  <Text style={styles.infoLabel}>Role:</Text>
-                  <Text style={[styles.infoValue, { color: getRoleInfo(selectedUser?.rol || selectedUser?.Rol) }]}>
-                    {selectedUser?.rol || selectedUser?.Rol}
-                  </Text>
+
+                  <View style={styles.dividerModal} />
+
+                  {/* Información de contacto */}
+                  <View style={styles.infoSection}>
+                    <Text style={[styles.sectionTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                      Contact Information
+                    </Text>
+                    
+                    <View style={styles.infoCard}>
+                      <View style={styles.infoRowImproved}>
+                        <View style={styles.iconContainer}>
+                    <Ionicons name="mail" size={20} color="#660154" />
+                      </View>
+                      <View style={styles.infoTextContainer}>
+                        <Text style={[styles.infoLabelImproved, { fontFamily: 'Montserrat_500Medium' }]}>
+                          Email
+                        </Text>
+                        <Text style={[styles.infoValueImproved, { fontFamily: 'Montserrat_400Regular' }]}>
+                          {selectedUser?.correo || selectedUser?.email}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
                 </View>
 
-                <TouchableOpacity 
-                  style={styles.editButton}
-                  onPress={openEditModal}
-                >
-                  <Ionicons name="create-outline" size={20} color="white" />
-                  <Text style={[styles.buttonText, { fontFamily: 'Montserrat_600SemiBold' }]}>Edit User</Text>
-                </TouchableOpacity>
+                {/* Botones de acción */}
+                <View style={styles.actionButtonsContainer}>
+                  <TouchableOpacity 
+                    style={styles.editButtonImproved}
+                    onPress={openEditModal}
+                  >
+                    <LinearGradient
+                      colors={['#660154', '#a5639bff']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.buttonGradient}
+                    >
+                      <Ionicons name="create-outline" size={20} color="white" />
+                      <Text style={[styles.buttonTextImproved, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                        Edit User
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
 
-                <TouchableOpacity 
-                  style={styles.deleteButton}
-                  onPress={handleDelete}
-                >
-                  <Ionicons name="trash-outline" size={20} color="white" />
-                  <Text style={[styles.buttonText, { fontFamily: 'Montserrat_600SemiBold' }]}>Delete User</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.deleteButtonImproved}
+                    onPress={handleDelete}
+                  >
+                    <View style={styles.deleteButtonInner}>
+                      <Ionicons name="trash-outline" size={20} color="#dc2626" />
+                      <Text style={[styles.deleteButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                        Delete User
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </TouchableOpacity>
@@ -507,113 +545,160 @@ const renderItem = ({ item }) => {
           onRequestClose={() => setEditModalVisible(false)}
         >
           <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setEditModalVisible(false)}>
-            <TouchableOpacity style={styles.modalContent} activeOpacity={1} onPress={() => {}}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>Edit User</Text>
-                <TouchableOpacity style={styles.closeButton} onPress={() => setEditModalVisible(false)}>
-                  <Ionicons name="close" size={24} color="#666" />
+            <TouchableOpacity style={styles.viewModalContent} activeOpacity={1} onPress={() => {}}>
+              {/* Header con gradiente - reutiliza modalHeaderGradient */}
+              <LinearGradient
+                colors={['#660154', '#a5639bff']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.modalHeaderGradient}
+              >
+                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
+                  Edit User
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => setEditModalVisible(false)}
+                  style={styles.closeButtonModal}
+                >
+                  <Ionicons name="close" size={24} color="#fff" />
                 </TouchableOpacity>
-              </View>
+              </LinearGradient>
 
               <View style={styles.modalBody}>
-                <View style={styles.avatarLarge}>
-                  <Ionicons name="person" size={50} color="#666" />
+                {/* Avatar y título - reutiliza avatarNameSection */}
+                <View style={[styles.avatarNameSection, { paddingBottom: 5 }]}>
+                  <View style={styles.avatarLargeImproved}>
+                    <View style={styles.avatarInner}>
+                      <Ionicons name="person" size={40} color="#660154" />
+                    </View>
+                  </View>
+                  <Text style={[styles.editSubtitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    Edit User Details
+                  </Text>
                 </View>
-                 <View style={{ borderBottomColor: 'rgba(209, 148, 22, 0.4)', borderBottomWidth: 1, marginTop: 5, marginBottom: 20, marginLeft:30,marginRight:30, }} />
-              <View style={styles.inputContainer}>
-                <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Name</Text>
-                <TextInput
-                  style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
-                  value={editedName}
-                  onChangeText={setEditedName}
-                  placeholder="Insert Name"
-                />
-              </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Last name</Text>
-                <TextInput
-                  style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
-                  value={editedApellidos}
-                  onChangeText={setEditedApellidos}
-                  placeholder="Insert Last Name"
-                />
-              </View>
+                {/* Divisor - reutiliza dividerModal */}
+                <View style={[styles.dividerModal, { marginVertical: 15, marginHorizontal: 20 }]} />
 
-              <View style={styles.inputContainer}>
-                <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Email</Text>
-                <TextInput
-                  style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
-                  value={editedEmail}
-                  onChangeText={setEditedEmail}
-                  placeholder="Insert Email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
-              </View>
+                {/* Campos del formulario */}
+                <View style={styles.editFormContainer}>
+                  <View style={styles.inputContainer}>
+                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Montserrat_700Bold' }]}>Name<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
+                    <View style={[styles.searchContainer, styles.editInputWrapper]}>
+                      <Ionicons name="person-outline" size={20} color="#660154" style={styles.searchIcon} />
+                      <TextInput
+                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Montserrat_400Regular' }]}
+                        value={editedName}
+                        onChangeText={setEditedName}
+                        placeholder="Enter name"
+                        placeholderTextColor="#999"
+                      />
+                    </View>
+                  </View>
 
-             <View style={styles.inputContainer}>
-  <Text style={[styles.label, { fontFamily: 'Montserrat_700Bold' }]}>Rol</Text>
-  <TouchableOpacity 
-  style={styles.dropdownSelector}
-  onPress={() => setShowRoleDropdown(!showRoleDropdown)} 
-  activeOpacity={0.8}
->
-  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-    {editedRol ? (
-      <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(editedRol).color }]}>
-        <Ionicons name={getRoleInfo(editedRol).icon} size={14} color="white" />
-      </View>
-    ) : null}
-    <Text style={[styles.dropdownSelectorText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>
-      {editedRol || "Select Role"} 
-    </Text>
-  </View>
-  <Ionicons 
-    name={showRoleDropdown ? "chevron-up" : "chevron-down"} 
-    size={20} 
-    color="#660154" 
-  />
-</TouchableOpacity>
-  
-  {showRoleDropdown && (
-  <View style={styles.dropdownOptions}>
-    {ROLE_OPTIONS.map((role, index) => (
-      <TouchableOpacity
-        key={role.value}
-        style={[
-          styles.dropdownOption,
-          index === ROLE_OPTIONS.length - 1 && { borderBottomWidth: 0 }
-        ]}
-        onPress={() => {
-          setEditedRol(role.value);
-          setShowRoleDropdown(false);
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(role.value).color }]}>
-            <Ionicons name={getRoleInfo(role.value).icon} size={14} color="white" />
-          </View>
-          <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>{role.label}</Text>
-        </View>
-      </TouchableOpacity>
-    ))}
-  </View>
-)}
-</View>
+                  <View style={styles.inputContainer}>
+                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Montserrat_700Bold' }]}>Last Name<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
+                    <View style={[styles.searchContainer, styles.editInputWrapper]}>
+                      <Ionicons name="person-outline" size={20} color="#660154" style={styles.searchIcon} />
+                      <TextInput
+                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Montserrat_400Regular' }]}
+                        value={editedApellidos}
+                        onChangeText={setEditedApellidos}
+                        placeholder="Enter last name"
+                        placeholderTextColor="#999"
+                      />
+                    </View>
+                  </View>
 
-<TouchableOpacity onPress={handleSave} activeOpacity={0.85}>
-  <LinearGradient
-    colors={['#a5639bff', '#660154']}
-    start={{ x: 1, y: 1 }}
-    end={{ x: 0, y: 0 }}
-    style={styles.saveButtonGradient}
-  >
-    <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>
-      Save Changes
-    </Text>
-  </LinearGradient>
-</TouchableOpacity>
+                  <View style={styles.inputContainer}>
+                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Montserrat_700Bold' }]}>Email<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
+                    <View style={[styles.searchContainer, styles.editInputWrapper]}>
+                      <Ionicons name="mail-outline" size={20} color="#660154" style={styles.searchIcon} />
+                      <TextInput
+                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Montserrat_400Regular' }]}
+                        value={editedEmail}
+                        onChangeText={setEditedEmail}
+                        placeholder="example@mail.com"
+                        placeholderTextColor="#999"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Montserrat_700Bold' }]}>Role</Text>
+                    <TouchableOpacity 
+                      style={[styles.searchContainer, styles.editDropdown]}
+                      onPress={() => setShowRoleDropdown(!showRoleDropdown)} 
+                      activeOpacity={0.8}
+                    >
+                      
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        {editedRol ? (
+                          <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(editedRol).color }]}>
+                            <Ionicons name={getRoleInfo(editedRol).icon} size={14} color="white" />
+                          </View>
+                        ) : null}
+                        <Text style={[styles.searchInput, styles.editDropdownText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>
+                          {ROLE_OPTIONS.find(r => r.value === editedRol)?.label || "Seleccionar rol"} 
+                        </Text>
+                      </View>
+                      <Ionicons 
+                        name={showRoleDropdown ? "chevron-up" : "chevron-down"} 
+                        size={20} 
+                        color="#660154" 
+                        style={{ marginLeft: 8 }}
+                      />
+                    </TouchableOpacity>
+                    
+                    {showRoleDropdown && (
+                      <View style={[styles.dropdownOptionsSearch, styles.editDropdownList]}>
+                        {ROLE_OPTIONS.map((role, index) => (
+                          <TouchableOpacity
+                            key={role.value}
+                            style={[
+                              styles.dropdownOption,
+                              index === ROLE_OPTIONS.length - 1 && { borderBottomWidth: 0 }
+                            ]}
+                            onPress={() => {
+                              setEditedRol(role.value);
+                              setShowRoleDropdown(false);
+                            }}
+                          >
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                              <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(role.value).color }]}>
+                                <Ionicons name={getRoleInfo(role.value).icon} size={14} color="white" />
+                              </View>
+                              <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>
+                                {role.label}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Botón de guardar*/}
+                  <TouchableOpacity 
+                    style={[styles.editButtonImproved, { marginTop: 20 }]}
+                    onPress={handleSave} 
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={['#660154', '#a5639bff']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.buttonGradient}
+                    >
+                      <Ionicons name="checkmark-outline" size={20} color="white" />
+                      <Text style={[styles.buttonTextImproved, { fontFamily: 'Montserrat_700Bold' }]}>
+                        Save Changes
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
               </View>
             </TouchableOpacity>
           </TouchableOpacity>
@@ -750,7 +835,7 @@ titleGradient: {
     paddingHorizontal: 15,
     // paddingBottom se define dinámicamente con listContentDynamicStyle
   },
-  userCard: {
+  userCard: { 
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
@@ -926,35 +1011,196 @@ titleGradient: {
     zIndex: 10,
   },
   viewModalContent: {
-    width: "90%",
+    width: "92%",
+    maxWidth: 400,
     backgroundColor: "#fff",
-    borderRadius: 15,
- 
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  avatarNameContainers: {
+  
+  modalHeaderGradient: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingTop: 25,
+  },
+  
+  closeButtonModal: {
+    padding: 5,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  
+  avatarNameSection: {
     alignItems: 'center',
-    marginBottom: 15,
+    paddingTop: 5,
+    paddingBottom: 10,
   },
-  infoName: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-    width: '100%',
+  
+  avatarLargeImproved: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 15,
+    borderWidth: 3,
+    borderColor: "#660154",
   },
+  
+  avatarInner: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  
   fullNameText: {
     textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
     color: '#333',
-    flexWrap: 'wrap',       // permite múltiples líneas
-    maxWidth: '100%',    
+    marginBottom: 10,
+    paddingHorizontal: 20,
   },
-  iconoContainer: {
+  
+  roleBadgeLarge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 5,
+    marginTop: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
+  
+  roleBadgeText: {
+    color: 'white',
+    marginLeft: 6,
+    fontSize: 14,
+  },
+  
+  dividerModal: {
+    height: 1,
+    backgroundColor: 'rgba(209, 148, 22, 0.3)',
+    marginVertical: 20,
+    marginHorizontal: 30,
+  },
+  
+  infoSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  
+  sectionTitle: {
+    fontSize: 16,
+    color: '#660154',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  
+  infoCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#660154',
+  },
+  
+  infoRowImproved: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  
+  infoTextContainer: {
+    flex: 1,
+  },
+  
+  infoLabelImproved: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
+  },
+  
+  infoValueImproved: {
+    fontSize: 16,
+    color: '#333',
+  },
+  
+  actionButtonsContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 25,
+    gap: 12,
+  },
+  
+  editButtonImproved: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: "#660154",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  
+  buttonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  
+  buttonTextImproved: {
+    color: 'white',
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  
+  deleteButtonImproved: {
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#dc2626',
+    backgroundColor: '#fff',
+  },
+  
+  deleteButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  
+  deleteButtonText: {
+    color: '#dc2626',
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  
   infoRow: {
     flexDirection: 'row',
     marginBottom: 12,
@@ -1011,63 +1257,7 @@ roleBadge: {
   alignItems: 'center',
   marginRight: 2,
 },
-roleBadgeText: {
-  fontSize: 18,
-},
-saveButtonGradient: {
-  padding: 15,
-  borderRadius: 8,
-  alignItems: "center",
-  marginTop: 10,
-  shadowColor: "#660154",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.25,
-  shadowRadius: 4,
-  elevation: 5,
-},
 
-roleFilterButton: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: '#fff',
-  borderRadius: 20,
-  borderWidth: 1,
-  borderColor: '#ccc',
-  paddingVertical: 6,
-  paddingHorizontal: 12,
-  marginRight: 8,
-  marginBottom: 5,
-  shadowColor: '#660154',
-  elevation: 2,
-},
-roleFilterButtonActive: {
-  borderColor: '#660154',
-  backgroundColor: '#fbb42a22',
-},
-roleFilterText: {
-  fontSize: 15,
-  color: '#333',
-  marginLeft: 6,
-  fontFamily: 'Montserrat_600SemiBold',
-},
-roleFilterClear: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  paddingHorizontal: 8,
-  paddingVertical: 6,
-  borderRadius: 20,
-  backgroundColor: '#fff',
-  borderWidth: 1,
-  borderColor: '#660154',
-  marginLeft: 4,
-  marginBottom: 5,
-},
-roleFilterClearText: {
-  color: '#660154',
-  marginLeft: 4,
-  fontFamily: 'Montserrat_600SemiBold',
-  fontSize: 15,
-},
 filterIconContainer: {
   marginLeft: 8,
   flexDirection: 'row',
@@ -1095,7 +1285,53 @@ dropdownOptionsSearch: {
   elevation: 15,
   minWidth: 150,
 },
+editSubtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: 'center',
+    marginTop: 5,
+  },
 
+  editFormContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+
+  editLabel: {
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 8,
+    fontWeight: "600",
+  },
+
+  editInputWrapper: {
+    marginHorizontal: 0, // quita el margin del searchContainer original
+    marginVertical: 0,   // quita el margin del searchContainer original
+    marginBottom: 15,    // solo bottom margin para separar inputs
+  },
+
+  editInput: {
+    fontSize: 16, // sobrescribe el fontSize del searchInput si es necesario
+  },
+
+  editDropdown: {
+    marginHorizontal: 0,
+    marginVertical: 0,
+    marginBottom: 5,
+    paddingRight: 10, // espacio para la flecha
+  },
+
+  editDropdownText: {
+    color: "#333", // sobrescribe el color del searchInput
+  },
+
+  editDropdownList: {
+    position: 'relative', // cambia de absolute a relative
+    top: 0,               // resetea el top
+    right: 0,             // resetea el right
+    marginTop: 8,
+    zIndex: 1000,
+  },
   
 })
 

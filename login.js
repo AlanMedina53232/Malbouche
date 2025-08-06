@@ -135,13 +135,13 @@ export default function Login({ navigation }) {
       >
         <View style={styles.loginBox}>
           <View>
-            <Text style={[styles.title, { fontFamily: 'Cinzel_700Bold' }]}>MALBOUCHE</Text>
+            <Text style={[styles.title, { fontFamily: 'Montserrat_700Bold' }]}>MALBOUCHE</Text>
           </View>
           <Image
             source={reloj}
             style={styles.logo}
           />
-          <Text style={[styles.loginTitle, { fontFamily: 'Cinzel_600SemiBold' }]}>LOGIN</Text>
+          <Text style={[styles.loginTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>LOGIN</Text>
           <Text style={[styles.subtitle, { fontFamily: 'Montserrat_400Regular' }]}>Enter your email and password to log in</Text>
           <View style={styles.inputContainer}>
             <TextInput
@@ -203,7 +203,7 @@ export default function Login({ navigation }) {
               {isLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={[styles.buttonText, { fontFamily: 'Cinzel_600SemiBold' }]}>Log In</Text>
+                <Text style={[styles.buttonText, { fontFamily: 'Montserrat_600SemiBold' }]}>Log In</Text>
               )}
             </TouchableOpacity>
           </View>

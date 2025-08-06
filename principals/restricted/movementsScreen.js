@@ -8,6 +8,7 @@ import {
   TouchableOpacity, 
   SafeAreaView 
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from "@expo/vector-icons";
 import NavigationBar from "../../components/NavigationBar";
@@ -95,6 +96,12 @@ const MovementsScreen = () => {
     fetchMovements();
   }, []);
 
+  // Estilo dinámico para el FAB basado en los safe area insets
+  const fabDynamicStyle = {
+    ...styles.fab,
+    bottom: 80 + insets.bottom, // 80px base + espacio de navegación del sistema
+  }
+
     const renderItem = ({ item }) => {
       // Extract data according to API structure
       const movimiento = item.movimiento || {};
@@ -105,6 +112,10 @@ const MovementsScreen = () => {
       const duracion = item.duracion || 'N/A';
       const direccionGeneral = movimiento.direccionGeneral || 'N/A';
       
+      // Get directions for each hand
+      const horasDireccion = horas.direccion || 'N/A';
+      const minutosDireccion = minutos.direccion || 'N/A';
+      
       // Get average speed for display
       const horasVelocidad = horas.velocidad || 0;
       const minutosVelocidad = minutos.velocidad || 0;
@@ -112,14 +123,36 @@ const MovementsScreen = () => {
 
       return (
         <TouchableOpacity 
-          style={styles.item} 
+          style={styles.movementCard} 
           onPress={() => handleMovementPress(item)}
+          activeOpacity={0.7}
         >
-          <Text style={styles.itemText}>{item.nombre}</Text>
-          <View style={styles.itemDetails}>
-            <Text style={styles.itemSubtext}>
-              Duration: {duracion}s • Direction: {direccionGeneral} • Speed: {avgSpeed}
-            </Text>
+          <View style={styles.movementHeader}>
+            <View style={styles.movementIcon}>
+              <Ionicons name="time-outline" size={24} color="#660154" />
+            </View>
+            <View style={styles.movementInfo}>
+              <Text style={[styles.movementName, { fontFamily: 'Montserrat_700Bold' }]}>
+                {item.nombre}
+              </Text>
+              <View style={styles.movementDetails}>
+                <View style={styles.detailItem}>
+                  <Ionicons name="time-outline" size={14} color="#666" />
+                  <Text style={[styles.detailText, { fontFamily: 'Montserrat_400Regular' }]}>
+                    Hours: {horasDireccion}
+                  </Text>
+                </View>
+                
+                <View style={styles.detailItem}>
+                  <Ionicons name="timer-outline" size={14} color="#666" />
+                  <Text style={[styles.detailText, { fontFamily: 'Montserrat_400Regular' }]}>
+                    Minutes: {minutosDireccion}
+                  </Text>
+                </View>
+
+              </View>
+            </View>
+          
           </View>
         </TouchableOpacity>
       );
@@ -128,37 +161,48 @@ const MovementsScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>MOVEMENTS</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
-          >
-            <View style={styles.avatarSmall}>
-              <Ionicons name="person" size={20} color="#660154" />
+        <LinearGradient
+          colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>MOVEMENTS</Text>
             </View>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+            >
+              <View style={styles.avatarSmall}>
+                <Ionicons name="person" size={20} color="#660154" />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
 
         <FlatList
           data={movements}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={
-            <Text style={styles.subtitle}>Create a new movement...</Text>
+            <Text style={[styles.subtitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+              Create and manage clock movements
+            </Text>
           }
           contentContainerStyle={[
-            styles.list,
-            { paddingBottom: insets.bottom + 100 }
+            styles.movementsList,
+            { paddingBottom: insets.bottom + 150 }
           ]}
-        refreshing={loading}
-        onRefresh={fetchMovements}
+          style={styles.movementsContainer}
+          showsVerticalScrollIndicator={false}
+          refreshing={loading}
+          onRefresh={fetchMovements}
         />
 
         <TouchableOpacity 
-          style={styles.fab} 
+          style={fabDynamicStyle} 
           onPress={handleCreateMovement}
         >
           <Ionicons name="add" size={28} color="white" />
@@ -178,16 +222,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f4f4f4",
   },
-  header: {
+  headerGradient: {
+    paddingTop: 38,
+    paddingBottom: 10,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 30, 
-    backgroundColor: "#FAFAFA",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    zIndex: 100,
+  },
+  titleGradient: {
+    fontSize: 22,
+    color: "#fff",
+    paddingLeft: 35
   },
   profileButton: {
     marginLeft: 10,
@@ -203,53 +255,81 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#333",
+    alignItems: 'center',
+    paddingLeft: 20,
   },
   subtitle: {
-    fontSize: 25,
-    fontWeight: "500",
+    fontSize: 22,
+    fontWeight: "600",
     textAlign: "center",
-    marginTop: 10,
-    marginBottom: 30,
+    marginTop: 22,
+    marginBottom: 20,
     paddingHorizontal: 20,
-    color: "#400135",
+    color: "#660154",
   },
-  list: {
-    paddingTop: 20,
-    flexGrow: 1, 
-    paddingHorizontal: 20,
-    paddingBottom: 110,
+  movementsList: {
+    paddingHorizontal: 15,
+    // paddingBottom se define dinámicamente
   },
-  item: {
+  movementsContainer: {
+    flex: 1,
+  },
+  movementCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderColor: "rgba(209, 148, 22, 0.4)",
+    borderWidth: 1,
+    padding: 15,
+    marginVertical: 8,
+    shadowColor: "rgba(102, 1, 84,0.8)",
+    elevation: 5,
   },
-  itemText: {
+  movementHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  movementIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(102, 1, 84, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  movementInfo: {
+    flex: 1,
+  },
+  movementName: {
     fontSize: 16,
     fontWeight: "600",
     color: "#333",
+    marginBottom: 8,
   },
-  itemDetails: {
-    marginTop: 4,
+  movementDetails: {
+    flexDirection: 'row',
+    
+    gap: 12,
   },
-  itemSubtext: {
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  detailText: {
     fontSize: 12,
     color: "#666",
+  },
+  chevronContainer: {
+    padding: 1,
   },
   fab: {
     position: "absolute",
     right: 20,
-    bottom: 80,
-    backgroundColor: "#400135",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    backgroundColor: "#400135", 
+    width: 70,
+    height: 70,
+    borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
@@ -259,8 +339,8 @@ const styles = StyleSheet.create({
     shadowRadius: 5, 
     zIndex: 10,
   },
-  // Estilos para el modal
-   modalContainer: {
+  // Estilos para el modal (mantenidos para compatibilidad)
+  modalContainer: {
     flex: 1,
     justifyContent: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -338,37 +418,37 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   dropdown: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  borderWidth: 0.8,
-  borderColor: "rgba(204, 204, 204, 0.8)",
-  borderRadius: 6,
-  padding: 12,
-  backgroundColor: "#fff",
-  marginBottom: 8,
-},
-dropdownText: {
-  fontSize: 15,
-  color: "#333",
-},
-dropdownList: {
-  position: "absolute",
-  top: 70,
-  left: 0,
-  right: 0,
-  backgroundColor: "#fff",
-  borderWidth: 0.8,
-  borderColor: "rgba(204, 204, 204, 0.8)",
-  borderRadius: 6,
-  zIndex: 1000,
-  elevation: 5,
-},
-dropdownItem: {
-  padding: 12,
-  borderBottomWidth: 0.5,
-  borderBottomColor: "#eee",
-},
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 0.8,
+    borderColor: "rgba(204, 204, 204, 0.8)",
+    borderRadius: 6,
+    padding: 12,
+    backgroundColor: "#fff",
+    marginBottom: 8,
+  },
+  dropdownText: {
+    fontSize: 15,
+    color: "#333",
+  },
+  dropdownList: {
+    position: "absolute",
+    top: 70,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderWidth: 0.8,
+    borderColor: "rgba(204, 204, 204, 0.8)",
+    borderRadius: 6,
+    zIndex: 1000,
+    elevation: 5,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#eee",
+  },
   deleteButton: {
     backgroundColor: '#ff4444',
   },
@@ -380,6 +460,6 @@ dropdownItem: {
     fontWeight: '600',
     fontSize: 15,
   },
-})
+});
 
 export default MovementsScreen

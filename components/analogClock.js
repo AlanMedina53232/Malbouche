@@ -8,7 +8,7 @@ const CLOCK_SIZE = 176;
 const CENTER = CLOCK_SIZE / 2;
 const RADIUS = CLOCK_SIZE / 2 - 10;
 
-const AnalogClock = ({ direction = 'normal', speed = 50, isCrazy = false, isSwing = false }) => {
+const AnalogClock = ({ direction = 'normal', speed = 50, minuteDirection = 'normal', minuteSpeed = 50, isCrazy = false, isSwing = false }) => {
   const [pendulum, setPendulum] = useState({
     hour: { angle: 0, velocity: 0, targetAngle: 180 },
     minute: { angle: 0, velocity: 0, targetAngle: 180 }
@@ -68,21 +68,24 @@ const AnalogClock = ({ direction = 'normal', speed = 50, isCrazy = false, isSwin
       if (!isSwing) {
         if (isCrazy) {
           const speedFactor = 0.5 + (speed / 50) * 3; // Rango de 0.5 a 3.5
+          const minuteSpeedFactor = 0.5 + (minuteSpeed / 50) * 3; // Separate speed for minute hand
           setPendulum(prev => ({
             hour: { ...prev.hour, angle: (prev.hour.angle + 150 * speedFactor * deltaTime) % 360 },
-            minute: { ...prev.minute, angle: (prev.minute.angle - 180 * speedFactor * deltaTime) % 360 }
+            minute: { ...prev.minute, angle: (prev.minute.angle - 180 * minuteSpeedFactor * deltaTime) % 360 }
           }));
         } else if (direction === 'left') {
           const speedFactor = 0.5 + (speed / 50) * 3; // Rango de 0.5 a 3.5
+          const minuteSpeedFactor = 0.5 + (minuteSpeed / 50) * 3; // Separate speed for minute hand
           setPendulum(prev => ({
             hour: { ...prev.hour, angle: (prev.hour.angle - 80 * speedFactor * deltaTime) % 360 },
-            minute: { ...prev.minute, angle: (prev.minute.angle - 160 * speedFactor * deltaTime) % 360 }
+            minute: { ...prev.minute, angle: (prev.minute.angle - 160 * minuteSpeedFactor * deltaTime * (minuteDirection === 'left' ? 1 : -1)) % 360 }
           }));
         } else if (direction === 'right') {
           const speedFactor = 0.5 + (speed / 50) * 3; // Rango de 0.5 a 3.5
+          const minuteSpeedFactor = 0.5 + (minuteSpeed / 50) * 3; // Separate speed for minute hand
           setPendulum(prev => ({
             hour: { ...prev.hour, angle: (prev.hour.angle + 80 * speedFactor * deltaTime) % 360 },
-            minute: { ...prev.minute, angle: (prev.minute.angle + 160 * speedFactor * deltaTime) % 360 }
+            minute: { ...prev.minute, angle: (prev.minute.angle + 160 * minuteSpeedFactor * deltaTime * (minuteDirection === 'right' ? 1 : -1)) % 360 }
           }));
         } else {
           updateTime();
@@ -130,7 +133,7 @@ const AnalogClock = ({ direction = 'normal', speed = 50, isCrazy = false, isSwin
 
     animationRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationRef.current);
-  }, [direction, speed, isCrazy, isSwing]);
+  }, [direction, speed, minuteDirection, minuteSpeed, isCrazy, isSwing]);
 
   // Coordenadas de las manecillas
   const getHandCoordinates = (angle, length) => {

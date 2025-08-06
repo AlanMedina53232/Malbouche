@@ -12,7 +12,8 @@ import {
   SafeAreaView,
   Dimensions,
   Alert,
-  ScrollView
+  ScrollView,
+  FlatList
 } from "react-native"
 import DateTimePicker from "@react-native-community/datetimepicker"
 import { Ionicons } from "@expo/vector-icons"
@@ -21,14 +22,23 @@ import Slider from "@react-native-community/slider"
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createEvent, getAllMovements, handleEventConflictError, handleApiError } from '../../utils/apiClient'
 import { useEventErrorHandler, showEventConflictAlert } from '../../utils/eventErrorHandler'
+import { LinearGradient } from 'expo-linear-gradient'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api'
 
 const { height } = Dimensions.get("window")
 
-// Backend expects these exact day abbreviations
-const daysOfWeek = ["Su", "M", "T", "W", "Th", "F", "Sa"]
-
+// Backend expects these exact day abbreviations - updated to English display
+const daysOfWeek = [
+  { backend: "Su", display: "Su" },    // Sunday
+  { backend: "M", display: "M" },      // Monday
+  { backend: "T", display: "T" },      // Tuesday
+  { backend: "W", display: "W" },      // Wednesday
+  { backend: "Th", display: "Th" },    // Thursday
+  { backend: "F", display: "F" },      // Friday
+  { backend: "Sa", display: "Sa" }     // Saturday
+]
+ 
 const NewEventScreen = ({ navigation }) => {
   const [eventName, setEventName] = useState("")
   const [startTime, setStartTime] = useState(new Date())
@@ -65,8 +75,8 @@ const NewEventScreen = ({ navigation }) => {
     }
   }
 
-  const toggleDay = (day) => {
-    setSelectedDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
+  const toggleDay = (dayBackend) => {
+    setSelectedDays((prev) => (prev.includes(dayBackend) ? prev.filter((d) => d !== dayBackend) : [...prev, dayBackend]))
   }
 
   // Format time to HH:MM (24-hour format) as expected by backend
@@ -146,7 +156,7 @@ const NewEventScreen = ({ navigation }) => {
     }
   }
 
-  const clockSize = Math.min(height * 0.25, 200)
+  const clockSize = Math.min(height * 0.18, 160)
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -155,94 +165,134 @@ const NewEventScreen = ({ navigation }) => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.arrowButton}
-            onPress={() => navigation.goBack()}
-          >
-            <View style={styles.iconSmall}>
-              <Ionicons name="arrow-back" size={24} color="black" />
+        <LinearGradient
+          colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>NEW EVENT</Text>
             </View>
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>NEW EVENT</Text>
           </View>
-        </View>
+        </LinearGradient>
 
-        <View style={styles.content}>
-          <View style={[styles.clockContainer, { height: clockSize }]}>
-            <AnalogClock />
-          </View>
-
-          <View style={styles.timeRow}>
-            <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.timeButton}>
-              <Text style={styles.timeText}>
-                {formatTimeForBackend(startTime)}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View >
+            <View style={styles.clockSection}>
+             {/*  <View style={[styles.clockContainer, { height: clockSize }, { marginTop: 35 }]}>
+                <AnalogClock />
+              </View> */}
+              <Text style={[styles.sectionTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                Set Event Time
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.timeButton}>
-              <Text style={styles.timeText}>
-                {formatTimeForBackend(endTime)}
-              </Text>
-            </TouchableOpacity>
-          </View>
+            </View>
 
-          <View style={styles.daysRow}>
-            {daysOfWeek.map((day, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[styles.dayButton, selectedDays.includes(day) && styles.daySelected]}
-                onPress={() => toggleDay(day)}
-              >
-                <Text style={[styles.dayText, selectedDays.includes(day) && styles.dayTextSelected]}>{day}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+            <View style={styles.timeSection}>
+              <Text style={[styles.sectionLabel, { fontFamily: 'Montserrat_500Medium' }]}>Time Range</Text>
+              <View style={styles.timeRow}>
+                <View style={styles.timeInputContainer}>
+                  <Text style={[styles.timeLabel, { fontFamily: 'Montserrat_400Regular' }]}>Start Time</Text>
+                  <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.timeButton}>
+                    <Ionicons name="time-outline" size={20} color="#660154" style={styles.timeIcon} />
+                    <Text style={[styles.timeText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                      {formatTimeForBackend(startTime)}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.timeInputContainer}>
+                  <Text style={[styles.timeLabel, { fontFamily: 'Montserrat_400Regular' }]}>End Time</Text>
+                  <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.timeButton}>
+                    <Ionicons name="time-outline" size={20} color="#660154" style={styles.timeIcon} />
+                    <Text style={[styles.timeText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                      {formatTimeForBackend(endTime)}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
 
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.formContainer}>
-              <View style={styles.formGroup}>
-                <Text style={styles.formGroupLabel}>Event Details</Text>
-                
-                <View style={styles.formColumn}>
-                  <Text style={styles.inputLabel}>Event Name (2-100 characters)</Text>
+            <View style={styles.daysSection}>
+              <Text style={[styles.sectionLabel, { fontFamily: 'Montserrat_500Medium' }]}>Days of Week</Text>
+              <View style={styles.daysRow}>
+                {daysOfWeek.map((day, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.dayButton, selectedDays.includes(day.backend) && styles.daySelected]}
+                    onPress={() => toggleDay(day.backend)}
+                  >
+                    <Text style={[
+                      styles.dayText, 
+                      selectedDays.includes(day.backend) && styles.dayTextSelected,
+                      { fontFamily: 'Montserrat_600SemiBold' }
+                    ]}>
+                      {day.display}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.detailsSection}>
+              <Text style={[styles.sectionTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>Event Details</Text>
+              
+              <View style={styles.inputContainer}>
+                <Text style={[styles.inputLabel, { fontFamily: 'Montserrat_500Medium' }]}>
+                  Event Name<Text style={{ color: "#af0808ff" }}> *</Text>
+                </Text>
+                <View style={styles.inputWrapper}>
+                  <Ionicons name="calendar-outline" size={20} color="#660154" style={styles.inputIcon} />
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
                     placeholder="Enter event name"
+                    placeholderTextColor="#999"
                     value={eventName}
                     onChangeText={setEventName}
                     maxLength={100}
                   />
-                  <Text style={styles.characterCount}>
-                    {eventName.length}/100 characters
-                  </Text>
                 </View>
-
-                <View style={styles.formColumn}>
-                  <Text style={styles.inputLabel}>Move Type</Text>
-                  <Dropdown
-                    options={movementOptions}
-                    value={movementOptions.find(m => m.id === selectedMovementId)?.nombre || "Select Movement"}
-                    onSelect={(value) => setSelectedMovementId(value.id)}
-                  />
-                </View>
+                <Text style={[styles.characterCount, { fontFamily: 'Montserrat_400Regular' }]}>
+                  {eventName.length}/100 characters
+                </Text>
               </View>
 
-              <TouchableOpacity 
-                style={[styles.createButton, loading && styles.createButtonDisabled]} 
-                onPress={handleCreate}
-                disabled={loading}
-              >
-                <Text style={styles.createButtonText}>
-                  {loading ? "Creating..." : "Create event"}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.inputContainer}>
+                <Text style={[styles.inputLabel, { fontFamily: 'Montserrat_500Medium' }]}>Movement Type</Text>
+                <Dropdown
+                  options={movementOptions}
+                  value={movementOptions.find(m => m.id === selectedMovementId)?.nombre || "Select Movement"}
+                  onSelect={(value) => setSelectedMovementId(value.id)}
+                />
+              </View>
             </View>
-          </ScrollView>
-        </View>
+
+            <TouchableOpacity 
+              style={[styles.createButton, loading && styles.createButtonDisabled]} 
+              onPress={handleCreate}
+              disabled={loading}
+            >
+              <View style={styles.buttonContent}>
+                <Ionicons name="add-circle" size={20} color="#fff" />
+                <Text style={[styles.createButtonText, { fontFamily: 'Montserrat_700Bold' }]}>
+                  {loading ? "Creating..." : "Create Event"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
 
         {showStartPicker && (
           <DateTimePicker
@@ -281,23 +331,40 @@ const Dropdown = ({ options, value, onSelect }) => {
   return (
     <View style={styles.dropdownContainer}>
       <TouchableOpacity onPress={() => setVisible(!visible)} style={styles.dropdown}>
-        <Text style={styles.dropdownText}>{value}</Text>
-        <Ionicons name={visible ? "chevron-up" : "chevron-down"} size={20} color="#666" />
+        <View style={styles.dropdownContent}>
+          <Ionicons name="settings-outline" size={20} color="#660154" style={styles.dropdownIcon} />
+          <Text style={[styles.dropdownText, { fontFamily: 'Montserrat_400Regular' }]}>{value}</Text>
+        </View>
+        <Ionicons name={visible ? "chevron-up" : "chevron-down"} size={20} color="#660154" />
       </TouchableOpacity>
       {visible && (
         <View style={styles.dropdownList}>
-          {options.map((option) => (
-            <TouchableOpacity
-              key={option.id}
-              style={styles.dropdownItem}
-              onPress={() => {
-                onSelect(option)
-                setVisible(false)
-              }}
-            >
-              <Text style={styles.dropdownItemText}>{option.nombre}</Text>
-            </TouchableOpacity>
-          ))}
+          <ScrollView 
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={true}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+            overScrollMode="never"
+            scrollEnabled={true}
+            style={{ flex: 1 }}
+          >
+            {options.map((option, index) => (
+              <TouchableOpacity
+                key={option.id}
+                style={[
+                  styles.dropdownItem,
+                  index === options.length - 1 && styles.dropdownItemLast
+                ]}
+                onPress={() => {
+                  onSelect(option)
+                  setVisible(false)
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.dropdownItemText, { fontFamily: 'Montserrat_400Regular' }]}>{option.nombre}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
       )}
     </View>
@@ -307,185 +374,332 @@ const Dropdown = ({ options, value, onSelect }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f4f4f4",
   },
   container: {
     flex: 1,
     backgroundColor: "#f4f4f4",
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  
+  headerGradient: {
+    paddingTop: 38,
+    paddingBottom: 10,
     paddingHorizontal: 20,
-    paddingTop: 30, 
-    backgroundColor: "#FAFAFA",
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    zIndex: 100,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
   },
-  arrowButton: {
-    marginRight: 10,
-    marginBottom: 10,
-  },
-  iconSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
+
+  arrowButton: {
+    marginRight: 15,
+    padding: 8,
+    borderRadius: 20,
+  },
+
   titleContainer: {
     flex: 1,
+    alignItems: 'center',
+    marginRight: 40,
   },
-  title: {
+
+  titleGradient: {
     fontSize: 22,
-    fontWeight: "700",
-    color: "#333",
+    color: "#fff",
+    fontWeight: '700',
   },
-  content: {
-    flex: 1,
+
+  scrollContainer: {
     paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingBottom: 100,
   },
+
+  formContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+
+  clockSection: {
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 5,
+    paddingVertical: 10,
+  },
+
   clockContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 15,
+    marginBottom: 55,
+    width: '100%',
+    paddingHorizontal: 20,
   },
+
+  sectionTitle: {
+    fontSize: 20,
+    color: "#660154",
+    textAlign: 'center',
+    marginBottom: 10,
+   
+  },
+
+  timeSection: {
+    marginBottom: 25,
+  },
+
+  sectionLabel: {
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 15,
+    fontWeight: "600",
+  },
+
   timeRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
-    paddingHorizontal: 40,
+    gap: 15,
   },
+
+  timeInputContainer: {
+    flex: 1,
+  },
+
+  timeLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+
   timeButton: {
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    backgroundColor: "#f9f9f9",
+    shadowColor: "#660154",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
+
+  timeIcon: {
+    marginRight: 8,
+  },
+
   timeText: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
     color: "#333",
   },
+
+  daysSection: {
+    marginBottom: 25,
+  },
+
   daysRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
   },
+
   dayButton: {
-    width: 35,
-    height: 35,
-    borderRadius: 8,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(64, 1, 53, 0.2)",
-  },
-  daySelected: {
-    backgroundColor: "#400135",
-  },
-  dayText: {
-    color: "#400135",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  dayTextSelected: {
-    color: "#fff",
-  },
-  scrollContainer: {
-    paddingBottom: 20,
-  },
-  formContainer: {
-    flex: 1,
-    justifyContent: "space-between",
-    paddingBottom: 10,
-  },
-  input: {
-    borderRadius: 6,
-    backgroundColor: "#fff",
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    marginBottom: 5,
-    borderWidth: 1,
+    backgroundColor: "transparent",
+    borderWidth: 2,
     borderColor: "#ddd",
   },
+
+  daySelected: {
+    backgroundColor: "#660154",
+    borderColor: "#660154",
+  },
+
+  dayText: {
+    color: "#666",
+    fontSize: 12,
+  },
+
+  dayTextSelected: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(209, 148, 22, 0.3)',
+    marginBottom: 10,
+    marginHorizontal: 10,
+  },
+
+  detailsSection: {
+    marginBottom: 20,
+    marginTop: 10,
+  },
+
+  inputContainer: {
+    marginBottom: 20,
+  },
+
+  inputLabel: {
+    fontSize: 16,
+    color: "#333",
+    marginBottom: 8,
+    fontWeight: "600",
+  },
+
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    backgroundColor: "#f9f9f9",
+    paddingHorizontal: 15,
+    shadowColor: "#660154",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+
+  inputIcon: {
+    marginRight: 12,
+  },
+
+  input: {
+    flex: 1,
+    paddingVertical: 15,
+    fontSize: 16,
+    color: "#333",
+  },
+
   characterCount: {
     fontSize: 12,
     color: "#666",
-    textAlign: "right",
-    marginBottom: 10,
+    textAlign: 'right',
+    marginTop: 5,
   },
+
   dropdownContainer: {
-    position: "relative",
+    position: 'relative',
   },
+
   dropdown: {
-    borderRadius: 6,
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ddd",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    backgroundColor: "#f9f9f9",
+    shadowColor: "#660154",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
+
+  dropdownContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  dropdownIcon: {
+    marginRight: 12,
+  },
+
   dropdownText: {
     fontSize: 16,
     color: "#333",
   },
+
   dropdownList: {
-    position: "absolute",
-    top: "100%",
+    position: 'absolute',
+    top: '100%',
     left: 0,
     right: 0,
     backgroundColor: "#fff",
+    borderRadius: 12,
+    marginTop: 5,
+    maxHeight: 200,
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
     zIndex: 1000,
-    marginTop: 5,
-    elevation: 5,
   },
+
   dropdownItem: {
-    padding: 12,
+    padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
+    backgroundColor: "#fff",
   },
+
+  dropdownItemLast: {
+    borderBottomWidth: 0,
+  },
+
   dropdownItemText: {
     fontSize: 16,
     color: "#333",
   },
-  formGroup: {
-    marginBottom: 20,
-  },
-  formGroupLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
-    color: "#333",
-  },
-  formColumn: {
-    marginBottom: 15,
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 6,
-  },
+
   createButton: {
-    backgroundColor: "#400135",
-    paddingVertical: 15,
-    borderRadius: 8,
+    backgroundColor: "#660154",
+    paddingVertical: 18,
+    borderRadius: 12,
     alignItems: "center",
-    marginBottom: 5,
+    marginTop: 20,
+    shadowColor: "#660154",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
+
   createButtonDisabled: {
-    backgroundColor: "#cccccc",
+    backgroundColor: "#999",
+    shadowColor: "#999",
   },
+
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
   createButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
     color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    marginLeft: 8,
   },
 })
 

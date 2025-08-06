@@ -11,11 +11,14 @@ import { getAllEvents, getAllMovements, updateEvent, handleApiError } from '../.
 import { showGenericErrorAlert } from '../../utils/eventErrorHandler'
 import { useCallback } from "react"
 import eventRefreshService from '../../utils/eventRefreshService'
+import { LinearGradient } from 'expo-linear-gradient'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const API_BASE_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api' // Fallback if env not set
 
 const EventsScreen = () => {
   const navigation = useNavigation()
+  const insets = useSafeAreaInsets()
   // const { events, setEvents } = useContext(EventContext)
   const [movements, setMovements] = useState([])
   const [loading, setLoading] = useState(false)
@@ -101,22 +104,55 @@ const fetchData = async () => {
 
   const mapDayAbbreviation = (day) => {
     const dayMap = {
-      lunes: "M",
-      martes: "T",
-      miercoles: "W",
-      jueves: "Th",
-      viernes: "F",
-      sabado: "Sa",
-      domingo: "Su",
-      Su: "Su",
-      M: "M",
-      T: "T",
-      W: "W",
-      Th: "Th",
-      F: "F",
-      Sa: "Sa"
+      lunes: "L",
+      martes: "M", 
+      miercoles: "M",
+      jueves: "J",
+      viernes: "V",
+      sabado: "S",
+      domingo: "D",
+      Su: "D",
+      M: "L",
+      T: "M",
+      W: "M",
+      Th: "J",
+      F: "V",
+      Sa: "S"
     }
     return dayMap[day] || day
+  }
+
+  const getAllDaysWithStatus = (activeDays) => {
+    const allDays = [
+      { key: 'L', label: 'M', active: false },    // Monday
+      { key: 'M', label: 'T', active: false },    // Tuesday
+      { key: 'Mi', label: 'W', active: false },   // Wednesday
+      { key: 'J', label: 'Th', active: false },   // Thursday
+      { key: 'V', label: 'F', active: false },    // Friday
+      { key: 'S', label: 'Sa', active: false },   // Saturday
+      { key: 'D', label: 'Su', active: false }    // Sunday
+    ];
+
+    // Mark active days - map Spanish abbreviations to English
+    activeDays.forEach(day => {
+      const dayMapping = {
+        'L': 'M',   // Lunes -> Monday
+        'M': 'T',   // Martes -> Tuesday  
+        'Mi': 'W',  // Miércoles -> Wednesday
+        'J': 'Th',  // Jueves -> Thursday
+        'V': 'F',   // Viernes -> Friday
+        'S': 'Sa',  // Sábado -> Saturday
+        'D': 'Su'   // Domingo -> Sunday
+      };
+      
+      const englishDay = dayMapping[day] || day;
+      const dayIndex = allDays.findIndex(d => d.label === englishDay);
+      if (dayIndex !== -1) {
+        allDays[dayIndex].active = true;
+      }
+    });
+
+    return allDays;
   }
 
 const toggleEventStatus = async (eventId) => {
@@ -189,12 +225,111 @@ const toggleEventStatus = async (eventId) => {
   }
 
   const getOngoingEvent = () => {
-    const ongoingEvent = localEvents.find((event) => event.enabled)
-    return ongoingEvent ? `The ${ongoingEvent.name} event is ongoing` : "No ongoing event"
+    const enabledEvents = localEvents.filter((event) => event.enabled)
+    
+    if (enabledEvents.length === 0) {
+      return "No ongoing events"
+    }
+
+    const now = new Date()
+    const currentDay = now.getDay() // 0 = Sunday, 1 = Monday, etc.
+    const currentTime = now.getHours() * 60 + now.getMinutes() // Current time in minutes
+
+    // Map JavaScript day numbers to our day abbreviations
+    const dayMap = {
+      0: 'D', // Sunday
+      1: 'L', // Monday
+      2: 'M', // Tuesday  
+      3: 'Mi', // Wednesday
+      4: 'J', // Thursday
+      5: 'V', // Friday
+      6: 'S'  // Saturday
+    }
+    
+    const currentDayAbbr = dayMap[currentDay]
+
+    // Check if any event is currently happening
+    for (const event of enabledEvents) {
+      if (event.days.includes(currentDayAbbr)) {
+        const [startHour, startMinute] = event.startTime.split(':').map(Number)
+        const [endHour, endMinute] = event.endTime.split(':').map(Number)
+        const startTimeMinutes = startHour * 60 + startMinute
+        const endTimeMinutes = endHour * 60 + endMinute
+        
+        if (currentTime >= startTimeMinutes && currentTime <= endTimeMinutes) {
+          return `The ${event.name} event is ongoing`
+        }
+      }
+    }
+
+    // If no event is currently happening, find the next upcoming event
+    let nextEvent = null
+    let minHoursUntilNext = Infinity
+
+    for (const event of enabledEvents) {
+      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const checkDay = (currentDay + dayOffset) % 7
+        const checkDayAbbr = dayMap[checkDay]
+        
+        if (event.days.includes(checkDayAbbr)) {
+          const [startHour, startMinute] = event.startTime.split(':').map(Number)
+          const startTimeMinutes = startHour * 60 + startMinute
+          
+          let hoursUntilEvent
+          if (dayOffset === 0) {
+            // Same day
+            if (startTimeMinutes > currentTime) {
+              hoursUntilEvent = (startTimeMinutes - currentTime) / 60
+            } else {
+              continue // Event already passed today
+            }
+          } else {
+            // Future day
+            const minutesUntilMidnight = (24 * 60) - currentTime
+            const minutesToEvent = (dayOffset - 1) * 24 * 60 + startTimeMinutes
+            hoursUntilEvent = (minutesUntilMidnight + minutesToEvent) / 60
+          }
+          
+          if (hoursUntilEvent < minHoursUntilNext) {
+            minHoursUntilNext = hoursUntilEvent
+            nextEvent = event
+          }
+        }
+      }
+    }
+
+    if (nextEvent) {
+      const hoursUntilNext = Math.floor(minHoursUntilNext)
+      const minutesUntilNext = Math.round((minHoursUntilNext % 1) * 60)
+      
+      if (hoursUntilNext === 0) {
+        return `The ${nextEvent.name} starts in ${minutesUntilNext} minutes`
+      } else if (hoursUntilNext < 24) {
+        return `The ${nextEvent.name} starts in ${hoursUntilNext} hours`
+      } else {
+        const daysUntilNext = Math.floor(hoursUntilNext / 24)
+        return `The ${nextEvent.name} event starts in ${daysUntilNext} day${daysUntilNext > 1 ? 's' : ''}`
+      }
+    }
+
+    return "No upcoming events"
+  }
+
+  // Estilo dinámico para el FAB basado en los safe area insets
+  const fabDynamicStyle = {
+    ...styles.fab,
+    bottom: 80 + insets.bottom, // 80px base + espacio de navegación del sistema
+  }
+
+  // Estilo dinámico para el contenido de la lista
+  const listContentDynamicStyle = {
+    ...styles.eventsList,
+    paddingBottom: 150 + insets.bottom, // Padding base + espacio de navegación del sistema
   }
 
   const renderItem = ({ item }) => {
     const isUpdating = updatingEvents.has(item.id);
+    const daysWithStatus = getAllDaysWithStatus(item.days);
     
     return (
       <TouchableOpacity
@@ -205,16 +340,34 @@ const toggleEventStatus = async (eventId) => {
       >
         <View style={styles.eventHeader}>
           <View style={styles.eventInfo}>
-            <Text style={styles.eventName}>{item.name}</Text>
-            <Text style={styles.eventTime}>
+            <Text style={[styles.eventName, { fontFamily: 'Montserrat_700Bold' }]}>{item.name}</Text>
+            <Text style={[styles.eventTime, { fontFamily: 'Montserrat_400Regular' }]}>
               {item.startTime} - {item.endTime}
             </Text>
-            <Text style={styles.eventDays}>{item.days.join(" ")}</Text>
-            {item.movement && (
-              <Text style={styles.movementInfo}>
-                Movement: {item.movement.type} | Speed: {item.movement.speed} | Time: {item.movement.time}
-              </Text>
-            )}
+            
+            {/* Días de la semana */}
+            <View style={styles.daysContainer}>
+              {daysWithStatus.map((day, index) => (
+                <View 
+                  key={index} 
+                  style={[
+                    styles.dayBadge, 
+                    day.active ? styles.dayBadgeActive : styles.dayBadgeInactive
+                  ]}
+                >
+                  <Text 
+                    style={[
+                      styles.dayText, 
+                      day.active ? styles.dayTextActive : styles.dayTextInactive,
+                      { fontFamily: 'Montserrat_600SemiBold' }
+                    ]}
+                  >
+                    {day.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            
           </View>
           
           <View style={styles.switchContainer}>
@@ -238,7 +391,7 @@ const toggleEventStatus = async (eventId) => {
               ]}
             />
             {isUpdating && (
-              <Text style={styles.updatingText}>Updating...</Text>
+              <Text style={[styles.updatingText, { fontFamily: 'Montserrat_400Regular' }]}>Updating...</Text>
             )}
           </View>
         </View>
@@ -249,19 +402,26 @@ const toggleEventStatus = async (eventId) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>EVENTS</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
-          >
-            <View style={styles.avatarSmall}>
-              <Ionicons name="person" size={20} color="#660154" />
+        <LinearGradient
+          colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.titleContainer}>
+              <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>EVENTS</Text>
             </View>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={styles.profileButton}
+              onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
+            >
+              <View style={styles.avatarSmall}>
+                <Ionicons name="person" size={20} color="#660154" />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
 
         <FlatList
           data={localEvents}
@@ -269,18 +429,18 @@ const toggleEventStatus = async (eventId) => {
           keyExtractor={(item) => item.id.toString()}
           ListHeaderComponent={
             <>
-              <Text style={styles.subtitle}>{getOngoingEvent()}</Text>
+              <Text style={[styles.subtitle, { fontFamily: 'Montserrat_600SemiBold' }]}>{getOngoingEvent()}</Text>
             </>
           }
-          contentContainerStyle={styles.eventsList}
+          contentContainerStyle={listContentDynamicStyle}
           style={styles.eventContainer}
-        showsVerticalScrollIndicator={false}
-        refreshing={loading}
-        onRefresh={fetchData}
-      />
+          showsVerticalScrollIndicator={false}
+          refreshing={loading}
+          onRefresh={fetchData}
+        />
 
         <TouchableOpacity 
-          style={styles.fab} 
+          style={fabDynamicStyle} 
           onPress={() => navigation.navigate("NewEventScreen")}
         >
           <Ionicons name="add" size={28} color="white" />
@@ -294,134 +454,182 @@ const toggleEventStatus = async (eventId) => {
 
 const styles = StyleSheet.create({
   container: {
-      flex: 1,
-      backgroundColor: "#f4f4f4",
-    },
-    safeArea: {
-      flex: 1,
-      backgroundColor: "#f4f4f4",
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingTop: 30, 
-      backgroundColor: "#FAFAFA",
-      borderBottomWidth: 1,
-      borderBottomColor: "#eee",
-      zIndex: 100,
-    },
+    flex: 1,
+    backgroundColor: "#f4f4f4",
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f4f4f4",
+  },
   
-    profileButton: {
-      marginLeft: 10,
-      marginBottom: 10,
-    },
-    avatarSmall: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: '#f0f0f0',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    titleContainer: {
-      flex: 1,
-    },
-    title: {
-      fontSize: 22,
-      fontWeight: "700",
-      color: "#333",
-    },
-    subtitle: {
-      fontSize: 25,
-      fontWeight: "500",
-      textAlign: "center",
-      marginTop: 30,
-      marginBottom: 30,
-      paddingHorizontal: 20,
-      color: "#400135",
-    },
-    eventsList: {
-      paddingHorizontal: 20,
-      paddingBottom: 110,
-    },
-    eventContainer:{
-      paddingTop: 10,
-    },
-    eventCard: {
-      backgroundColor: "#fff",
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-    },
-    eventHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    eventInfo: {
-      flex: 1,
-    },
-    switchContainer: {
-      alignItems: "center",
-      justifyContent: "center",
-      minWidth: 60,
-    },
-    switch: {
-      marginVertical: 4,
-    },
-    switchDisabled: {
-      opacity: 0.6,
-    },
-    loadingIndicator: {
-      position: "absolute",
-      top: -8,
-      right: 5,
-    },
-    updatingText: {
-      fontSize: 10,
-      color: "#666",
-      marginTop: 2,
-      textAlign: "center",
-    },
-    eventName: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: "#333",
-      marginBottom: 4,
-    },
-    eventTime: {
-      fontSize: 14,
-      color: "#666",
-      marginBottom: 2,
-    },
-    eventDays: {
-      fontSize: 14,
-      color: "#666",
-    },
-    movementInfo: {
-      fontSize: 14,
-      color: "#400135",
-      marginTop: 4,
-    },
-    fab: {
-      position: "absolute",
-      right: 20,
-      bottom: 80,
-      backgroundColor: "#400135",
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      justifyContent: "center",
-      alignItems: "center",
-      elevation: 5,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 5, 
-      zIndex: 10, 
-    },
+  headerGradient: {
+    paddingTop: 38,
+    paddingBottom: 10,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
+  },
+
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  titleGradient: {
+    fontSize: 22,
+    color: "#fff",
+    paddingLeft: 35
+  },
+
+  profileButton: {
+    marginLeft: 10,
+    marginBottom: 10,
+  },
+  avatarSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingLeft: 20,
+  },
+  
+  subtitle: {
+    fontSize: 22,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 22,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    color: "#660154",
+    fontFamily: 'Montserrat_600SemiBold',
+  },
+  eventsList: {
+    paddingHorizontal: 15,
+    // paddingBottom se define dinámicamente con listContentDynamicStyle
+  },
+  eventContainer:{
+    flex: 1,
+  },
+  eventCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderColor: "rgba(209, 148, 22, 0.4)",
+    borderWidth: 1,
+    padding: 15,
+    marginVertical: 8,
+    shadowColor: "rgba(102, 1, 84,0.8)",
+    elevation: 5,
+  },
+  eventHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  eventInfo: {
+    flex: 1,
+  },
+  switchContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 60,
+  },
+  switch: {
+    marginVertical: 4,
+  },
+  switchDisabled: {
+    opacity: 0.6,
+  },
+  loadingIndicator: {
+    position: "absolute",
+    top: -8,
+    right: 5,
+  },
+  updatingText: {
+    fontSize: 10,
+    color: "#666",
+    marginTop: 2,
+    textAlign: "center",
+  },
+  eventName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  eventTime: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 8,
+  },
+  
+  // Nuevos estilos para los días de la semana
+  daysContainer: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    gap: 3,
+  },
+  dayBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  dayBadgeActive: {
+    backgroundColor: '#660154',
+    borderColor: '#660154',
+  },
+  dayBadgeInactive: {
+    backgroundColor: 'transparent',
+    borderColor: '#ddd',
+  },
+  dayText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  dayTextActive: {
+    color: '#fff',
+  },
+  dayTextInactive: {
+    color: '#ccc',
+  },
+  
+  eventDays: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
+  },
+  movementInfo: {
+    fontSize: 14,
+    color: "#660154",
+    marginTop: 4,
+  },
+  fab: {
+    position: "absolute",
+    right: 20,
+    backgroundColor: "#400135", 
+    width: 70,
+    height: 70,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5, 
+    zIndex: 10,
+  },
 })
 
 export default EventsScreen

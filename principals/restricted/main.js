@@ -24,11 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   validateIPFormat, 
   pingESP32, 
-  connectToESP32Android, 
-  scanLocalNetwork,
-  scanLocalNetworkFast,
-  scanMultipleNetworks,
-  getScanStatistics,
+  connectToESP32Android,
   isLocalNetwork
 } from '../../utils/networkHelper';
 
@@ -52,11 +48,6 @@ const MainRest = ({ navigation }) => {
   const [ipModalVisible, setIpModalVisible] = useState(false);
   const [espIp, setEspIp] = useState("");
   const [ipInput, setIpInput] = useState("");
-  const [isScanning, setIsScanning] = useState(false);
-  const [scannedDevices, setScannedDevices] = useState([]);
-  const [scanProgress, setScanProgress] = useState(null);
-  const [deviceSelectionVisible, setDeviceSelectionVisible] = useState(false);
-  const [fastScanMode, setFastScanMode] = useState(false);
   const [deviceType, setDeviceType] = useState(null); // Tipo de dispositivo detectado
   
 const [alertMessage, setAlertMessage] = useState('');
@@ -72,52 +63,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     refreshEvents
   } = useEventScheduler();
 
-  // Función para escanear red local
-  const scanForESP32 = async (fastMode = false) => {
-    setIsScanning(true);
-    setScannedDevices([]);
-    setScanProgress(null);
-    setAlertMessage(`Iniciando escaneo ${fastMode ? 'rápido' : 'completo'}...`);
-    setAlertType('info');
-    
-    try {
-      // Escanear múltiples redes con callback de progreso
-      const devices = await scanMultipleNetworks((progress) => {
-        setScanProgress(progress);
-        setAlertMessage(`${progress.message} ${fastMode ? '(Modo rápido)' : '(Modo completo)'}`);
-      }, fastMode);
-      
-      setScannedDevices(devices);
-      
-      if (devices.length > 0) {
-        setAlertMessage(`Encontrados ${devices.length} dispositivos. Selecciona el tuyo.`);
-        setAlertType('success');
-        setDeviceSelectionVisible(true);
-      } else {
-        setAlertMessage('No se encontraron dispositivos. Ingresa la IP manualmente.');
-        setAlertType('warning');
-      }
-      
-      setTimeout(() => setAlertMessage(''), 6000);
-    } catch (error) {
-      console.error('Error escaneando red:', error);
-      setAlertMessage('Error escaneando red. Intenta ingresar la IP manualmente.');
-      setAlertType('error');
-      setTimeout(() => setAlertMessage(''), 4000);
-    } finally {
-      setIsScanning(false);
-      setScanProgress(null);
-    }
-  };
-
-  // Función para seleccionar un dispositivo de la lista
-  const selectDevice = (device) => {
-    setIpInput(device.ip);
-    setDeviceSelectionVisible(false);
-    setAlertMessage(`Dispositivo seleccionado: ${device.ip}`);
-    setAlertType('success');
-    setTimeout(() => setAlertMessage(''), 3000);
-  };
+  // Las funciones de escaneo de red han sido eliminadas
 
   // Cargar la IP guardada al iniciar
   useEffect(() => {
@@ -126,8 +72,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         const savedIp = await AsyncStorage.getItem(ESP_IP_KEY);
         if (savedIp) {
           setEspIp(savedIp);
-          // Probar conexión con la IP guardada
-          await testEspConnection(savedIp);
+          // Ya no probamos la conexión automáticamente
         } else {
           // Si no hay IP guardada, mostrar el modal
           setIpModalVisible(true);
@@ -143,40 +88,41 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   useEffect(() => {
     ESP_IP = espIp;
   }, [espIp]);
-  const testEspConnection = async (ip) => {
+  
+  // Configurar el ESP32 en el backend
+  const configureESP32InBackend = async (ip, deviceType) => {
     try {
-      // Use our unified service to test the connection
-      const result = await UnifiedClockService.testConnection(ip);
+      const token = await getAuthToken();
+      if (!token) {
+        return false;
+      }
+
+      // Convertir tipo de dispositivo al formato que espera el backend
+      const espType = deviceType === UnifiedClockService.DEVICE_TYPES.PROTOTYPE ? 'prototype' : 'standard';
+      
+      const response = await fetch(`${BACKEND_URL}/scheduler/esp32/configure`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ip: ip,
+          type: espType
+        })
+      });
+
+      const result = await response.json();
       
       if (!result.success) {
-        setAlertMessage(result.message);
-        setAlertType('error');
-        setTimeout(() => setAlertMessage(''), 6000);
+        console.warn("Error configuring ESP32 in backend:", result.error);
         return false;
       }
       
-      // Connection successful
-      console.log('Conexión con dispositivo exitosa:', ip);
-      
-      // Detectar el tipo de dispositivo
-      const detectedType = await UnifiedClockService.detectDeviceType(ip);
-      setDeviceType(detectedType);
-      
-      // Mostrar mensaje según el tipo de dispositivo
-      const deviceTypeName = detectedType === UnifiedClockService.DEVICE_TYPES.PROTOTYPE 
-        ? 'Prototipo (28BYJ-48)' 
-        : 'Estándar (motores paso a paso)';
-      
-      setAlertMessage(`Conexión exitosa con el reloj - Tipo: ${deviceTypeName}`);
-      setAlertType('success');
-      setTimeout(() => setAlertMessage(''), 4000);
+      console.log("ESP32 configured successfully in backend");
       return true;
     } catch (error) {
-      console.error('Error probando conexión con dispositivo:', error);
-      
-      setAlertMessage(`Error inesperado: ${error.message}`);
-      setAlertType('error');
-      setTimeout(() => setAlertMessage(''), 6000);
+      console.error("Error configuring ESP32 in backend:", error);
       return false;
     }
   };
@@ -294,25 +240,37 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
       return;
     }
 
-    // If stop command, just send directly to ESP32 without backend
+    // If stop command, send to the backend stop endpoint
     if (preset === "stop") {
-      if (espIp) {
-        try {
-          const result = await UnifiedClockService.sendPreset(espIp, "stop", 0);
-          if (result.success) {
-            setAlertMessage("Movimiento detenido");
-            setAlertType("success");
-          } else {
-            setAlertMessage(`Error deteniendo movimiento: ${result.message}`);
-            setAlertType("error");
-          }
-          setTimeout(() => setAlertMessage(''), 3000);
-        } catch (error) {
-          console.error("Error stopping movement:", error);
-          setAlertMessage("Error deteniendo movimiento");
-          setAlertType("error");
-          setTimeout(() => setAlertMessage(''), 3000);
+      try {
+        const token = await getAuthToken();
+        if (!token) {
+          return;
         }
+        
+        const response = await fetch(`${BACKEND_URL}/direct-movement/stop`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          setAlertMessage("Movimiento detenido");
+          setAlertType("success");
+        } else {
+          setAlertMessage(`Error deteniendo movimiento: ${result.error}`);
+          setAlertType("error");
+        }
+        setTimeout(() => setAlertMessage(''), 3000);
+      } catch (error) {
+        console.error("Error stopping movement:", error);
+        setAlertMessage("Error de conexión al detener movimiento");
+        setAlertType("error");
+        setTimeout(() => setAlertMessage(''), 3000);
       }
       return;
     }
@@ -368,20 +326,41 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         }
         console.log("Preset updated successfully in backend:", preset);
         
-        // 2. Now send the command directly to ESP32 using our new service
-        if (espIp) {
-          const result = await UnifiedClockService.sendPreset(espIp, preset, speed);
+        // 2. Now send the command through the backend Direct Movement API
+        try {
+          const token = await getAuthToken();
+          if (!token) {
+            setLoading(false);
+            return;
+          }
+
+          const response = await fetch(`${BACKEND_URL}/direct-movement/execute`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              movement: preset.toLowerCase(),
+              speed: speed
+            })
+          });
+
+          const result = await response.json();
           
           if (!result.success) {
-            console.warn("ESP32 communication warning:", result.message);
-            setAlertMessage(`Movimiento actualizado en servidor, pero hubo un problema comunicándose con el reloj: ${result.message}`);
+            console.warn("Backend direct movement warning:", result.error);
+            setAlertMessage(`Movimiento actualizado en servidor, pero hubo un problema enviándolo al reloj: ${result.error}`);
             setAlertType("warning");
             setTimeout(() => setAlertMessage(''), 4000);
           } else {
-            console.log("ESP32 preset applied successfully");
+            console.log("Movement command sent successfully through backend");
           }
-        } else {
-          console.log("No ESP32 IP configured, skipping direct command");
+        } catch (error) {
+          console.error("Error sending movement through backend:", error);
+          setAlertMessage("Error de conexión al enviar el comando al backend");
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 4000);
         }
       } else {
         setSelectedOption(preset);
@@ -451,36 +430,62 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         }
         console.log("Custom movement updated successfully in backend:", movement.nombre);
         
-        // 2. Now send the command directly to ESP32 using our new service
-        if (espIp) {
-          // Extract movement parameters for ESP32
+        // 2. Now send the command through the backend Direct Movement API
+        try {
+          const token = await getAuthToken();
+          if (!token) {
+            setLoading(false);
+            return;
+          }
+          
+          // Extract movement parameters
           const movimiento = data.data.movimiento || movement.movimiento || {};
           const horas = movimiento.horas || {};
           const minutos = movimiento.minutos || {};
           
-          // Create movement options object
-          const movementOptions = {
-            ip: espIp,
+          // Prepare custom movement object for backend
+          const customMovement = {
             nombre: movement.nombre,
-            dirHoras: horas.direccion || movimiento.direccionGeneral,
-            dirMinutos: minutos.direccion || movimiento.direccionGeneral,
-            velHoras: horas.velocidad !== undefined ? horas.velocidad : speed,
-            velMinutos: minutos.velocidad !== undefined ? minutos.velocidad : speed
+            movimiento: {
+              horas: {
+                direccion: horas.direccion || movimiento.direccionGeneral,
+                velocidad: horas.velocidad !== undefined ? horas.velocidad : speed
+              },
+              minutos: {
+                direccion: minutos.direccion || movimiento.direccionGeneral,
+                velocidad: minutos.velocidad !== undefined ? minutos.velocidad : speed
+              }
+            }
           };
-          
-          // Send movement to ESP32
-          const result = await UnifiedClockService.sendMovement(movementOptions);
+
+          const response = await fetch(`${BACKEND_URL}/direct-movement/execute`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              movement: 'custom',
+              speed: speed,
+              customMovement: customMovement
+            })
+          });
+
+          const result = await response.json();
           
           if (!result.success) {
-            console.warn("ESP32 communication warning:", result.message);
-            setAlertMessage(`Movimiento actualizado en servidor, pero hubo un problema comunicándose con el reloj: ${result.message}`);
+            console.warn("Backend custom movement warning:", result.error);
+            setAlertMessage(`Movimiento actualizado en servidor, pero hubo un problema enviándolo al reloj: ${result.error}`);
             setAlertType("warning");
             setTimeout(() => setAlertMessage(''), 4000);
           } else {
-            console.log("ESP32 custom movement applied successfully");
+            console.log("Custom movement sent successfully through backend");
           }
-        } else {
-          console.log("No ESP32 IP configured, skipping direct command");
+        } catch (error) {
+          console.error("Error sending custom movement through backend:", error);
+          setAlertMessage("Error de conexión al enviar el movimiento personalizado al backend");
+          setAlertType("error");
+          setTimeout(() => setAlertMessage(''), 4000);
         }
       } else {
         setSelectedOption("Custom");
@@ -544,22 +549,42 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
       }
       console.log("Speed updated successfully in backend:", newSpeed);
 
-      // 2. Now send the speed update directly to ESP32 using our new service
-      if (espIp) {
-        // Send speed update to ESP32
-        const result = await UnifiedClockService.sendSpeed(espIp, newSpeed);
+      // 2. Now send the speed update through the backend
+      try {
+        const token = await getAuthToken();
+        if (!token) {
+          return;
+        }
+
+        // Obtener el movimiento actual para determinar qué tipo enviar
+        const currentMovement = selectedOption.toLowerCase() === "custom" ? "custom" : selectedOption.toLowerCase();
+        
+        // Enviar actualización de velocidad a través del backend
+        const response = await fetch(`${BACKEND_URL}/direct-movement/execute`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            movement: currentMovement,
+            speed: newSpeed
+          })
+        });
+
+        const result = await response.json();
         
         if (!result.success) {
-          console.warn("ESP32 speed update warning:", result.message);
+          console.warn("Backend speed update warning:", result.error);
           // Optionally show a warning message to the user
-          // setAlertMessage(`Velocidad actualizada en servidor, pero hubo un problema enviándola al reloj: ${result.message}`);
+          // setAlertMessage(`Velocidad actualizada en servidor, pero hubo un problema enviándola al reloj: ${result.error}`);
           // setAlertType("warning");
           // setTimeout(() => setAlertMessage(''), 4000);
         } else {
-          console.log("ESP32 speed updated successfully");
+          console.log("Speed updated successfully through backend");
         }
-      } else {
-        console.log("No ESP32 IP configured, skipping direct speed update");
+      } catch (error) {
+        console.error("Error sending speed update through backend:", error);
       }
 
     } catch (error) {
@@ -608,33 +633,47 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         return await executeMovementCommand(preset, 'direct');
       }
     } else {
-      // Direct ESP32 communication for stop or when backend is disabled
-      if (!espIp) {
-        setAlertMessage('No se ha configurado la IP del reloj. Configúrala primero.');
-        setAlertType('error');
-        setTimeout(() => setAlertMessage(''), 4000);
-        return;
-      }
-
+      // Direct command through backend API for stop or when regular backend is disabled
       try {
-        console.log('Enviando comando directo:', preset, 'a IP:', espIp);
+        const token = await getAuthToken();
+        if (!token) {
+          return;
+        }
+
+        const endpoint = preset === "stop" ? 
+          `${BACKEND_URL}/direct-movement/stop` : 
+          `${BACKEND_URL}/direct-movement/execute`;
         
-        const result = await UnifiedClockService.sendPreset(espIp, preset, speed);
+        console.log(`Enviando comando ${preset} a través del backend`);
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(preset === "stop" ? {} : {
+            movement: preset.toLowerCase(),
+            speed: speed
+          })
+        });
+
+        const result = await response.json();
         
         if (result.success) {
-          setAlertMessage(`Comando enviado exitosamente: ${result.message}`);
+          setAlertMessage(`Comando enviado exitosamente: ${result.message || preset}`);
           setAlertType('success');
-          console.log('Comando enviado con éxito al dispositivo');
+          console.log('Comando enviado con éxito a través del backend');
         } else {
-          setAlertMessage(result.message);
+          setAlertMessage(result.error || "Error enviando comando");
           setAlertType('error');
-          console.error('Error enviando comando al dispositivo:', result.message);
+          console.error('Error enviando comando a través del backend:', result.error);
         }
         
         setTimeout(() => setAlertMessage(''), 4000);
       } catch (error) {
-        console.error('Error enviando comando:', error);
-        setAlertMessage('Error inesperado al enviar comando al reloj');
+        console.error('Error de conexión enviando comando:', error);
+        setAlertMessage('Error de conexión al enviar comando al backend');
         setAlertType('error');
         setTimeout(() => setAlertMessage(''), 4000);
       }
@@ -642,34 +681,49 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
   };
 
   const sendCommand = async (command) => {
-    return await executeMovementCommand(command, 'direct'); // Force direct communication
+    return await executeMovementCommand(command, 'backend'); // Force backend communication
   };
 
   const sendSpeed = async (newSpeed) => {
-    if (!espIp) {
-      console.log('No ESP IP configured for speed adjustment');
-      return;
-    }
-
     try {
-      console.log('Enviando velocidad al dispositivo:', newSpeed);
+      const token = await getAuthToken();
+      if (!token) {
+        return;
+      }
+
+      console.log('Enviando velocidad a través del backend:', newSpeed);
       
-      // Use our unified service to send speed to device
-      const result = await UnifiedClockService.sendSpeed(espIp, newSpeed);
+      // Obtener el movimiento actual para determinar qué tipo enviar
+      const currentMovement = selectedOption.toLowerCase() === "custom" ? "custom" : selectedOption.toLowerCase();
+      
+      // Use direct-movement API to send speed update
+      const response = await fetch(`${BACKEND_URL}/direct-movement/execute`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          movement: currentMovement,
+          speed: newSpeed
+        })
+      });
+
+      const result = await response.json();
       
       if (result.success) {
         console.log("Velocidad ajustada con éxito:", newSpeed);
       } else {
-        console.warn("Error ajustando velocidad:", result.message);
+        console.warn("Error ajustando velocidad:", result.error);
         // Optionally show error to user
-        // setAlertMessage(result.message);
+        // setAlertMessage(result.error);
         // setAlertType('error');
         // setTimeout(() => setAlertMessage(''), 4000);
       }
     } catch (error) {
       console.error('Error enviando velocidad:', error);
       
-      setAlertMessage('Error inesperado ajustando velocidad del reloj');
+      setAlertMessage('Error de conexión al ajustar velocidad');
       setAlertType('error');
       setTimeout(() => setAlertMessage(''), 4000);
     }
@@ -730,58 +784,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
     );
   };
 
-  // Render device item for selection
-  const renderDeviceItem = ({ item }) => {
-    const deviceInfo = item.deviceInfo || {};
-    const isRecommended = deviceInfo.isTarget;
-    
-    return (
-      <TouchableOpacity
-        style={[
-          styles.deviceItem,
-          isRecommended && styles.deviceItemRecommended
-        ]}
-        onPress={() => selectDevice(item)}
-      >
-        <View style={styles.deviceInfo}>
-          <View style={styles.deviceHeader}>
-            <Text style={[
-              styles.deviceIP,
-              isRecommended && styles.deviceIPRecommended
-            ]}>
-              {item.ip}
-            </Text>
-            {isRecommended && (
-              <View style={styles.recommendedBadge}>
-                <Text style={styles.recommendedText}>RECOMENDADO</Text>
-              </View>
-            )}
-          </View>
-          
-          <Text style={styles.deviceDescription}>
-            {deviceInfo.description || 'Dispositivo HTTP'}
-          </Text>
-          
-          <View style={styles.deviceStats}>
-            <Text style={styles.deviceStat}>
-              Tiempo: {item.responseTime}ms
-            </Text>
-            <Text style={styles.deviceStat}>
-              Estado: {item.status}
-            </Text>
-          </View>
-        </View>
-        
-        <View style={styles.deviceAction}>
-          <Ionicons 
-            name="chevron-forward" 
-            size={20} 
-            color={isRecommended ? "#660154" : "#666"} 
-          />
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  // El renderizado de dispositivos escaneados ha sido eliminado
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -1058,33 +1061,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   Asegúrate de que tu dispositivo y el reloj estén en la misma red WiFi.
                 </Text>
                 
-                <View style={styles.scanButtonsContainer}>
-                  <TouchableOpacity
-                    style={[styles.scanButton, styles.scanButtonFast, isScanning && styles.scanButtonDisabled]}
-                    onPress={() => scanForESP32(true)}
-                    disabled={isScanning}
-                  >
-                    <Text style={[styles.scanButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                      {isScanning ? 'Escaneando...' : 'Escaneo Rápido'}
-                    </Text>
-                    <Text style={[styles.scanButtonSubtext, { fontFamily: 'Montserrat_400Regular' }]}>
-                      ~2 min
-                    </Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[styles.scanButton, styles.scanButtonComplete, isScanning && styles.scanButtonDisabled]}
-                    onPress={() => scanForESP32(false)}
-                    disabled={isScanning}
-                  >
-                    <Text style={[styles.scanButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                      {isScanning ? (scanProgress ? scanProgress.message : 'Escaneando...') : 'Escaneo Completo'}
-                    </Text>
-                    <Text style={[styles.scanButtonSubtext, { fontFamily: 'Montserrat_400Regular' }]}>
-                      ~4 min
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                {/* Los botones de escaneo han sido eliminados */}
                 
                 {/* Selección de tipo de dispositivo */}
                 <View style={styles.deviceTypeContainer}>
@@ -1145,37 +1122,9 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                       (deviceType === UnifiedClockService.DEVICE_TYPES.PROTOTYPE ? 
                         'Prototipo con motores 28BYJ-48 seleccionado' : 
                         'Dispositivo estándar con motores paso a paso seleccionado') : 
-                      'El tipo de dispositivo se detectará automáticamente al probar la conexión'}
+                      'Por favor selecciona un tipo de dispositivo antes de continuar'}
                   </Text>
                 </View>
-                
-                <TouchableOpacity
-                  style={styles.testButton}
-                  onPress={async () => {
-                    if (!ipInput.trim()) {
-                      setAlertMessage('Ingresa una dirección IP válida');
-                      setAlertType('error');
-                      setTimeout(() => setAlertMessage(''), 4000);
-                      return;
-                    }
-                    
-                    setAlertMessage('Probando conexión...');
-                    setAlertType('info');
-                    
-                    const isConnected = await testEspConnection(ipInput);
-                    
-                    if (isConnected) {
-                      setAlertMessage('¡Conexión exitosa! IP válida.');
-                      setAlertType('success');
-                    } else {
-                      setAlertMessage('No se pudo conectar. Verifica la IP y que el reloj esté encendido.');
-                      setAlertType('error');
-                    }
-                    setTimeout(() => setAlertMessage(''), 6000);
-                  }}
-                >
-                  <Text style={[styles.testButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>Probar Conexión</Text>
-                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.saveButton}
                   onPress={async () => {
@@ -1224,64 +1173,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           </View>
         </Modal>
 
-        {/* Modal para seleccionar dispositivo */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={deviceSelectionVisible}
-          onRequestClose={() => setDeviceSelectionVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.deviceModalContent}>
-              <View style={styles.deviceModalHeader}>
-                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
-                  Seleccionar Dispositivo
-                </Text>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setDeviceSelectionVisible(false)}
-                >
-                  <Ionicons name="close" size={24} color="#666" />
-                </TouchableOpacity>
-              </View>
-              
-              <View style={styles.deviceModalBody}>
-                <Text style={[styles.deviceModalSubtitle, { fontFamily: 'Montserrat_500Medium' }]}>
-                  Encontrados {scannedDevices.length} dispositivos:
-                </Text>
-                
-                {scannedDevices.length > 0 && (
-                  <View style={styles.scanInfoContainer}>
-                    <Text style={[styles.scanInfoText, { fontFamily: 'Montserrat_400Regular' }]}>
-                      💡 Los dispositivos marcados como "RECOMENDADO" son más probables de ser tu reloj ESP32
-                    </Text>
-                  </View>
-                )}
-                
-                <FlatList
-                  data={scannedDevices}
-                  renderItem={renderDeviceItem}
-                  keyExtractor={(item) => item.id}
-                  showsVerticalScrollIndicator={false}
-                  style={styles.devicesList}
-                  contentContainerStyle={styles.devicesListContent}
-                />
-                
-                <TouchableOpacity
-                  style={styles.manualButton}
-                  onPress={() => {
-                    setDeviceSelectionVisible(false);
-                    // IP modal ya está abierto, solo cerramos este
-                  }}
-                >
-                  <Text style={[styles.manualButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                    Ingresar IP Manualmente
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        {/* El modal para seleccionar dispositivo ha sido eliminado */}
 
         {/* Modal to view active events list */}
         <Modal
@@ -1871,17 +1763,6 @@ activeButton: {
     color: '#fff',
     fontSize: 10,
     opacity: 0.8,
-  },
-  testButton: {
-    backgroundColor: '#007bff',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  testButtonText: {
-    color: '#fff',
-    fontSize: 14,
   },
   saveButton: {
     backgroundColor: '#660154',

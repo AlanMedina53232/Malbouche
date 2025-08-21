@@ -20,7 +20,13 @@ const apiRequest = async (endpoint, options = {}) => {
       ...(token && { 'Authorization': `Bearer ${token}` }),
     };
 
-    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+    const url = `${BACKEND_URL}${endpoint}`;
+    console.log(`API Request to: ${url}`, {
+      method: options.method || 'GET',
+      body: options.body ? JSON.parse(options.body) : undefined
+    });
+
+    const response = await fetch(url, {
       headers: {
         ...defaultHeaders,
         ...options.headers,
@@ -29,6 +35,11 @@ const apiRequest = async (endpoint, options = {}) => {
     });
 
     const data = await response.json();
+
+    console.log(`API Response from ${url}:`, {
+      status: response.status,
+      data: data
+    });
 
     if (!response.ok) {
       throw {
@@ -120,6 +131,7 @@ export const createEvent = async (eventData) => {
  */
 export const updateEvent = async (eventId, eventData) => {
   try {
+    // Ensure we're using the correct URL format for the backend
     const response = await apiRequest(`/events/${eventId}`, {
       method: 'PUT',
       body: JSON.stringify(eventData)

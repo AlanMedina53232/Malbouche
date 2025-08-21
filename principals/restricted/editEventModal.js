@@ -27,7 +27,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
 
 const { height } = Dimensions.get("window");
 
-// Backend expects these exact day abbreviations - updated to English display
+// Backend expects these exact day abbreviations in English
 const daysOfWeek = [
   { backend: "Su", display: "Su" },    // Sunday
   { backend: "M", display: "M" },      // Monday
@@ -65,7 +65,23 @@ const EditEventModal = () => {
   useEffect(() => {
     if (event) {
       setEventName(event.name || "");
-      setSelectedDays(event.days || []);
+      
+      // Convert days to valid backend format if needed
+      const validDays = (event.days || []).map(day => {
+        // Map Spanish abbreviations to English if needed
+        const mappings = {
+          'L': 'M',    // Lunes -> Monday
+          'Ma': 'T',   // Martes -> Tuesday
+          'Mi': 'W',   // Miércoles -> Wednesday
+          'J': 'Th',   // Jueves -> Thursday
+          'V': 'F',    // Viernes -> Friday
+          'S': 'Sa',   // Sábado -> Saturday
+          'D': 'Su'    // Domingo -> Sunday
+        };
+        return mappings[day] || day;
+      });
+      
+      setSelectedDays(validDays);
       setMovementId(event.movement?.id || null);
 
       const parseTime = (timeStr) => {
@@ -139,8 +155,18 @@ const EditEventModal = () => {
       return;
     }
 
+    // Validate that all selected days match the expected format
+    const validDayValues = ["Su", "M", "T", "W", "Th", "F", "Sa"];
+    const invalidDays = selectedDays.filter(day => !validDayValues.includes(day));
+    
+    if (invalidDays.length > 0) {
+      Alert.alert("Error", `Invalid day format: ${invalidDays.join(", ")}. Days must be in English format.`);
+      return;
+    }
+    
     // Prepare data exactly as backend expects for update
     const updatedEvent = {
+      id: event.id, // Add the ID to ensure backend recognizes the event
       nombreEvento: eventName.trim(),
       horaInicio: formatTimeForBackend(startTime),
       horaFin: formatTimeForBackend(endTime),
@@ -154,9 +180,11 @@ const EditEventModal = () => {
     setLoading(true)
 
     try {
+      console.log(`Attempting to update event with ID: ${event.id}`);
       const result = await updateEvent(event.id, updatedEvent)
       
       if (result.success) {
+        console.log("Event updated successfully:", result);
         // Update local state if using context
         if (setEvents) {
           setEvents((prev) => prev.map((e) => (e.id === event.id ? { ...e, ...updatedEvent } : e)));
@@ -171,6 +199,7 @@ const EditEventModal = () => {
           }
         ]);
       } else {
+        console.error("Event update failed:", result);
         // Use the new conflict-aware error handling
         const conflictInfo = handleEventConflictError(result)
         
@@ -188,7 +217,11 @@ const EditEventModal = () => {
       }
     } catch (error) {
       console.error("Error updating event:", error);
-      Alert.alert("Error", "Failed to connect to server");
+      // More detailed error information
+      if (error.response && error.response.data) {
+        console.error("Backend error response:", error.response.data);
+      }
+      Alert.alert("Error", "Failed to connect to server. Please check your connection and try again.");
     } finally {
       setLoading(false)
     }

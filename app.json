@@ -27,16 +27,8 @@
       "compileSdkVersion": 34,
       "permissions": [
         "INTERNET",
-        "ACCESS_WIFI_STATE",
-        "CHANGE_WIFI_STATE",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
         "ACCESS_NETWORK_STATE",
-        "CHANGE_NETWORK_STATE",
-        "WAKE_LOCK",
-        "ACCESS_WIFI_MULTICAST",
-        "NEARBY_WIFI_DEVICES",
-        "CHANGE_WIFI_MULTICAST_STATE"
+        "WAKE_LOCK"
       ],
       "networkSecurityConfig": "res/xml/network_security_config.xml"
     },
@@ -50,17 +42,7 @@
     },
     "owner": "amedina53",
     "plugins": [
-      "expo-font",
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Esta aplicación necesita acceso a la ubicación para comunicarse con el reloj por WiFi en la red local.",
-          "locationAlwaysPermission": "Esta aplicación necesita acceso a la ubicación para comunicarse con el reloj por WiFi en la red local.",
-          "locationWhenInUsePermission": "Esta aplicación necesita acceso a la ubicación para comunicarse con el reloj por WiFi en la red local.",
-          "isAndroidBackgroundLocationEnabled": false,
-          "isIosBackgroundLocationEnabled": false
-        }
-      ]
+      "expo-font"
     ]
   }
 }

@@ -1,11 +1,12 @@
 /**
  * ESP32Prototype28BYJService.js
- * Proporciona funciones de comunicación para interactuar con el prototipo ESP32 que usa motores 28BYJ-48.
+ * Proporciona funciones de comunicación para interactuar con el prototipo ESP32 que usa motores 28BYJ-48 a través del backend.
  * Maneja el envío de comandos de movimiento, actualizaciones de velocidad y pruebas de conexión.
  */
 
 import { Platform } from 'react-native';
-import { checkNetworkStatus, validateIPFormat, isLocalNetwork, connectToESP32Android } from './networkHelper';
+import { checkNetworkStatus } from './networkHelper';
+import apiClient from './apiClient';
 
 // Modos de movimiento disponibles en el prototipo
 export const PROTOTYPE_MODES = {
@@ -34,102 +35,71 @@ export const sendPrototypeCommand = async (options) => {
     timeout = 10000 
   } = options;
 
-  // Validar IP y verificar conexión antes de continuar
+  // Validar ID del dispositivo antes de continuar
   if (!ip) {
-    return { success: false, message: 'No se ha configurado la IP del reloj' };
-  }
-
-  if (!validateIPFormat(ip)) {
-    return { success: false, message: 'Formato de IP inválido. Use formato: 192.168.1.100' };
+    return { success: false, message: 'No se ha configurado el ID del reloj' };
   }
 
   // Comprobar la conectividad de red primero
   try {
     const networkState = await checkNetworkStatus();
     if (!networkState.isConnected) {
-      return { success: false, message: 'Sin conexión a internet. Verifica tu conexión WiFi' };
+      return { success: false, message: 'Sin conexión a internet. Verifica tu conexión' };
     }
   } catch (error) {
     return { success: false, message: 'Error verificando conexión de red', error };
   }
 
-  // Construir el endpoint basado en el modo
-  let endpoint = mode ? mode.toLowerCase() : '';
-  
-  // Si se especifica velocidad o el modo es "speed", construir una URL diferente
-  if (mode === 'speed' || speed !== undefined) {
-    endpoint = 'speed';
-    if (speed !== undefined) {
-      endpoint += `?value=${speed}`;
-    }
-  } else {
-    // Validar que el modo sea compatible con el prototipo (solo para modos que no son "speed")
-    if (mode && !Object.values(PROTOTYPE_MODES).includes(mode.toLowerCase())) {
-      return { 
-        success: false, 
-        message: `Modo no soportado por el prototipo: ${mode}. Modos disponibles: ${Object.values(PROTOTYPE_MODES).join(', ')}` 
-      };
-    }
+  // Validar que el modo sea compatible con el prototipo (si se proporciona)
+  if (mode && mode !== 'speed' && !Object.values(PROTOTYPE_MODES).includes(mode.toLowerCase())) {
+    return { 
+      success: false, 
+      message: `Modo no soportado por el prototipo: ${mode}. Modos disponibles: ${Object.values(PROTOTYPE_MODES).join(', ')}` 
+    };
   }
-
-  // Construir la URL completa
-  const url = `http://${ip}/${endpoint}`;
   
-  console.log('Enviando comando al prototipo:', url);
+  // Preparar datos para el backend
+  const commandData = {
+    deviceId: ip,  // Ahora ip es en realidad un ID de dispositivo para el backend
+    deviceType: 'prototype',  // Indicar que es un prototipo con 28BYJ-48
+    command: {
+      mode: mode ? mode.toLowerCase() : undefined,
+      speed: speed
+    }
+  };
+  
+  console.log('Enviando comando al prototipo a través del backend:', mode || 'speed', ip);
 
   try {
-    // Usar implementación específica para la plataforma
-    if (Platform.OS === 'android') {
-      // Para Android, usar la función connectToESP32Android
-      const result = await connectToESP32Android(ip, endpoint, timeout);
-      
+    // Usar apiClient para comunicarse con el backend
+    const response = await apiClient.post('/clock/command', commandData, { 
+      timeout: timeout 
+    });
+    
+    if (response.data && response.data.success) {
       return {
-        success: result.success,
-        message: result.success 
-          ? `Modo ${mode || 'speed'} activado correctamente` 
-          : result.message || 'Error enviando comando al reloj'
+        success: true,
+        message: `Comando ${mode || 'speed'} enviado correctamente`,
+        data: response.data
       };
     } else {
-      // Para iOS u otras plataformas, usar fetch con timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        },
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const text = await response.text();
-        return {
-          success: true,
-          message: `Comando ${mode || 'speed'} enviado correctamente`,
-          response: text
-        };
-      } else {
-        return {
-          success: false,
-          message: `Error ${response.status}: ${response.statusText}`,
-          statusCode: response.status
-        };
-      }
+      return {
+        success: false,
+        message: response.data?.message || 'Error enviando comando al reloj',
+        error: response.data?.error
+      };
     }
   } catch (error) {
-    console.error('Error enviando comando al prototipo ESP32:', error);
+    console.error('Error enviando comando al prototipo:', error);
     
-    let errorMessage = 'Error de conexión con el reloj';
+    let errorMessage = 'Error de conexión con el servidor';
     
-    if (error.name === 'AbortError') {
-      errorMessage = 'Timeout - El reloj no responde. Verifica que esté conectado a la misma red WiFi.';
-    } else if (error.message && error.message.includes('Network request failed')) {
-      errorMessage = 'Error de red - No se pudo conectar al reloj. Verifica la IP y la conexión WiFi.';
+    if (error.code === 'ECONNABORTED') {
+      errorMessage = 'Timeout - El servidor no responde. Inténtalo de nuevo más tarde.';
+    } else if (error.response) {
+      errorMessage = `Error ${error.response.status}: ${error.response.statusText}`;
+    } else if (error.message) {
+      errorMessage = error.message;
     }
     
     return {
@@ -147,82 +117,46 @@ export const sendPrototypeCommand = async (options) => {
  * @param {number} [timeout=10000] - Tiempo máximo de espera en milisegundos
  * @returns {Promise<Object>} Objeto resultado con estado de éxito y mensaje
  */
-export const sendSpeedToPrototype = async (ip, speed, timeout = 10000) => {
-  if (!ip) {
-    return { success: false, message: 'No se ha configurado la IP del reloj' };
-  }
-
-  if (!validateIPFormat(ip)) {
-    return { success: false, message: 'Formato de IP inválido. Use formato: 192.168.1.100' };
+export const sendSpeedToPrototype = async (deviceId, speed, timeout = 10000) => {
+  if (!deviceId) {
+    return { success: false, message: 'No se ha configurado el ID del reloj' };
   }
 
   try {
     const networkState = await checkNetworkStatus();
     if (!networkState.isConnected) {
-      return { success: false, message: 'Sin conexión a internet. Verifica tu conexión WiFi' };
+      return { success: false, message: 'Sin conexión a internet. Verifica tu conexión' };
     }
     
     // Validar que la velocidad esté dentro del rango permitido para este prototipo (1-100)
     const validatedSpeed = Math.min(Math.max(parseInt(speed) || 50, 1), 100);
     
-    // Construir el endpoint para velocidad
-    const endpoint = `speed?value=${validatedSpeed}`;
-    const url = `http://${ip}/${endpoint}`;
+    // Simplemente usar la función sendPrototypeCommand con el modo "speed"
+    const result = await sendPrototypeCommand({
+      ip: deviceId,
+      mode: 'speed',
+      speed: validatedSpeed,
+      timeout
+    });
     
-    console.log('Enviando velocidad al prototipo:', url);
-
-    // Usar implementación específica para la plataforma
-    if (Platform.OS === 'android') {
-      // Para Android, usar la función connectToESP32Android
-      const result = await connectToESP32Android(ip, endpoint, timeout);
-      
-      return {
-        success: result.success,
-        message: result.success 
-          ? `Velocidad ${validatedSpeed} configurada correctamente` 
-          : result.message || 'Error enviando velocidad al reloj'
-      };
-    } else {
-      // Para iOS u otras plataformas, usar fetch con timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        },
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const text = await response.text();
-        return {
-          success: true,
-          message: `Velocidad ${validatedSpeed} configurada correctamente`,
-          response: text
-        };
-      } else {
-        return {
-          success: false,
-          message: `Error ${response.status}: ${response.statusText}`,
-          statusCode: response.status
-        };
-      }
-    }
+    return {
+      success: result.success,
+      message: result.success 
+        ? `Velocidad ${validatedSpeed} configurada correctamente` 
+        : result.message || 'Error enviando velocidad al reloj'
+    };
+  
   } catch (error) {
     console.error('Error enviando velocidad al prototipo ESP32:', error);
     
     let errorMessage = 'Error enviando velocidad al reloj';
     
-    if (error.name === 'AbortError') {
-      errorMessage = 'Timeout - El reloj no responde. Verifica que esté conectado a la misma red WiFi.';
-    } else if (error.message && error.message.includes('Network request failed')) {
-      errorMessage = 'Error de red - No se pudo conectar al reloj. Verifica la IP y la conexión WiFi.';
+    if (error.code === 'ECONNABORTED') {
+      errorMessage = 'Timeout - El servidor no responde. Inténtalo de nuevo más tarde.';
+    } else if (error.response) {
+      errorMessage = `Error ${error.response.status}: ${error.response.statusText}`;
+    } else if (error.message) {
+      errorMessage = error.message;
     }
     
     return {
@@ -239,75 +173,49 @@ export const sendSpeedToPrototype = async (ip, speed, timeout = 10000) => {
  * @param {number} [timeout=5000] - Tiempo máximo de espera en milisegundos
  * @returns {Promise<Object>} Objeto resultado con estado de éxito y mensaje
  */
-export const testPrototypeConnection = async (ip, timeout = 5000) => {
-  if (!ip) {
-    return { success: false, message: 'No se ha configurado la IP del reloj' };
-  }
-
-  if (!validateIPFormat(ip)) {
-    return { success: false, message: 'Formato de IP inválido. Use formato: 192.168.1.100' };
-  }
-
-  if (!isLocalNetwork(ip)) {
-    console.warn('Advertencia: La IP no parece ser de red local');
+export const testPrototypeConnection = async (deviceId, timeout = 5000) => {
+  if (!deviceId) {
+    return { success: false, message: 'No se ha configurado el ID del reloj' };
   }
 
   try {
     // Comprobar la conectividad de red primero
     const networkStatus = await checkNetworkStatus();
     if (!networkStatus.isConnected) {
-      return { success: false, message: 'Sin conexión de red. Conecta a WiFi primero.' };
+      return { success: false, message: 'Sin conexión de red. Verifica tu conexión a internet.' };
     }
 
-    console.log('Probando conexión con prototipo ESP32:', ip);
+    console.log('Probando conexión con prototipo a través del backend:', deviceId);
     
-    // Usar implementación específica para la plataforma
-    if (Platform.OS === 'android') {
-      const result = await connectToESP32Android(ip, '', timeout);
-      console.log('Resultado conexión Android:', result);
-      return result;
+    // Usar apiClient para verificar la conexión con el reloj mediante el backend
+    const response = await apiClient.get(`/clock/status/${deviceId}?type=prototype`, {
+      timeout: timeout
+    });
+    
+    if (response.data && response.data.success) {
+      return {
+        success: true,
+        message: 'Conexión exitosa con el reloj prototipo',
+        data: response.data
+      };
     } else {
-      // Para iOS o desarrollo, usar fetch estándar con timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-      const url = `http://${ip}/`;
-      const response = await fetch(url, {
-        method: 'GET',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        },
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const text = await response.text();
-        return {
-          success: true,
-          message: 'Conexión exitosa con el reloj prototipo',
-          response: text
-        };
-      } else {
-        return {
-          success: false,
-          message: `Error ${response.status}: ${response.statusText}`,
-          statusCode: response.status
-        };
-      }
+      return {
+        success: false,
+        message: response.data?.message || 'Error de conexión con el reloj prototipo',
+        error: response.data?.error
+      };
     }
   } catch (error) {
-    console.error('Error probando conexión con prototipo ESP32:', error);
+    console.error('Error probando conexión con el prototipo:', error);
     
-    let errorMessage = 'Error de conexión con el reloj';
+    let errorMessage = 'Error de conexión con el servidor';
     
-    if (error.name === 'AbortError') {
-      errorMessage = 'Timeout - El reloj no responde. Verifica la IP y que esté conectado a la misma red WiFi.';
-    } else if (error.message && error.message.includes('Network request failed')) {
-      errorMessage = 'Error de red - No se pudo conectar al reloj. Verifica la IP y la conexión WiFi.';
+    if (error.code === 'ECONNABORTED') {
+      errorMessage = 'Timeout - El servidor no responde. Inténtalo de nuevo más tarde.';
+    } else if (error.response) {
+      errorMessage = `Error ${error.response.status}: ${error.response.statusText}`;
+    } else if (error.message) {
+      errorMessage = error.message;
     }
     
     return {
@@ -326,9 +234,9 @@ export const testPrototypeConnection = async (ip, timeout = 5000) => {
  * @param {number} [timeout=10000] - Tiempo máximo de espera en milisegundos
  * @returns {Promise<Object>} Objeto resultado con estado de éxito y mensaje
  */
-export const sendModeToPrototype = async (ip, mode, speed, timeout = 10000) => {
-  if (!ip) {
-    return { success: false, message: 'No se ha configurado la IP del reloj' };
+export const sendModeToPrototype = async (deviceId, mode, speed, timeout = 10000) => {
+  if (!deviceId) {
+    return { success: false, message: 'No se ha configurado el ID del reloj' };
   }
 
   // Validar que el modo sea compatible con el prototipo
@@ -342,19 +250,19 @@ export const sendModeToPrototype = async (ip, mode, speed, timeout = 10000) => {
   try {
     const networkState = await checkNetworkStatus();
     if (!networkState.isConnected) {
-      return { success: false, message: 'Sin conexión a internet. Verifica tu conexión WiFi' };
+      return { success: false, message: 'Sin conexión a internet. Verifica tu conexión' };
     }
     
     // Primero, enviar el comando de modo
     const modeResult = await sendPrototypeCommand({
-      ip,
+      ip: deviceId,  // Usar el ID del dispositivo en lugar de la IP
       mode: mode.toLowerCase(),
       timeout
     });
     
     // Si hay una velocidad especificada y el modo fue exitoso, actualizar la velocidad
     if (modeResult.success && speed !== undefined) {
-      const speedResult = await sendSpeedToPrototype(ip, speed, timeout);
+      const speedResult = await sendSpeedToPrototype(deviceId, speed, timeout);
       
       if (!speedResult.success) {
         return {
@@ -368,9 +276,18 @@ export const sendModeToPrototype = async (ip, mode, speed, timeout = 10000) => {
     return modeResult;
   } catch (error) {
     console.error(`Error enviando modo ${mode} al prototipo:`, error);
+    
+    let errorMessage = `Error enviando modo ${mode} al reloj`;
+    
+    if (error.code === 'ECONNABORTED') {
+      errorMessage = 'Timeout - El servidor no responde. Inténtalo de nuevo más tarde.';
+    } else if (error.response) {
+      errorMessage = `Error ${error.response.status}: ${error.response.statusText}`;
+    }
+    
     return {
       success: false,
-      message: `Error enviando modo ${mode} al reloj`,
+      message: errorMessage,
       error
     };
   }
@@ -389,7 +306,7 @@ export const sendMovementToPrototype = async (options) => {
   } = options;
 
   if (!ip) {
-    return { success: false, message: 'No se ha configurado la IP del reloj' };
+    return { success: false, message: 'No se ha configurado el ID del reloj' };
   }
 
   try {

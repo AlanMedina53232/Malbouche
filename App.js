@@ -21,7 +21,8 @@ import { useCallback } from "react";
 import { useFonts } from "expo-font";
 import {Montserrat_400Regular, Montserrat_500Medium,Montserrat_600SemiBold, Montserrat_700Bold, Montserrat_300Light } from "@expo-google-fonts/montserrat";
 import {Cinzel_400Regular,Cinzel_500Medium, Cinzel_600SemiBold, Cinzel_700Bold } from "@expo-google-fonts/cinzel";
-
+import { Combo_400Regular } from "@expo-google-fonts/combo";
+ 
 
 SplashScreen.preventAutoHideAsync();
 
@@ -38,6 +39,7 @@ export default function App() {
     Cinzel_500Medium,
     Cinzel_600SemiBold,
     Cinzel_700Bold,
+    Combo_400Regular
   });
 
   // Oculta la pantalla de carga una vez que las fuentes están listas

@@ -111,7 +111,7 @@ const UserDetailScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#660154" />
+        <ActivityIndicator size="large" color="#404040" />
       </View>
     );
   }
@@ -124,6 +124,18 @@ const UserDetailScreen = ({ navigation }) => {
     );
   }
 
+  const getRoleInfo = (role) => {
+  const r = (role || '').toLowerCase();
+  switch (r) {
+    case 'vip':
+      return { bg: '#404040', text: '#fff', label: 'VIP' };
+    case 'admin':
+      return { bg: '#8C8C8C', text: '#fff', label: 'Admin' };
+    default:
+      return { bg: '#0b2b70ff', text: '#fff', label: 'Usuario' };
+  }
+};
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -131,24 +143,29 @@ const UserDetailScreen = ({ navigation }) => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
+      <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
         <LinearGradient
-          colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.headerGradient}
+          colors={['#8C8C8C', '#3A3A3B', '#2E2E2E']}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ flex: 1 }}
+        />
+      </View>
+
+        <View style={styles.headerGradient}
         >
           <View style={styles.headerContent}>
             <TouchableOpacity
               style={styles.arrowButton}
               onPress={() => navigation.goBack()}
             >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
+              <Ionicons name="arrow-back" size={24} color="#f2f2f2" />
             </TouchableOpacity>
             <View style={styles.titleContainer}>
-              <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>USER PROFILE</Text>
+              <Text style={[styles.titleGradient, { fontFamily: 'Combo_400Regular' }]}>USER PROFILE</Text>
             </View>
           </View>
-        </LinearGradient>
+        </View>
 
         <ScrollView 
           contentContainerStyle={styles.scrollContainer}
@@ -161,7 +178,7 @@ const UserDetailScreen = ({ navigation }) => {
               <View style={styles.profileHeader}>
                 <View style={styles.avatarContainer}>
                   <LinearGradient
-                    colors={['#660154', '#33002A']}
+                    colors={['#bfbfbf', '#404040']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.avatarGradient}
@@ -170,25 +187,31 @@ const UserDetailScreen = ({ navigation }) => {
                   </LinearGradient>
                 </View>
                 <View style={styles.userInfo}>
-                  <Text style={[styles.userName, { fontFamily: 'Montserrat_700Bold' }]}>
+                  <Text style={[styles.userName, { fontFamily: 'Combo_400Regular' }]}>
                     {user.name || user.nombre}
                   </Text>
-                  <Text style={[styles.userEmail, { fontFamily: 'Montserrat_400Regular' }]}>
+                  <Text style={[styles.userEmail, { fontFamily: 'Combo_400Regular' }]}>
                     {user.email || user.correo}
                   </Text>
-                  <View style={styles.roleContainer}>
-                    <Ionicons name="settings" size={16} color="#fff" />
-                    <Text style={[styles.userRole, { fontFamily: 'Montserrat_500Medium' }]}>
-                      {user.rol || 'User'}
-                    </Text>
-                  </View>
+                  {(() => {
+                    const roleInfo = getRoleInfo(user.rol || user.Rol);
+                    return (
+                      <View style={styles.roleContainer}>
+                        <View style={[styles.rolePill, { backgroundColor: roleInfo.bg }]}>
+                          <Text style={[styles.rolePillText, { color: roleInfo.text, fontFamily: 'Combo_400Regular' }]}>
+                            {roleInfo.label}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })()}
                 </View>
               </View>
             </View>
 
             {/* Action Buttons */}
             <View style={styles.actionsContainer}>
-              <Text style={[styles.sectionTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+              <Text style={[styles.sectionTitle, { fontFamily: 'Combo_400Regular' }]}>
                 Account Settings
               </Text>
               
@@ -198,17 +221,17 @@ const UserDetailScreen = ({ navigation }) => {
               >
                 <View style={styles.actionButtonContent}>
                   <View style={styles.actionIcon}>
-                    <Ionicons name="lock-closed-outline" size={24} color="#660154" />
+                    <Ionicons name="lock-closed-outline" size={24} color="#404040" />
                   </View>
                   <View style={styles.actionTextContainer}>
-                    <Text style={[styles.actionTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    <Text style={[styles.actionTitle, { fontFamily: 'Combo_400Regular' }]}>
                       Change Password
                     </Text>
-                    <Text style={[styles.actionSubtitle, { fontFamily: 'Montserrat_400Regular' }]}>
+                    <Text style={[styles.actionSubtitle, { fontFamily: 'Combo_400Regular' }]}>
                       Update your account password
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#999" />
+                  <Ionicons name="chevron-forward" size={20} color="#8c8c8c" />
                 </View>
               </TouchableOpacity>
 
@@ -234,17 +257,17 @@ const UserDetailScreen = ({ navigation }) => {
               >
                 <View style={styles.actionButtonContent}>
                   <View style={styles.actionIcon}>
-                    <Ionicons name="log-out-outline" size={24} color="#dc3545" />
+                    <Ionicons name="log-out-outline" size={24} color="#631b1bff" />
                   </View>
                   <View style={styles.actionTextContainer}>
-                    <Text style={[styles.actionTitle, styles.logoutText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    <Text style={[styles.actionTitle, styles.logoutText, { fontFamily: 'Combo_400Regular' }]}>
                       Log Out
                     </Text>
-                    <Text style={[styles.actionSubtitle, { fontFamily: 'Montserrat_400Regular' }]}>
+                    <Text style={[styles.actionSubtitle, { fontFamily: 'Combo_400Regular' }]}>
                       Sign out of your account
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#dc3545" />
+                  <Ionicons name="chevron-forward" size={20} color="#631b1bff" />
                 </View>
               </TouchableOpacity>
             </View>
@@ -271,7 +294,7 @@ const UserDetailScreen = ({ navigation }) => {
                   style={styles.modalHeaderGradient}
                 >
                   <View style={styles.modalHeader}>
-                    <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
+                    <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>
                       Change Password
                     </Text>
                     <TouchableOpacity 
@@ -291,9 +314,9 @@ const UserDetailScreen = ({ navigation }) => {
                 >
                   <View style={styles.modalAvatarContainer}>
                     <View style={styles.modalAvatarLarge}>
-                      <Ionicons name="lock-closed" size={40} color="#660154" />
+                      <Ionicons name="lock-closed" size={40} color="#404040" />
                     </View>
-                    <Text style={[styles.modalSubtitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    <Text style={[styles.modalSubtitle, { fontFamily: 'Combo_400Regular' }]}>
                       Enter your current and new password
                     </Text>
                   </View>
@@ -302,13 +325,13 @@ const UserDetailScreen = ({ navigation }) => {
 
                   <View style={styles.modalInputContainer}>
                     <View style={styles.inputContainer}>
-                      <Text style={[styles.label, { fontFamily: 'Montserrat_500Medium' }]}>
+                      <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>
                         Current Password<Text style={{ color: "#af0808ff" }}> *</Text>
                       </Text>
                       <View style={styles.inputWrapper}>
-                        <Ionicons name="lock-closed-outline" size={20} color="#660154" style={styles.inputIcon} />
+                        <Ionicons name="lock-closed-outline" size={20} color="#404040" style={styles.inputIcon} />
                         <TextInput
-                          style={[styles.modalInput, { fontFamily: 'Montserrat_400Regular' }]}
+                          style={[styles.modalInput, { fontFamily: 'Combo_400Regular' }]}
                           placeholder="Enter current password"
                           placeholderTextColor="#999"
                           secureTextEntry
@@ -319,13 +342,13 @@ const UserDetailScreen = ({ navigation }) => {
                     </View>
 
                     <View style={styles.inputContainer}>
-                      <Text style={[styles.label, { fontFamily: 'Montserrat_500Medium' }]}>
+                      <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>
                         New Password<Text style={{ color: "#af0808ff" }}> *</Text>
                       </Text>
                       <View style={styles.inputWrapper}>
-                        <Ionicons name="key-outline" size={20} color="#660154" style={styles.inputIcon} />
+                        <Ionicons name="key-outline" size={20} color="#404040" style={styles.inputIcon} />
                         <TextInput
-                          style={[styles.modalInput, { fontFamily: 'Montserrat_400Regular' }]}
+                          style={[styles.modalInput, { fontFamily: 'Combo_400Regular' }]}
                           placeholder="Enter new password"
                           placeholderTextColor="#999"
                           secureTextEntry
@@ -336,13 +359,13 @@ const UserDetailScreen = ({ navigation }) => {
                     </View>
 
                     <View style={styles.inputContainer}>
-                      <Text style={[styles.label, { fontFamily: 'Montserrat_500Medium' }]}>
+                      <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>
                         Confirm New Password<Text style={{ color: "#af0808ff" }}> *</Text>
                       </Text>
                       <View style={styles.inputWrapper}>
-                        <Ionicons name="checkmark-circle-outline" size={20} color="#660154" style={styles.inputIcon} />
+                        <Ionicons name="checkmark-circle-outline" size={20} color="#404040" style={styles.inputIcon} />
                         <TextInput
-                          style={[styles.modalInput, { fontFamily: 'Montserrat_400Regular' }]}
+                          style={[styles.modalInput, { fontFamily: 'Combo_400Regular' }]}
                           placeholder="Confirm new password"
                           placeholderTextColor="#999"
                           secureTextEntry
@@ -354,8 +377,8 @@ const UserDetailScreen = ({ navigation }) => {
 
                     <View style={styles.passwordInfo}>
                       <View style={styles.infoRow}>
-                        <Ionicons name="information-circle" size={16} color="#660154" />
-                        <Text style={[styles.infoText, { fontFamily: 'Montserrat_400Regular' }]}>
+                        <Ionicons name="information-circle" size={16} color="#404040" />
+                        <Text style={[styles.infoText, { fontFamily: 'Combo_400Regular' }]}>
                           Password must be at least 6 characters long
                         </Text>
                       </View>
@@ -373,7 +396,7 @@ const UserDetailScreen = ({ navigation }) => {
                         size={20} 
                         color="#fff" 
                       />
-                      <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>
+                      <Text style={[styles.saveButtonText, { fontFamily: 'Combo_400Regular' }]}>
                         {changingPassword ? 'Changing...' : 'Change Password'}
                       </Text>
                     </View>
@@ -384,7 +407,7 @@ const UserDetailScreen = ({ navigation }) => {
                     onPress={() => setModalVisible(false)}
                     disabled={changingPassword}
                   >
-                    <Text style={[styles.cancelButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    <Text style={[styles.cancelButtonText, { fontFamily: 'Combo_400Regular' }]}>
                       Cancel
                     </Text>
                   </TouchableOpacity>
@@ -411,13 +434,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#f4f4f4",
   },
   headerGradient: {
-    paddingTop: 38,
-    paddingBottom: 10,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
+  paddingTop: 38,
+  paddingBottom: 10,
+  paddingHorizontal: 20,
   },
   headerContent: {
     flexDirection: 'row',
@@ -435,9 +454,9 @@ const styles = StyleSheet.create({
     marginRight: 40,
   },
   titleGradient: {
-    fontSize: 22,
-    color: "#fff",
-    fontWeight: '700',
+    fontSize: 28,
+    color: "#f2f2f2",
+
   },
   scrollContainer: {
     paddingHorizontal: 20,
@@ -445,24 +464,22 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   profileCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
+   backgroundColor: "#f2f2f2",
+    borderRadius: 10,
     padding: 25,
     marginBottom: 25,
-    shadowColor: "#660154",
+    shadowColor: "#404040",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 8,
-    borderWidth: 1,
-    borderColor: "rgba(209, 148, 22, 0.2)",
   },
   profileHeader: {
     alignItems: 'center',
   },
   avatarContainer: {
     marginBottom: 20,
-    shadowColor: "#660154",
+    shadowColor: "#404040",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -493,12 +510,22 @@ const styles = StyleSheet.create({
   roleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: "#660154",
-    paddingHorizontal: 12,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    borderRadius: 0,
+    shadowOpacity: 0,
+  },
+  rolePill: {
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 20,
-    shadowColor: "#660154",
-    shadowOffset: { width: 0, height: 2 },
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  rolePillText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
   userRole: {
     fontSize: 14,
@@ -511,12 +538,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    color: "#333",
+    color: "#f2f2f2",
     marginBottom: 20,
     textAlign: 'center',
   },
   actionButton: {
-    backgroundColor: "#fff",
+    backgroundColor: "#f2f2f2",
     borderRadius: 12,
     marginBottom: 15,
     shadowColor: "#000",
@@ -524,8 +551,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
+
   },
   logoutButton: {
     borderColor: "rgba(220, 53, 69, 0.2)",
@@ -539,7 +565,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'rgba(102, 1, 84, 0.1)',
+    backgroundColor: '#bfbfbf',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
@@ -557,7 +583,7 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   logoutText: {
-    color: "#dc3545",
+    color: "#631b1bff",
   },
   modalOverlay: {
     flex: 1,
@@ -624,7 +650,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 15,
     borderWidth: 2,
-    borderColor: "#660154",
+    borderColor: "#404040",
   },
   modalSubtitle: {
     fontSize: 16,
@@ -658,7 +684,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#f9f9f9",
     paddingHorizontal: 15,
-    shadowColor: "#660154",
+    shadowColor: "#404040",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -679,7 +705,7 @@ const styles = StyleSheet.create({
     padding: 15,
     marginTop: 5,
     borderLeftWidth: 4,
-    borderLeftColor: "#660154",
+    borderLeftColor: "#404040",
   },
   infoRow: {
     flexDirection: 'row',
@@ -698,12 +724,12 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 16,
   },
   saveButton: {
-    backgroundColor: "#660154",
+    backgroundColor: "#404040",
     paddingVertical: 15,
     borderRadius: 12,
     alignItems: "center",
     marginBottom: 15,
-    shadowColor: "#660154",
+    shadowColor: "#404040",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -722,12 +748,12 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   cancelButton: {
-    backgroundColor: "#dc3545",
+    backgroundColor: "#631b1bff",
     paddingVertical: 15,
     borderRadius: 12,
     alignItems: "center",
     marginBottom: 15,
-    shadowColor: "#dc3545",
+    shadowColor: "#631b1bff",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -736,7 +762,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: 'white',
     fontSize: 16,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Combo_400Regular',
   },
 });
 

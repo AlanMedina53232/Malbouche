@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
 import { ImageBackground } from 'react-native';
-import FrameImage from '../assets/marcoReloj3.png'; // Asegúrate de que la ruta sea correcta
+import FrameImage from '../assets/malbouche4.png'; // Asegúrate de que la ruta sea correcta
 
 const CLOCK_SIZE = 176;
 const CENTER = CLOCK_SIZE / 2;
@@ -181,7 +181,7 @@ return (
         y1={CENTER}
         x2={hourHand.x}
         y2={hourHand.y}
-        stroke="#8c0200"
+        stroke="#F2F2F2"
         strokeWidth="6"
         strokeLinecap="round"
       />
@@ -190,11 +190,11 @@ return (
         y1={CENTER}
         x2={minuteHand.x}
         y2={minuteHand.y}
-        stroke="#8c0200"
+        stroke="#BFBFBF"
         strokeWidth="4"
         strokeLinecap="round"
       />
-      <Circle cx={CENTER} cy={CENTER} r={5} fill="#8c0200" />
+      <Circle cx={CENTER} cy={CENTER} r={4} fill="#8C8C8C" />
     </Svg>
   </ImageBackground>
 );
@@ -209,14 +209,14 @@ const styles = StyleSheet.create({
     marginBottom: 60,
   },
   frame: {
-    width: CLOCK_SIZE + 100,
-    height: CLOCK_SIZE + 100,
+    width: CLOCK_SIZE + 90,
+    height: CLOCK_SIZE + 90,
     justifyContent: 'center',
     alignItems: 'center',
   },
   clockSvg: {
-    marginTop: 56, // Puedes ajustar este valor para bajar el reloj
-    marginLeft:3, // Ajusta el margen inferior si es necesario
+    marginTop: 10, // Puedes ajustar este valor para bajar el reloj
+    marginLeft: 9, // Ajusta el margen inferior si es necesario
     
     // Alternativamente:
     // transform: [{ translateY: 20 }],

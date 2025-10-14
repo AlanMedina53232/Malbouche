@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useContext } from "react"
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Switch, Alert, SafeAreaView, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Switch, Alert, SafeAreaView, ActivityIndicator, Image } from "react-native"
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useNavigation, useFocusEffect } from "@react-navigation/native"
 import { EventContext } from "../../context/eventContext"
@@ -201,13 +201,13 @@ const toggleEventStatus = async (eventId) => {
         setLocalEvents(prevEvents =>
           prevEvents.map(ev => ev.id === eventId ? { ...ev, enabled: !ev.enabled } : ev)
         )
-        console.log('✅ Event status updated successfully');
+        console.log('Event status updated successfully');
       } else {
         const errorInfo = handleApiError({ response: { data: result } })
         showGenericErrorAlert(errorInfo)
       }
     } catch (error) {
-      console.log('🚨 Error in toggleEventStatus:', error);
+      console.log('Error in toggleEventStatus:', error);
       const errorInfo = handleApiError(error)
       showGenericErrorAlert(errorInfo)
     } finally {
@@ -228,7 +228,7 @@ const toggleEventStatus = async (eventId) => {
     const enabledEvents = localEvents.filter((event) => event.enabled)
     
     if (enabledEvents.length === 0) {
-      return "No ongoing events"
+      return "No Ongoing Events"
     }
 
     const now = new Date()
@@ -303,16 +303,16 @@ const toggleEventStatus = async (eventId) => {
       const minutesUntilNext = Math.round((minHoursUntilNext % 1) * 60)
       
       if (hoursUntilNext === 0) {
-        return `The ${nextEvent.name} starts in ${minutesUntilNext} minutes`
+        return `The ${nextEvent.name} Event Starts In ${minutesUntilNext} minutes`
       } else if (hoursUntilNext < 24) {
-        return `The ${nextEvent.name} starts in ${hoursUntilNext} hours`
+        return `The ${nextEvent.name} Event Starts In ${hoursUntilNext} hours`
       } else {
         const daysUntilNext = Math.floor(hoursUntilNext / 24)
-        return `The ${nextEvent.name} event starts in ${daysUntilNext} day${daysUntilNext > 1 ? 's' : ''}`
+        return `The ${nextEvent.name} Event Starts In ${daysUntilNext} day${daysUntilNext > 1 ? 's' : ''}`
       }
     }
 
-    return "No upcoming events"
+    return "No Upcoming Events"
   }
 
   // Estilo dinámico para el FAB basado en los safe area insets
@@ -332,6 +332,7 @@ const toggleEventStatus = async (eventId) => {
     const daysWithStatus = getAllDaysWithStatus(item.days);
     
     return (
+      
       <TouchableOpacity
         style={styles.eventCard}
         onPress={() => handlePress(item)}
@@ -340,8 +341,8 @@ const toggleEventStatus = async (eventId) => {
       >
         <View style={styles.eventHeader}>
           <View style={styles.eventInfo}>
-            <Text style={[styles.eventName, { fontFamily: 'Montserrat_700Bold' }]}>{item.name}</Text>
-            <Text style={[styles.eventTime, { fontFamily: 'Montserrat_400Regular' }]}>
+            <Text style={[styles.eventName, { fontFamily: 'Combo_400Regular' }]}>{item.name}</Text>
+            <Text style={[styles.eventTime, { fontFamily: 'Combo_400Regular' }]}>
               {item.startTime} - {item.endTime}
             </Text>
             
@@ -359,7 +360,7 @@ const toggleEventStatus = async (eventId) => {
                     style={[
                       styles.dayText, 
                       day.active ? styles.dayTextActive : styles.dayTextInactive,
-                      { fontFamily: 'Montserrat_600SemiBold' }
+                      { fontFamily: 'Combo_400Regular' }
                     ]}
                   >
                     {day.label}
@@ -374,16 +375,16 @@ const toggleEventStatus = async (eventId) => {
             {isUpdating && (
               <ActivityIndicator 
                 size="small" 
-                color="#660154" 
+                color="#3A3A3B" 
                 style={styles.loadingIndicator}
               />
             )}
             <Switch
               value={item.enabled}
               onValueChange={() => toggleEventStatus(item.id)}
-              trackColor={{ false: "#e0e0e0", true: "#660154" }}
-              thumbColor={item.enabled ? "#ffffff" : "#660154"}
-              ios_backgroundColor="#e0e0e0"
+              trackColor={{ false: "#BFBFBF", true: "#3A3A3B" }}
+              thumbColor={item.enabled ? "#ffffff" : "#3A3A3B"}
+              ios_backgroundColor="#BFBFBF"
               disabled={isUpdating} // Disable switch while updating
               style={[
                 styles.switch,
@@ -391,45 +392,91 @@ const toggleEventStatus = async (eventId) => {
               ]}
             />
             {isUpdating && (
-              <Text style={[styles.updatingText, { fontFamily: 'Montserrat_400Regular' }]}>Updating...</Text>
+              <Text style={[styles.updatingText, { fontFamily: 'Combo_400Regular' }]}>Updating...</Text>
             )}
           </View>
         </View>
       </TouchableOpacity>
+      
     )
   }
 
   return (
+    <LinearGradient
+      colors={['#8C8C8C', '#3a3a3bc8', '#2e2e2ec5']}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={styles.container}
+    >
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <LinearGradient
-          colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
+          colors={['#a6a6a6', '#a6a6a6']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={styles.headerGradient}
         >
           <View style={styles.headerContent}>
-            <View style={styles.titleContainer}>
-              <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>EVENTS</Text>
-            </View>
+{/*             <View style={styles.titleContainer}>
+              <Text style={[styles.titleGradient, { fontFamily: 'Combo_400Regular' }]}>EVENTS</Text>
+            </View> */}
             <TouchableOpacity
               style={styles.profileButton}
               onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
             >
               <View style={styles.avatarSmall}>
-                <Ionicons name="person" size={20} color="#660154" />
+                <Ionicons name="person" size={20} color="#3A3A3B" />
               </View>
             </TouchableOpacity>
           </View>
         </LinearGradient>
-
+        <View style={styles.fixedHeader}>
+          <Image 
+            source={require('../../assets/malbouche1.jpg')} 
+            style={styles.fixedHeaderImage}
+            resizeMode='cover'
+            
+          />      
+          <View style={styles.fadeOverlays} pointerEvents="none">
+          {/* Left */}
+{/*           <LinearGradient
+            colors={['#F2F2F2', 'transparent']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={[styles.fadeSide, { left: 0 }]}
+          /> */}
+          {/* Right */}
+{/*           <LinearGradient
+            colors={['transparent', '#F2F2F2']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={[styles.fadeSide, { right: 0 }]}
+          /> */}
+           {/* Top */}
+            <LinearGradient
+              colors={['#b5b4b4ff', 'transparent']}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={[styles.fadeSide, { top: 0 }]}
+            />
+          {/* Bottom */}
+            <LinearGradient
+              colors={['transparent', '#717171']}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={[styles.fadeTopBottom, { bottom: 0 }]}
+            />
+          </View>
+        </View>
         <FlatList
           data={localEvents}
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
           ListHeaderComponent={
             <>
-              <Text style={[styles.subtitle, { fontFamily: 'Montserrat_600SemiBold' }]}>{getOngoingEvent()}</Text>
+              <Text style={styles.subtitle}>
+                {getOngoingEvent()}
+              </Text>
             </>
           }
           contentContainerStyle={listContentDynamicStyle}
@@ -449,37 +496,65 @@ const toggleEventStatus = async (eventId) => {
         <NavigationBar />
       </View>
     </SafeAreaView>
+    </LinearGradient>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
+    
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
+    
   },
-  
   headerGradient: {
     paddingTop: 38,
-    paddingBottom: 10,
+    paddingBottom: 80,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
   },
-
   headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
+    zIndex: 1, // encima de la imagen fija
+  },
+  fixedHeader: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  height: 250, // puedes ajustar
+  zIndex: 0, // detrás del contenido
+  overflow: 'hidden',
+},
+
+fixedHeaderImage: {
+  width: '100%',
+  height: '100%',
+},
+
+listHeader: {
+  alignItems: 'flex-start',
+},
+fadeOverlays: {
+    position: 'absolute',
+    inset: 0,
+  },
+  fadeSide: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 30, // alto del difuminado superior/inferior
+  },
+    fadeTopBottom: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 50, // alto del difuminado superior/inferior
   },
 
   titleGradient: {
-    fontSize: 22,
+    fontSize: 22, 
     color: "#fff",
     paddingLeft: 35
   },
@@ -492,7 +567,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f2f2f2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -501,16 +576,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingLeft: 20,
   },
-  
   subtitle: {
-    fontSize: 22,
-    fontWeight: "600",
+    fontSize: 30,
     textAlign: "center",
-    marginTop: 22,
     marginBottom: 20,
     paddingHorizontal: 20,
-    color: "#660154",
-    fontFamily: 'Montserrat_600SemiBold',
+    color: "#3A3A3B",
+    fontFamily: 'Combo_400Regular',
   },
   eventsList: {
     paddingHorizontal: 15,
@@ -520,14 +592,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   eventCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderColor: "rgba(209, 148, 22, 0.4)",
-    borderWidth: 1,
+    backgroundColor: "#f2f2f2a7",
+    borderRadius: 8,
     padding: 15,
-    marginVertical: 8,
-    shadowColor: "rgba(102, 1, 84,0.8)",
-    elevation: 5,
+    marginBottom: 5,
+
   },
   eventHeader: {
     flexDirection: "row",
@@ -560,13 +629,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   eventName: {
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: "600",
     color: "#333",
     marginBottom: 4,
   },
   eventTime: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#666",
     marginBottom: 8,
   },
@@ -586,22 +655,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dayBadgeActive: {
-    backgroundColor: '#660154',
-    borderColor: '#660154',
+    backgroundColor: '#3A3A3B',
+    borderColor: '#3A3A3B',
   },
   dayBadgeInactive: {
     backgroundColor: 'transparent',
-    borderColor: '#ddd',
+    borderColor: '#3A3A3B',
   },
   dayText: {
     fontSize: 10,
     fontWeight: '600',
   },
   dayTextActive: {
-    color: '#fff',
+    color: '#F2F2F2',
   },
   dayTextInactive: {
-    color: '#ccc',
+    color: '#3A3A3B',
   },
   
   eventDays: {
@@ -617,14 +686,14 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 20,
-    backgroundColor: "#400135", 
+    backgroundColor: "#404040", 
     width: 70,
     height: 70,
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
-    shadowColor: "#000",
+    shadowColor: "#2e2e2e",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 5, 

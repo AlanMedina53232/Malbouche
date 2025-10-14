@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import reloj from './assets/icono.png';
+import reloj from './assets/malbouche4.png';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -118,7 +118,7 @@ export default function Login({ navigation }) {
   return (
    
   <LinearGradient
-    colors={['#33002A', '#4F0E36', '#B76BA3']}
+    colors={['#8C8C8C', '#3A3A3B', '#2E2E2E']}
         start={{ x: 0.1, y: 0 }}
         end={{ x: 1, y: 1 }}
     style={styles.container}
@@ -135,18 +135,18 @@ export default function Login({ navigation }) {
       >
         <View style={styles.loginBox}>
           <View>
-            <Text style={[styles.title, { fontFamily: 'Montserrat_700Bold' }]}>MALBOUCHE</Text>
+            <Text style={[styles.title, { fontFamily: 'Combo_400Regular' }]}>MALBOUCHE</Text>
           </View>
           <Image
             source={reloj}
             style={styles.logo}
           />
-          <Text style={[styles.loginTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>LOGIN</Text>
-          <Text style={[styles.subtitle, { fontFamily: 'Montserrat_400Regular' }]}>Enter your email and password to log in</Text>
+         {/*  <Text style={[styles.loginTitle, { fontFamily: 'Combo_400Regular' }]}>LOGIN</Text> */}
+          <Text style={[styles.subtitle, { fontFamily: 'Combo_400Regular' }]}>Enter your email and password to log in</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={[
-                [styles.input, { fontFamily: 'Montserrat_400Regular' }],
+                [styles.input, { fontFamily: 'Combo_400Regular' }],
                 errors.email && styles.inputError
               ]}
               placeholder="Email Address"
@@ -170,7 +170,7 @@ export default function Login({ navigation }) {
                 errors.password && styles.inputError
               ]}>
                 <TextInput
-                  style={[styles.passwordInput, { fontFamily: 'Montserrat_400Regular' }]}
+                  style={[styles.passwordInput, { fontFamily: 'Combo_400Regular' }]}
                   placeholder="Password"
                   secureTextEntry={!showPassword}
                   value={password}
@@ -203,7 +203,7 @@ export default function Login({ navigation }) {
               {isLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={[styles.buttonText, { fontFamily: 'Montserrat_600SemiBold' }]}>Log In</Text>
+                <Text style={[styles.buttonText, { fontFamily: 'Combo_400Regular' }]}>Log In</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -230,12 +230,12 @@ const styles = StyleSheet.create({
   loginBox: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: 'rgba(245, 245, 245, 1)',
+    backgroundColor: '#f2f2f2',
     borderRadius: 18,
     padding: 24,
     paddingBottom: 50,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#404040',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
@@ -243,9 +243,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center'
   },
   title: {
-    fontSize: 25,
-
-    color: '#660154',
+    fontSize: 35,
+    color: '#404040',
     textAlign: 'center',
     marginBottom: 10,
     
@@ -272,11 +271,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   inputError: {
-    borderColor: '#ff4444',
-    backgroundColor: '#fff0f0',
+    borderColor: '#631b1bff',
+    backgroundColor: '#ede1e1ff',
   },
   errorText: {
-    color: '#ff4444',
+    color: '#631b1bff',
     fontSize: 12,
     paddingBottom: 10,
     marginLeft: 10,
@@ -284,43 +283,44 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     height: 48,
-    borderColor: 'rgba(209, 148, 22, 0.4)',
+    borderColor: '#b4b4b4ff',
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
     marginBottom: 8,
-    backgroundColor: '#f9fafb',
-    shadowColor: "rgba(102, 1, 84,0.8)",
+    backgroundColor: '#f2f2f2',
+    shadowColor: "#404040",
     elevation: 1.5,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    borderColor: 'rgba(209, 148, 22, 0.4)',
+    borderColor: '#b4b4b4ff',
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f2f2f2',
+    shadowColor: "#404040",
+    elevation: 1.5,
     height: 48,
     marginBottom: 8,
     justifyContent: 'space-between',
-    shadowColor: "rgba(102, 1, 84,0.8)",
-    elevation: 1.5,
+
   },
   passwordInput: {
     flex: 1,
     fontSize: 14,
   },
   button: {
-    backgroundColor: '#660154',
+    backgroundColor: '#404040',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
     width: '100%',
     marginBottom: 14,
-    shadowColor: "rgba(102, 1, 84,0.8)",
-    elevation: 5,
+    shadowColor: "#2E2E2E",
+    elevation: 3,
   },
   buttonText: {
     color: '#fff',

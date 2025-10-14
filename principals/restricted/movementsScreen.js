@@ -6,7 +6,8 @@ import {
   StyleSheet, 
   FlatList, 
   TouchableOpacity, 
-  SafeAreaView 
+  SafeAreaView ,
+  Image
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -129,23 +130,23 @@ const MovementsScreen = () => {
         >
           <View style={styles.movementHeader}>
             <View style={styles.movementIcon}>
-              <Ionicons name="time-outline" size={24} color="#660154" />
+              <Ionicons name="time-outline" size={24} color="#404040" />
             </View>
-            <View style={styles.movementInfo}>
-              <Text style={[styles.movementName, { fontFamily: 'Montserrat_700Bold' }]}>
+            <View style={styles.movementInfo}>  
+              <Text style={[styles.movementName, { fontFamily: 'Combo_400Regular' }]}>
                 {item.nombre}
               </Text>
               <View style={styles.movementDetails}>
                 <View style={styles.detailItem}>
-                  <Ionicons name="time-outline" size={14} color="#666" />
-                  <Text style={[styles.detailText, { fontFamily: 'Montserrat_400Regular' }]}>
+                  <Ionicons name="time-outline" size={14} color="#404040" />
+                  <Text style={[styles.detailText, { fontFamily: 'Combo_400Regular' }]}>
                     Hours: {horasDireccion}
                   </Text>
                 </View>
                 
                 <View style={styles.detailItem}>
-                  <Ionicons name="timer-outline" size={14} color="#666" />
-                  <Text style={[styles.detailText, { fontFamily: 'Montserrat_400Regular' }]}>
+                  <Ionicons name="timer-outline" size={14} color="#404040" />
+                  <Text style={[styles.detailText, { fontFamily: 'Combo_400Regular' }]}>
                     Minutes: {minutosDireccion}
                   </Text>
                 </View>
@@ -159,37 +160,92 @@ const MovementsScreen = () => {
     };
 
   return (
+    <LinearGradient
+      colors={['#8C8C8C', '#3a3a3bc8', '#2e2e2ec5']}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={styles.container}
+
+    >
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <LinearGradient
-          colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
+          colors={['#a6a6a6', '#a6a6a6']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={styles.headerGradient}
         >
           <View style={styles.headerContent}>
-            <View style={styles.titleContainer}>
+            {/* <View style={styles.titleContainer}>
               <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>MOVEMENTS</Text>
-            </View>
+            </View> */}
             <TouchableOpacity
               style={styles.profileButton}
               onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
             >
               <View style={styles.avatarSmall}>
-                <Ionicons name="person" size={20} color="#660154" />
+                <Ionicons name="person" size={20} color="#404040" />
               </View>
             </TouchableOpacity>
           </View>
         </LinearGradient>
-
+        <View style={styles.fixedHeader}>
+          <Image 
+            source={require('../../assets/malbouche3.jpg')} 
+            style={styles.fixedHeaderImage}
+            resizeMode='cover'
+      
+          />
+                 
+          <View style={styles.fadeOverlays} pointerEvents="none">
+          {/* Left */}
+{/*           <LinearGradient
+            colors={['#F2F2F2', 'transparent']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={[styles.fadeSide, { left: 0 }]}
+          /> */}
+          {/* Right */}
+{/*           <LinearGradient
+            colors={['transparent', '#F2F2F2']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={[styles.fadeSide, { right: 0 }]}
+          /> */}
+           {/* Top */}
+            <LinearGradient
+              colors={['#b5b4b4ff', 'transparent']}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={[styles.fadeSide, { top: 0 }]}
+            />
+          {/* Bottom */}
+            <LinearGradient
+              colors={['transparent', '#717171']}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={[styles.fadeTopBottom, { bottom: 0 }]}
+            />
+          </View>
+        </View>
+      
         <FlatList
           data={movements}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={
-            <Text style={[styles.subtitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
-              Create and manage clock movements
-            </Text>
+            <View style={styles.listHeader}>
+              <Text style={[styles.subtitle, { fontFamily: 'Combo_400Regular' }]}>
+                MOVEMENTS
+              </Text>
+          {/* Top */}
+      {/*  <LinearGradient
+              colors={['#D6D6D6', 'transparent']}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={[styles.fadeTopBottom, { top: 0 }]}
+            /> */}
+            </View>
           }
           contentContainerStyle={[
             styles.movementsList,
@@ -211,30 +267,68 @@ const MovementsScreen = () => {
         <NavigationBar />
       </View>
     </SafeAreaView>
+    </LinearGradient>
+
   );
 };
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
   },
   headerGradient: {
-    paddingTop: 38,
-    paddingBottom: 10,
+    paddingTop: 30,
+    paddingBottom: 120,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
   },
   headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
+    zIndex: 1, // encima de la imagen fija
+  },
+ fixedHeader: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  height: 250, // puedes ajustar
+  zIndex: 0, // detrás del contenido
+  overflow: 'hidden',
+},
+
+fixedHeaderImage: {
+  width: '100%',
+  height: '100%',
+},
+
+listHeader: {
+  alignItems: 'flex-start',
+},
+fadeOverlays: {
+    position: 'absolute',
+    inset: 0,
+  },
+  fadeSide: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 30, // alto del difuminado superior/inferior
+  },
+    fadeTopBottom: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 50, // alto del difuminado superior/inferior
+  },
+  subtitle: {
+    fontSize: 30,
+    fontWeight: "600",
+    textAlign: "left",
+    marginTop: 10,
+    marginBottom: 10,
+    paddingHorizontal: 20,
+    color: "#3A3A3B",
   },
   titleGradient: {
     fontSize: 22,
@@ -249,7 +343,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f2f2f2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -258,41 +352,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingLeft: 20,
   },
-  subtitle: {
-    fontSize: 22,
-    fontWeight: "600",
-    textAlign: "center",
-    marginTop: 22,
-    marginBottom: 20,
-    paddingHorizontal: 20,
-    color: "#660154",
-  },
   movementsList: {
     paddingHorizontal: 15,
-    // paddingBottom se define dinámicamente
   },
   movementsContainer: {
     flex: 1,
   },
   movementCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderColor: "rgba(209, 148, 22, 0.4)",
-    borderWidth: 1,
+    borderRadius: 0,
     padding: 15,
-    marginVertical: 8,
-    shadowColor: "rgba(102, 1, 84,0.8)",
-    elevation: 5,
+    backgroundColor: "#f2f2f2a7",
+    borderRadius: 8,
+    marginBottom: 6,
+
   },
   movementHeader: {
     flexDirection: "row",
     alignItems: "center",
   },
   movementIcon: {
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
     borderRadius: 25,
-    backgroundColor: 'rgba(102, 1, 84, 0.1)',
+    backgroundColor: '#8c8c8c8f',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
@@ -301,14 +383,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   movementName: {
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: "600",
-    color: "#333",
+    color: "#262626",
     marginBottom: 8,
   },
   movementDetails: {
     flexDirection: 'row',
-    
     gap: 12,
   },
   detailItem: {
@@ -326,14 +407,14 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: 20,
-    backgroundColor: "#400135", 
+    backgroundColor: "#404040", 
     width: 70,
     height: 70,
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
-    shadowColor: "#000",
+    shadowColor: "#2e2e2e",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 5, 
@@ -349,6 +430,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
+    
   },
   modalContent: {
     backgroundColor: 'white',

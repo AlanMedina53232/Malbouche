@@ -788,41 +788,39 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <LinearGradient
-        colors={['#fff', '#fff']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.headerGradient}
-      >
+      {/* Fondo con gradiente a pantalla completa */}
+      <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+        <LinearGradient
+          colors={['#8C8C8C', '#3A3A3B', '#2E2E2E']}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ flex: 1 }}
+        />
+      </View>
+      <View style={styles.headerGradient}>
         <View style={styles.headerContent}>
           <View style={styles.titleContainer}>
-            <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>MALBOUCHE</Text>
+            <Text style={[styles.titleGradient, { fontFamily: 'Combo_400Regular' }]}>MALBOUCHE</Text>
           </View>
           <TouchableOpacity
             style={styles.profileButton}
             onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
           >
             <View style={styles.avatarSmall}>
-              <Ionicons name="person" size={20} color="#660154" />
+              <Ionicons name="person" size={20} color="#404040" />
             </View>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
 
       <View style={styles.container}>
-        <LinearGradient
-        colors={['#33002A', '#4F0E36', '#B76BA3']}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.container}
+        <View style={styles.container}
         >
 
      <ScrollView 
           contentContainerStyle={styles.scrollContainer} 
           showsVerticalScrollIndicator={false} 
         >
-
-
           {/* Indicador de eventos programados */}
           <TouchableOpacity
             style={styles.eventsIndicator}
@@ -833,7 +831,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
             <Ionicons 
               name="time" 
               size={20} 
-              color="#660154" 
+              color="#404040" 
             />
             <Text style={styles.eventsText}>
               {getAllEvents().length}
@@ -848,7 +846,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
               setIpModalVisible(true);
                 }}
               >
-                <Ionicons name="settings-sharp" size={28} color="#660154" />
+                <Ionicons name="settings-sharp" size={28} color="#404040" />
               </TouchableOpacity>   
 
           <View style={styles.clockFrame}>
@@ -889,8 +887,8 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   <LinearGradient
                     colors={
                       selectedOption === item
-                        ? ['rgba(102, 1, 84, 0.9)', 'rgba(102, 1, 84, 0.8)']
-                        : ['#fff', '#fff']
+                        ? ['#8C8C8C', '#404040']
+                        : ['#F2F2F2', '#F2F2F2']
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
@@ -901,7 +899,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   >
                     <Text
                       style={[
-                        [styles.buttonText, { fontFamily: 'Montserrat_400Regular' }],
+                        [styles.buttonText, { fontFamily: 'Combo_400Regular' }],
                         selectedOption === item && { color: "white" },
                       ]}
                     >
@@ -917,7 +915,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
 
           <View style={styles.sliderContainer}>
             <View style={styles.sliderBox}>
-              <Text style={[styles.sliderLabel, { fontFamily: 'Montserrat_700Bold' }]}>Speed</Text>
+              <Text style={[styles.sliderLabel, { fontFamily: 'Combo_400Regular' }]}>Speed</Text>
                 <Slider
                   style={styles.slider}
                   minimumValue={1}
@@ -929,16 +927,16 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     sendSpeed(val);
                     sendSpeedUpdate(val); // Update speed in the database
                   }}
-                  minimumTrackTintColor="#000"
-                  maximumTrackTintColor="#aaa"
-                  thumbTintColor="#660154"
+                  minimumTrackTintColor="#2E2E2E"
+                  maximumTrackTintColor="#8C8C8C"
+                  thumbTintColor="#404040"
                 />
             </View> 
           </View>
 
           {loading && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#660154" />
+              <ActivityIndicator size="small" color="#2e2e2e" />
               
             </View>
           )}
@@ -964,7 +962,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         </View>       
                
       </ScrollView>
-    </LinearGradient>   
+    </View>   
 
      
         {/* Custom Movements Modal */}
@@ -1038,7 +1036,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           <View style={styles.modalOverlay}>
             <View style={styles.ipModalContent}>
               <View style={styles.ipModalHeader}>
-                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>Configure Clock IP Address</Text>
+                <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>Configure Clock IP Address</Text>
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setIpModalVisible(false)}
@@ -1047,9 +1045,9 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                 </TouchableOpacity>
               </View>
               <View style={styles.ipModalBody}>
-                <Text style={[styles.ipCurrentLabel, { fontFamily: 'Montserrat_500Medium' }]}>Actual IP Address: <Text style={[styles.ipCurrentValue, { fontFamily: 'Montserrat_700SemiBold' }]}>{espIp || 'Not configured'}</Text></Text>
+                <Text style={[styles.ipCurrentLabel, { fontFamily: 'Combo_400Regular' }]}>Actual IP Address: <Text style={[styles.ipCurrentValue, { fontFamily: 'Combo_400Regular' }]}>{espIp || 'Not configured'}</Text></Text>
                 <TextInput
-                  style={[styles.input, { fontFamily: 'Montserrat_500Medium' }]}
+                  style={[styles.input, { fontFamily: 'Combo_400Regular' }]}
                   placeholder="Ej: 192.168.0.175"
                   value={ipInput}
                   onChangeText={setIpInput}
@@ -1057,16 +1055,16 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   autoFocus
                   placeholderTextColor="#aaa"
                 />
-                <Text style={[styles.ipHelpText, { fontFamily: 'Montserrat_400Regular' }]}>
-                  Asegúrate de que tu dispositivo y el reloj estén en la misma red WiFi.
+                <Text style={[styles.ipHelpText, { fontFamily: 'Combo_400Regular' }]}>
+                  Ensure that your device and watch are on the same Wi-Fi network.
                 </Text>
                 
                 {/* Los botones de escaneo han sido eliminados */}
                 
                 {/* Selección de tipo de dispositivo */}
                 <View style={styles.deviceTypeContainer}>
-                  <Text style={[styles.deviceTypeLabel, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                    Tipo de dispositivo:
+                  <Text style={[styles.deviceTypeLabel, { fontFamily: 'Combo_400Regular' }]}>
+                    Device type:
                   </Text>
                   <View style={styles.deviceTypeButtons}>
                     <TouchableOpacity 
@@ -1087,7 +1085,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                       <Text style={[
                         styles.deviceTypeButtonText,
                         deviceType === UnifiedClockService.DEVICE_TYPES.STEPPER && styles.deviceTypeButtonTextActive,
-                        { fontFamily: 'Montserrat_600SemiBold' }
+                        { fontFamily: 'Combo_400Regular' }
                       ]}>
                         Estándar (Paso a Paso)
                       </Text>
@@ -1111,18 +1109,18 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                       <Text style={[
                         styles.deviceTypeButtonText,
                         deviceType === UnifiedClockService.DEVICE_TYPES.PROTOTYPE && styles.deviceTypeButtonTextActive,
-                        { fontFamily: 'Montserrat_600SemiBold' }
+                        { fontFamily: 'Combo_400Regular' }
                       ]}>
                         Prototipo (28BYJ-48)
                       </Text>
                     </TouchableOpacity>
                   </View>
-                  <Text style={[styles.deviceTypeInfo, { fontFamily: 'Montserrat_400Regular' }]}>
+                  <Text style={[styles.deviceTypeInfo, { fontFamily: 'Combo_400Regular' }]}>
                     {deviceType ? 
                       (deviceType === UnifiedClockService.DEVICE_TYPES.PROTOTYPE ? 
-                        'Prototipo con motores 28BYJ-48 seleccionado' : 
-                        'Dispositivo estándar con motores paso a paso seleccionado') : 
-                      'Por favor selecciona un tipo de dispositivo antes de continuar'}
+                        'The prototype with 28BYJ-48 motors has been selected.' : 
+                        'Stepper motors have been selected for this standard device.') : 
+                      'Before continuing, please select a device type.'}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -1166,7 +1164,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     }
                   }}
                 >
-                  <Text style={[styles.saveButtonText, { fontFamily: 'Montserrat_700Bold' }]}>Save</Text>
+                  <Text style={[styles.saveButtonText, { fontFamily: 'Combo_400Regular' }]}>Save</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1185,7 +1183,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           <View style={styles.modalOverlay}>
             <View style={styles.eventsModalContent}>
               <View style={styles.eventsModalHeader}>
-                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
+                <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>
                   Active Events
                 </Text>
                 <View style={styles.headerActions}>
@@ -1210,17 +1208,17 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
               </View>
               
               <View style={styles.eventsModalBody}>
-                <Text style={[styles.eventsListTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                <Text style={[styles.eventsListTitle, { fontFamily: 'Combo_400Regular' }]}>
                   {getAllEvents().filter(event => event.activo).length} active event(s) configured on the server:
                 </Text>
                 
                 {getAllEvents().filter(event => event.activo).length === 0 ? (
                   <View style={styles.emptyEventsContainer}>
                     <Ionicons name="calendar-outline" size={64} color="#660154" />
-                    <Text style={[styles.emptyEventsText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    <Text style={[styles.emptyEventsText, { fontFamily: 'Combo_400Regular' }]}>
                       No active events scheduled
                     </Text>
-                    <Text style={[styles.emptyEventsSubtext, { fontFamily: 'Montserrat_400Regular' }]}>
+                    <Text style={[styles.emptyEventsSubtext, { fontFamily: 'Combo_400Regular' }]}>
                       Create automated schedules for your clock to move at specific times
                     </Text>
                     
@@ -1232,7 +1230,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                       }}
                     >
                       <Ionicons name="add-circle" size={20} color="#fff" />
-                      <Text style={[styles.createEventButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                      <Text style={[styles.createEventButtonText, { fontFamily: 'Combo_400Regular' }]}>
                         Create First Event
                       </Text>
                     </TouchableOpacity>
@@ -1246,11 +1244,11 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     renderItem={({ item }) => (
                       <View style={styles.eventItem}>
                         <View style={styles.eventHeader}>
-                          <Text style={[styles.eventName, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                          <Text style={[styles.eventName, { fontFamily: 'Combo_400Regular' }]}>
                             {item.nombreEvento}
                           </Text>
                           <View style={[styles.eventStatusBadge, styles.activeBadge]}>
-                            <Text style={[styles.eventStatusText, { fontFamily: 'Montserrat_500Medium' }]}>
+                            <Text style={[styles.eventStatusText, { fontFamily: 'Combo_400Regular' }]}>
                               Active
                             </Text>
                           </View>
@@ -1259,22 +1257,22 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                         <View style={styles.eventDetails}>
                           <View style={styles.eventTimeRow}>
                             <Ionicons name="time-outline" size={16} color="#666" />
-                            <Text style={[styles.eventTime, { fontFamily: 'Montserrat_500Medium' }]}>
+                            <Text style={[styles.eventTime, { fontFamily: 'Combo_400Regular' }]}>
                               {item.horaInicio}
                             </Text>
                           </View>
                           
                           {item.descripcion && (
-                            <Text style={[styles.eventDescription, { fontFamily: 'Montserrat_400Regular' }]}>
+                            <Text style={[styles.eventDescription, { fontFamily: 'Combo_400Regular' }]}>
                               {item.descripcion}
                             </Text>
                           )}
                           
                           <View style={styles.eventDaysContainer}>
-                            <Text style={[styles.eventDaysLabel, { fontFamily: 'Montserrat_500Medium' }]}>
+                            <Text style={[styles.eventDaysLabel, { fontFamily: 'Combo_400Regular' }]}>
                               Days: 
                             </Text>
-                            <Text style={[styles.eventDays, { fontFamily: 'Montserrat_400Regular' }]}>
+                            <Text style={[styles.eventDays, { fontFamily: 'Combo_400Regular' }]}>
                               {Array.isArray(item.diasSemana) && item.diasSemana.length > 0 
                                 ? item.diasSemana.join(', ')
                                 : 'None'
@@ -1365,18 +1363,15 @@ const styles = StyleSheet.create({
   ipCurrentLabel: {
     marginBottom: 10,
     fontSize: 15,
-    color: '#333',
+    color: '#3A3A3B',
   },
   ipCurrentValue: {
-    fontWeight: 'bold',
-    color: '#660154',
+    color: '#2E2E2E',
   },
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
   },
   container2: {
-    backgroundColor: "#f4f4f4",
     borderTopLeftRadius: 150,   
     borderTopRightRadius: 150, 
     borderBottomLeftRadius: 20, 
@@ -1384,19 +1379,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 90,
     marginHorizontal: 15,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 6,
+    
     marginTop: 180,
     zIndex: 0,
     position: 'relative',
     
   },
+  //////////////////////////////////////////////////////////////////
   safeArea: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
@@ -1404,9 +1396,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 30, 
-    backgroundColor: "#FAFAFA",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
     zIndex: 100,
   },
 
@@ -1414,10 +1403,6 @@ const styles = StyleSheet.create({
   paddingTop: 38,
   paddingBottom: 10,
   paddingHorizontal: 20,
-  borderBottomWidth: 1,
-  borderBottomColor: "#eee",
-  borderBottomLeftRadius: 15,
-  borderBottomRightRadius: 15,
 
 },
 
@@ -1425,12 +1410,11 @@ headerContent: {
   flexDirection: 'row',
   justifyContent: 'space-between',
   alignItems: 'center',
-
 },
 
 titleGradient: {
-  fontSize: 22,
-  color: "#660154",
+  fontSize: 40,
+  color: "#2E2E2E",
   paddingLeft: 35
 },
 
@@ -1442,7 +1426,7 @@ titleGradient: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f2f2f2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1480,10 +1464,10 @@ titleGradient: {
   gearIcon: {
     alignContent: 'flex-end',
     position: 'absolute',
-    top: 10,
+    top: 5,
     right: 20,
     zIndex: 10,
-    backgroundColor: '#fff',
+    backgroundColor: '#BFBFBF',
     borderRadius: 20,
     padding: 4,
     elevation: 3,
@@ -1493,7 +1477,7 @@ titleGradient: {
     top: 10,
     right: 75,
     zIndex: 15,
-    backgroundColor: '#fff',
+    backgroundColor: '#BFBFBF',
     borderRadius: 15,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -1501,19 +1485,18 @@ titleGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    borderWidth: 1,
-    borderColor: '#660154',
+
   },
   eventsText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#660154',
+    color: '#404040',
     minWidth: 12,
     textAlign: 'center',
   },
   clockInnerContainer: {
     width: '100%',
-    height: '100%',
+    height: '/%',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight:2,
@@ -1529,10 +1512,12 @@ titleGradient: {
     marginBottom: 20,
     gap: 18,
     zIndex: 0,
+    elevation: 2,
+
   },
 button: {
   flex: 1,
-  backgroundColor: "#fff",
+  backgroundColor: "#f2f2f21a",
   borderRadius: 30,
   paddingVertical: 20,
   justifyContent: "center",
@@ -1540,17 +1525,17 @@ button: {
   minHeight: 50,
   borderWidth: 0,
   overflow: 'hidden',
+  shadowColor: "#2E2E2E",
+  elevation: 3,
+  
 },
 activeButton: {
-  backgroundColor: "#fff",
   borderWidth: 0,
 },
   buttonText: {
-    color: "#660154",
-    fontWeight: "600",
-    fontSize: 16,
+    color: "#404040",
+    fontSize: 18,
     textAlign: "center",
-    fontFamily: "Poppins_600SemiBold",
   },
   sliderContainer: {
     width: "100%",
@@ -1558,15 +1543,11 @@ activeButton: {
     marginTop: 20,
   },
   sliderBox: {
-    backgroundColor: "#fff",
+    backgroundColor: "#F2F2F2",
     width: "90%",
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#fff",
-  
-   
-    shadowColor: "#660154",
-    elevation: 5,
+    shadowColor: "#2E2E2E",
+    elevation: 3,
     overflow: "hidden",
     paddingBottom: 20,
   },
@@ -1594,7 +1575,7 @@ activeButton: {
     gap: 8,
   },
   loadingText: {
-    color: "#660154",
+    color: "#BFBFBF",
     fontWeight: "600",
   },
   // Modal styles
@@ -1723,11 +1704,11 @@ activeButton: {
     backgroundColor: '#fafafa',
   },
   ipHelpText: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
     marginBottom: 16,
     textAlign: 'center',
-    fontStyle: 'italic',
+    
   },
   scanButtonsContainer: {
     flexDirection: 'row',
@@ -1765,7 +1746,7 @@ activeButton: {
     opacity: 0.8,
   },
   saveButton: {
-    backgroundColor: '#660154',
+    backgroundColor: '#404040',
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
@@ -1893,9 +1874,8 @@ activeButton: {
   },
   deviceTypeLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
     marginBottom: 10,
-    color: '#333',
+    color: '#2e2e2e',
   },
   deviceTypeButtons: {
     flexDirection: 'row',
@@ -1904,21 +1884,20 @@ activeButton: {
   },
   deviceTypeButton: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f2f2f2',
     padding: 12,
     borderRadius: 8,
     marginHorizontal: 5,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#404040',
   },
   deviceTypeButtonActive: {
-    backgroundColor: '#660154',
-    borderColor: '#4a0035',
+    backgroundColor: '#404040',
   },
   deviceTypeButtonText: {
     fontSize: 12,
-    color: '#333',
+    color: '#2e2e2e',
     textAlign: 'center',
   },
   deviceTypeButtonTextActive: {

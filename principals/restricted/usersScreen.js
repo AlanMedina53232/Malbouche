@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList, SafeAreaView, Alert } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList, SafeAreaView, Alert, Image } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -211,28 +211,16 @@ const filteredUsers = useMemo(() => {
 
   // Function to get role color based on role name
 const getRoleInfo = (role) => {
-  const roleLower = role?.toLowerCase();
-  switch(roleLower) {
-    case 'vip': 
-      return {
-        color: '#fbb42a',
-        icon: 'diamond',
-        label: 'VIP'
-      };
-    case 'admin': 
-      return {
-        color: '#660154',
-        icon: 'settings',
-        label: 'Admin'
-      };
-    default: 
-      return {
-        color: '#0b2b70ff',
-        icon: 'person',
-        label: 'Usuario'
-      };
+  const r = (role || '').toLowerCase();
+  switch (r) {
+    case 'vip':
+      return { bg: '#404040', text: '#fff', label: 'VIP' };
+    case 'admin':
+      return { bg: '#8C8C8C', text: '#fff', label: 'Admin' };
+    default:
+      return { bg: '#0b2b70ff', text: '#fff', label: 'Usuario' };
   }
-}
+};
 
   // Estilo dinámico para el FAB basado en los safe area insets
   const fabDynamicStyle = {
@@ -255,25 +243,22 @@ const renderItem = ({ item }) => {
       onPress={() => openViewModal(item)}
     >
       <View style={styles.avatar}>
-        <Ionicons name="person" size={24} color="#666" />
+        <Ionicons name="person" size={24} color="#3A3A3B" />
       </View>
       <View style={styles.userInfo}>
-        <Text style={[styles.userName, { fontFamily: 'Montserrat_700Bold' }]}>
+        <Text style={[styles.userName, { fontFamily: 'Combo_400Regular' }]}>
           {item.nombre || item.name || ''} {item.apellidos || item.lastName || ''}
         </Text>
-        <Text style={[styles.userEmail, { fontFamily: 'Montserrat_400Regular' }]}>
+        <Text style={[styles.userEmail, { fontFamily: 'Combo_400Regular' }]}>
           {item.correo || item.email}
         </Text>
+        
         <View style={styles.roleContainer}>
-          <View style={[styles.roleBadge, { backgroundColor: roleInfo.color }]}>
-            <Ionicons name={roleInfo.icon} size={14} color="white" />
+          <View style={[styles.rolePill, { backgroundColor: roleInfo.bg }]}>
+            <Text style={[styles.rolePillText, { color: roleInfo.text, fontFamily: 'Combo_400Regular' }]}>
+              {roleInfo.label}
+            </Text>
           </View>
-          <Text style={[styles.userRol, { 
-            color: roleInfo.color, 
-            fontFamily: 'Montserrat_400Regular' 
-          }]}>
-            {roleInfo.label}
-          </Text>
         </View>
       </View>
       <Ionicons name="create-outline" size={20} color="#666" />
@@ -282,31 +267,49 @@ const renderItem = ({ item }) => {
 }
 
   return (
+    <LinearGradient
+          colors={['#8C8C8C', '#3a3a3bc8', '#2e2e2ec5']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={styles.container}
+        >
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <LinearGradient
-          colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          colors={['#a6a6a6', '#a6a6a6']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
           style={styles.headerGradient}
         >
         <View style={styles.headerContent}>
-        <View style={styles.titleContainer}>
-          <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>USERS</Text>
-        </View>
+        {/* <View style={styles.titleContainer}>
+          <Text style={[styles.titleGradient, { fontFamily: 'Combo_400Regular' }]}>USERS</Text>
+        </View> */}
         <TouchableOpacity
           style={styles.profileButton}
           onPress={() => navigation.navigate('UserDetail', { user: currentUser })}
         >
           <View style={styles.avatarSmall}>
-            <Ionicons name="person" size={20} color="#660154" />
+            <Ionicons name="person" size={20} color="#404040" />
           </View>
         </TouchableOpacity>
       </View>
     </LinearGradient>
+            <View style={styles.listHeader}>
+              <Text style={[styles.subtitle, { fontFamily: 'Combo_400Regular' }]}>
+                USERS
+              </Text>
+          {/* Top */}
+      {/*   <LinearGradient
+              colors={['#D6D6D6', 'transparent']}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={[styles.fadeTopBottom, { top: 0 }]}
+            /> */}
+            </View>    
 
     <View style={styles.searchContainer}>
-      <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+      <Ionicons name="search" size={20} color="#404040" style={styles.searchIcon} />
       <TextInput
         style={styles.searchInput}
         placeholder="Search users..."
@@ -326,12 +329,10 @@ const renderItem = ({ item }) => {
       onPress={() => setShowRoleDropdown(!showRoleDropdown)}
       activeOpacity={0.8}
     >
-      <Ionicons name="filter" size={22} color="#660154" />
-      {selectedRoleFilter ? (
-        <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(selectedRoleFilter).color, marginLeft: 4 }]}>
-          <Ionicons name={getRoleInfo(selectedRoleFilter).icon} size={12} color="white" />
-        </View>
-      ) : null}
+      <Ionicons name="filter" size={22} color="#404040" />
+        {selectedRoleFilter ? (
+          <View style={[styles.roleDot, { backgroundColor: getRoleInfo(selectedRoleFilter).bg }]} />
+        ) : null}
     </TouchableOpacity>
     </View>
     {showRoleDropdown && (
@@ -347,7 +348,7 @@ const renderItem = ({ item }) => {
               setShowRoleDropdown(false);
             }}
           >
-            <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular' }]}>All</Text>
+            <Text style={[styles.dropdownOptionText, { fontFamily: 'Combo_400Regular' }]}>All</Text>
           </TouchableOpacity>
           {ROLE_OPTIONS.map((role, index) => (
             <TouchableOpacity
@@ -362,17 +363,53 @@ const renderItem = ({ item }) => {
               }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(role.value).color }]}>
-                  <Ionicons name={getRoleInfo(role.value).icon} size={14} color="white" />
-                </View>
-                <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>{role.label}</Text>
+                <View style={[styles.roleDot, { backgroundColor: getRoleInfo(role.value).bg }]} />
+                <Text style={[styles.dropdownOptionText, { fontFamily: 'Combo_400Regular', marginLeft: 8 }]}>
+                  {role.label}
+                </Text>
               </View>
             </TouchableOpacity>
           ))}
         </TouchableOpacity>
       </View>
     )}
-
+    <View style={styles.fixedHeader}>
+      <Image 
+        source={require('../../assets/malbouche2.jpg')} 
+        style={styles.fixedHeaderImage}
+        resizeMode='cover'
+      />        
+                <View style={styles.fadeOverlays} pointerEvents="none">
+                {/* Left */}
+      {/*           <LinearGradient
+                  colors={['#F2F2F2', 'transparent']}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={[styles.fadeSide, { left: 0 }]}
+                /> */}
+                {/* Right */}
+      {/*           <LinearGradient
+                  colors={['transparent', '#F2F2F2']}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={[styles.fadeSide, { right: 0 }]}
+                /> */}
+                 {/* Top */}
+                  <LinearGradient
+                    colors={['#b5b4b4ff', 'transparent']}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                    style={[styles.fadeSide, { top: 0 }]}
+                  />
+                {/* Bottom */}
+                  <LinearGradient
+                    colors={['transparent', '#717171']}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                    style={[styles.fadeTopBottom, { bottom: 0 }]}
+                  />
+                </View>
+              </View>
     <FlatList
       data={filteredUsers}
           renderItem={renderItem}
@@ -412,6 +449,7 @@ const renderItem = ({ item }) => {
             setLoading(false)
           }
         }}
+        
         />
         <TouchableOpacity 
           style={fabDynamicStyle} 
@@ -419,6 +457,8 @@ const renderItem = ({ item }) => {
         >
           <Ionicons name="add" size={28} color="white" />
         </TouchableOpacity>
+
+
 
   
         {/* Modal de Visualización */}
@@ -436,12 +476,12 @@ const renderItem = ({ item }) => {
             <View style={styles.viewModalContent}>
               {/* Header con gradiente */}
               <LinearGradient
-                colors={['#660154', '#a5639bff']}
+                colors={['#a6a6a6', '#a6a6a6']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.modalHeaderGradient}
               >
-                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
+                <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>
                   User Details
                 </Text>
                 <TouchableOpacity 
@@ -460,19 +500,14 @@ const renderItem = ({ item }) => {
                       <Ionicons name="person" size={50} color="#660154" />
                     </View>
                   </View>
-                  <Text style={[styles.fullNameText, { fontFamily: 'Montserrat_700Bold' }]}>
+                  <Text style={[styles.fullNameText, { fontFamily: 'Combo_400Regular' }]}>
                     {`${selectedUser?.nombre || selectedUser?.name || ''} ${selectedUser?.apellidos || ''}`}
                   </Text>
-                  {/* Badge del rol */}
-                    <View style={[styles.roleBadgeLarge, { backgroundColor: getRoleInfo(selectedUser?.rol || selectedUser?.Rol).color }]}>
-                      <Ionicons 
-                        name={getRoleInfo(selectedUser?.rol || selectedUser?.Rol).icon} 
-                        size={16} 
-                        color="white" 
-                      />
-                        <Text style={[styles.roleBadgeText, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                          {getRoleInfo(selectedUser?.rol || selectedUser?.Rol).label}
-                        </Text>
+                    {/* Badge del rol */}
+                    <View style={[styles.roleBadgeLarge, { backgroundColor: getRoleInfo(selectedUser?.rol || selectedUser?.Rol).bg }]}>
+                      <Text style={[styles.roleBadgeText, { color: getRoleInfo(selectedUser?.rol || selectedUser?.Rol).text, fontFamily: 'Montserrat_600SemiBold' }]}>
+                        {getRoleInfo(selectedUser?.rol || selectedUser?.Rol).label}
+                      </Text>
                     </View>
                   </View>
 
@@ -493,7 +528,7 @@ const renderItem = ({ item }) => {
                         <Text style={[styles.infoLabelImproved, { fontFamily: 'Montserrat_500Medium' }]}>
                           Email
                         </Text>
-                        <Text style={[styles.infoValueImproved, { fontFamily: 'Montserrat_400Regular' }]}>
+                        <Text style={[styles.infoValueImproved, { fontFamily: 'Combo_400Regular' }]}>
                           {selectedUser?.correo || selectedUser?.email}
                         </Text>
                       </View>
@@ -553,7 +588,7 @@ const renderItem = ({ item }) => {
                 end={{ x: 1, y: 1 }}
                 style={styles.modalHeaderGradient}
               >
-                <Text style={[styles.modalTitle, { fontFamily: 'Montserrat_700Bold' }]}>
+                <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>
                   Edit User
                 </Text>
                 <TouchableOpacity 
@@ -583,11 +618,11 @@ const renderItem = ({ item }) => {
                 {/* Campos del formulario */}
                 <View style={styles.editFormContainer}>
                   <View style={styles.inputContainer}>
-                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Montserrat_700Bold' }]}>Name<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
+                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Name<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
                     <View style={[styles.searchContainer, styles.editInputWrapper]}>
                       <Ionicons name="person-outline" size={20} color="#660154" style={styles.searchIcon} />
                       <TextInput
-                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Montserrat_400Regular' }]}
+                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Combo_400Regular' }]}
                         value={editedName}
                         onChangeText={setEditedName}
                         placeholder="Enter name"
@@ -597,11 +632,11 @@ const renderItem = ({ item }) => {
                   </View>
 
                   <View style={styles.inputContainer}>
-                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Montserrat_700Bold' }]}>Last Name<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
+                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Last Name<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
                     <View style={[styles.searchContainer, styles.editInputWrapper]}>
                       <Ionicons name="person-outline" size={20} color="#660154" style={styles.searchIcon} />
                       <TextInput
-                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Montserrat_400Regular' }]}
+                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Combo_400Regular' }]}
                         value={editedApellidos}
                         onChangeText={setEditedApellidos}
                         placeholder="Enter last name"
@@ -611,11 +646,11 @@ const renderItem = ({ item }) => {
                   </View>
 
                   <View style={styles.inputContainer}>
-                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Montserrat_700Bold' }]}>Email<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
+                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Email<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
                     <View style={[styles.searchContainer, styles.editInputWrapper]}>
                       <Ionicons name="mail-outline" size={20} color="#660154" style={styles.searchIcon} />
                       <TextInput
-                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Montserrat_400Regular' }]}
+                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Combo_400Regular' }]}
                         value={editedEmail}
                         onChangeText={setEditedEmail}
                         placeholder="example@mail.com"
@@ -627,7 +662,7 @@ const renderItem = ({ item }) => {
                   </View>
 
                   <View style={styles.inputContainer}>
-                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Montserrat_700Bold' }]}>Role</Text>
+                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Role</Text>
                     <TouchableOpacity 
                       style={[styles.searchContainer, styles.editDropdown]}
                       onPress={() => setShowRoleDropdown(!showRoleDropdown)} 
@@ -636,12 +671,10 @@ const renderItem = ({ item }) => {
                       
                       <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                         {editedRol ? (
-                          <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(editedRol).color }]}>
-                            <Ionicons name={getRoleInfo(editedRol).icon} size={14} color="white" />
-                          </View>
+                          <View style={[styles.roleDot, { backgroundColor: getRoleInfo(editedRol).bg }]} />
                         ) : null}
-                        <Text style={[styles.searchInput, styles.editDropdownText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>
-                          {ROLE_OPTIONS.find(r => r.value === editedRol)?.label || "Seleccionar rol"} 
+                        <Text style={[styles.searchInput, styles.editDropdownText, { fontFamily: 'Combo_400Regular', marginLeft: 8 }]}>
+                          {ROLE_OPTIONS.find(r => r.value === editedRol)?.label || "Seleccionar rol"}
                         </Text>
                       </View>
                       <Ionicons 
@@ -667,10 +700,8 @@ const renderItem = ({ item }) => {
                             }}
                           >
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                              <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(role.value).color }]}>
-                                <Ionicons name={getRoleInfo(role.value).icon} size={14} color="white" />
-                              </View>
-                              <Text style={[styles.dropdownOptionText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>
+                              <View style={[styles.roleDot, { backgroundColor: getRoleInfo(role.value).bg }]} />
+                              <Text style={[styles.dropdownOptionText, { fontFamily: 'Combo_400Regular', marginLeft: 8 }]}>
                                 {role.label}
                               </Text>
                             </View>
@@ -693,7 +724,7 @@ const renderItem = ({ item }) => {
                       style={styles.buttonGradient}
                     >
                       <Ionicons name="checkmark-outline" size={20} color="white" />
-                      <Text style={[styles.buttonTextImproved, { fontFamily: 'Montserrat_700Bold' }]}>
+                      <Text style={[styles.buttonTextImproved, { fontFamily: 'Combo_400Regular' }]}>
                         Save Changes
                       </Text>
                     </LinearGradient>
@@ -707,48 +738,72 @@ const renderItem = ({ item }) => {
         <NavigationBar />
       </View>
     </SafeAreaView>
+    </LinearGradient>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 30, 
-    backgroundColor: "#FAFAFA",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    zIndex: 100,
-  },
-
   headerGradient: {
-  paddingTop: 38,
-  paddingBottom: 10,
-  paddingHorizontal: 20,
-  borderBottomWidth: 1,
-  borderBottomColor: "#eee",
-  borderBottomLeftRadius: 15,
-  borderBottomRightRadius: 15,
-
+    paddingTop: 38,
+    paddingBottom: 110,
+    paddingHorizontal: 20,
 },
-
 headerContent: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
+  alignItems: 'flex-end',
+  zIndex: 1,
 
 },
+fixedHeader: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  height: 250, // puedes ajustar
+  zIndex: 0, // detrás del contenido
+  overflow: 'hidden',
+},
 
+fixedHeaderImage: {
+  width: '100%',
+  height: '130%',
+},
+
+listHeader: {
+  alignItems: 'flex-start',
+  marginTop: -50,
+  zIndex: 1,
+},
+fadeOverlays: {
+    position: 'absolute',
+    inset: 0,
+  },
+  fadeSide: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 30, // alto del difuminado superior/inferior
+  },
+    fadeTopBottom: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 50, // alto del difuminado superior/inferior
+  },
+  subtitle: {
+    fontSize: 30,
+    fontWeight: "600",
+    textAlign: "left",
+    marginTop: 10,
+    marginBottom: 10,
+    paddingHorizontal: 20,
+    color: "#3A3A3B",
+  },
 titleGradient: {
   fontSize: 22,
   color: "#fff",
@@ -763,7 +818,7 @@ titleGradient: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f2f2f2',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -801,17 +856,13 @@ titleGradient: {
     searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f2f2f2aa',
     borderRadius: 10,
     marginHorizontal: 15,
-    marginVertical: 10,
+    marginBottom: 8,
     paddingHorizontal: 15,
     height: 45,
-    shadowColor: '#660154',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    zIndex: 1,
   },
   searchIcon: {
     marginRight: 10,
@@ -819,57 +870,68 @@ titleGradient: {
   searchInput: {
     flex: 1,
     height: '100%',
-    fontFamily: 'Montserrat_400Regular',
+    fontFamily: 'Combo_400Regular',
     fontSize: 16,
-    color: '#333',
+    color: '#404040',
   },
   clearButton: {
     padding: 5,
     marginLeft: 5,
   },
-
   listContainer: {
     flex: 1,
   },
   listContent: {
     paddingHorizontal: 15,
-    // paddingBottom se define dinámicamente con listContentDynamicStyle
   },
   userCard: { 
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderColor: "rgba(209, 148, 22, 0.4)",
-    borderWidth: 1,
+    backgroundColor: "#f2f2f2a7",
+    borderRadius: 8,
     padding: 15,
-    marginVertical: 8,
-    shadowColor: "rgba(102, 1, 84,0.8)",
-    elevation: 5,
+    marginVertical: 5,
   },
    userInfo: {
     flex: 1,
   },
   userName: {
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: "600",
     color: "#333",
     marginBottom: 4,
   },
   userEmail: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#666",
     marginBottom: 2,
   },
   userRol: {
-  fontSize: 14,
+  fontSize: 16,
   fontWeight: "500",
   marginLeft: 4,
   },
-  roleContainer: {
+roleContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 4,
+  },
+  rolePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  rolePillText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  roleDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginLeft: 4,
   },
   modalOverlay: {
     flex: 1,
@@ -944,7 +1006,6 @@ titleGradient: {
     shadowRadius: 4,
     elevation: 2,
   },
-
   dropdownSelector: {
   flexDirection: 'row',
   justifyContent: 'space-between',
@@ -997,14 +1058,14 @@ titleGradient: {
   fab: {
     position: "absolute",
     right: 20,
-    backgroundColor: "#400135", 
+    backgroundColor: "#404040", 
     width: 70,
     height: 70,
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
-    shadowColor: "#000",
+    shadowColor: "#2e2e2e",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 5, 
@@ -1080,16 +1141,14 @@ titleGradient: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    shadowColor: "#000",
+    shadowColor: "#404040",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
   },
-  
   roleBadgeText: {
-    color: 'white',
-    marginLeft: 6,
+    marginLeft: 0,
     fontSize: 14,
   },
   
@@ -1214,7 +1273,7 @@ titleGradient: {
     paddingRight: 10,
   },
   infoValue: {
-    fontFamily: 'Montserrat_400Regular',
+    fontFamily: 'Combo_400Regular',
     color: '#333',
     fontSize: 16,
     width: '90%',
@@ -1257,32 +1316,23 @@ roleBadge: {
   alignItems: 'center',
   marginRight: 2,
 },
-
 filterIconContainer: {
   marginLeft: 8,
   flexDirection: 'row',
   alignItems: 'center',
   padding: 4,
-  borderRadius: 8,
-  backgroundColor: '#f4f4f4',
-  borderWidth: 1,
-  borderColor: '#eee',
+
 },
 dropdownOverlay: {
   position: 'absolute',
-  top: 155, // ajusta según la altura de tu header + searchContainer
+  top: 200, // ajusta según la altura de tu header + searchContainer
   right: 15,
-  zIndex: 9999,
+  zIndex: 1,
   elevation: 20,
 },
 dropdownOptionsSearch: {
-  backgroundColor: '#fff',
+  backgroundColor: '#f2f2f2ff',
   borderRadius: 8,
-  shadowColor: '#660154',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.15,
-  shadowRadius: 4,
-  elevation: 15,
   minWidth: 150,
 },
 editSubtitle: {

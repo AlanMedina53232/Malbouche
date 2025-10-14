@@ -75,9 +75,9 @@ const NavigationBar = () => {
             <FontAwesomeIcon
               icon={item.icon}
               size={20}
-              color={isActive ? "#400135" : "rgba(64, 1, 53, 0.65)"}
+              color={isActive ? "#404040" : "#8C8C8C"}
             />
-            <Text style={[styles.navText, isActive && { color: "#400135" }]}>
+            <Text style={[styles.navText, isActive && { color: "#404040" }]}>
               {item.name}
             </Text>
           </TouchableOpacity>

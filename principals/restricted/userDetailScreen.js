@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Keyboard} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,6 +16,7 @@ const UserDetailScreen = ({ navigation }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -49,6 +50,12 @@ const UserDetailScreen = ({ navigation }) => {
     };
 
     fetchUserData();
+  }, []);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
   const handleChangePassword = async () => {
@@ -140,8 +147,8 @@ const UserDetailScreen = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        behavior={undefined}            // Android: deja que el sistema haga resize
+        keyboardVerticalOffset={0}
       >
       <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
         <LinearGradient
@@ -168,9 +175,13 @@ const UserDetailScreen = ({ navigation }) => {
         </View>
 
         <ScrollView 
-          contentContainerStyle={styles.scrollContainer}
+          contentContainerStyle={[
+            styles.scrollContainer,
+            { paddingBottom: keyboardVisible ? 24 : 100 } // evita hueco al cerrar
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         >
           <View>
             {/* Profile Section */}
@@ -281,110 +292,110 @@ const UserDetailScreen = ({ navigation }) => {
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
-          <View style={styles.modalOverlay}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-              style={styles.modalKeyboardView}
+
+          <SafeAreaView style={styles.fullscreenModal}>
+            <ScrollView 
+              contentContainerStyle={[
+                styles.scrollContainerModal,
+                { paddingBottom: keyboardVisible ? 24 : 100 } // idem en modal
+              ]}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
             >
-              <View style={styles.modalContent}>
-                <LinearGradient
-                  colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
-                   start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                  style={styles.modalHeaderGradient}
+            <LinearGradient
+              colors={['#404040', '#404040']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.modalHeaderGradient}
+            >
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>
+                  Change Password
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => setModalVisible(false)}
+                  style={styles.modalCloseButton}
                 >
-                  <View style={styles.modalHeader}>
-                    <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>
-                      Change Password
+                  <Ionicons name="close-circle" size={25} color="#999" />
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
+            
+            <View style={styles.modalBody}>
+              <View style={styles.modalAvatarContainer}>
+                <View style={styles.modalAvatarLarge}>
+                  <Ionicons name="lock-closed" size={40} color="#404040" />
+                </View>
+                <Text style={[styles.modalSubtitle, { fontFamily: 'Combo_400Regular' }]}>
+                  Please enter your current password and a new password below.
+                </Text>
+              </View>
+
+              <View style={styles.modalDivider} />
+
+              <View style={styles.modalInputContainer}>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>
+                    Current Password<Text style={{ color: "#af0808ff" }}> *</Text>
+                  </Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons name="lock-closed-outline" size={20} color="#404040" style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.modalInput, { fontFamily: 'Combo_400Regular' }]}
+                      placeholder="Enter current password"
+                      placeholderTextColor="#bfbfbf"
+                      secureTextEntry
+                      value={currentPassword}
+                      onChangeText={setCurrentPassword}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>
+                    New Password<Text style={{ color: "#af0808ff" }}> *</Text>
+                  </Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons name="key-outline" size={20} color="#404040" style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.modalInput, { fontFamily: 'Combo_400Regular' }]}
+                      placeholder="Enter new password"
+                      placeholderTextColor="#bfbfbf"
+                      secureTextEntry
+                      value={newPassword}
+                      onChangeText={setNewPassword}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>
+                    Confirm New Password<Text style={{ color: "#af0808ff" }}> *</Text>
+                  </Text>
+                  <View style={styles.inputWrapper}>
+                    <Ionicons name="checkmark-circle-outline" size={20} color="#404040" style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.modalInput, { fontFamily: 'Combo_400Regular' }]}
+                      placeholder="Confirm new password"
+                      placeholderTextColor="#bfbfbf"
+                      secureTextEntry
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.passwordInfo}>
+                  <View style={styles.infoRow}>
+                    <Ionicons name="information-circle" size={16} color="#404040" />
+                    <Text style={[styles.infoText, { fontFamily: 'Combo_400Regular' }]}>
+                      Password must be at least 6 characters long
                     </Text>
-                    <TouchableOpacity 
-                      onPress={() => setModalVisible(false)}
-                      style={styles.modalCloseButton}
-                    >
-                      <Ionicons name="close-circle" size={25} color="#999" />
-                    </TouchableOpacity>
                   </View>
-                </LinearGradient>
+                </View>
 
-                <ScrollView 
-                  style={styles.modalBody}
-                  contentContainerStyle={styles.modalScrollContent}
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  <View style={styles.modalAvatarContainer}>
-                    <View style={styles.modalAvatarLarge}>
-                      <Ionicons name="lock-closed" size={40} color="#404040" />
-                    </View>
-                    <Text style={[styles.modalSubtitle, { fontFamily: 'Combo_400Regular' }]}>
-                      Enter your current and new password
-                    </Text>
-                  </View>
-
-                  <View style={styles.modalDivider} />
-
-                  <View style={styles.modalInputContainer}>
-                    <View style={styles.inputContainer}>
-                      <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>
-                        Current Password<Text style={{ color: "#af0808ff" }}> *</Text>
-                      </Text>
-                      <View style={styles.inputWrapper}>
-                        <Ionicons name="lock-closed-outline" size={20} color="#404040" style={styles.inputIcon} />
-                        <TextInput
-                          style={[styles.modalInput, { fontFamily: 'Combo_400Regular' }]}
-                          placeholder="Enter current password"
-                          placeholderTextColor="#999"
-                          secureTextEntry
-                          value={currentPassword}
-                          onChangeText={setCurrentPassword}
-                        />
-                      </View>
-                    </View>
-
-                    <View style={styles.inputContainer}>
-                      <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>
-                        New Password<Text style={{ color: "#af0808ff" }}> *</Text>
-                      </Text>
-                      <View style={styles.inputWrapper}>
-                        <Ionicons name="key-outline" size={20} color="#404040" style={styles.inputIcon} />
-                        <TextInput
-                          style={[styles.modalInput, { fontFamily: 'Combo_400Regular' }]}
-                          placeholder="Enter new password"
-                          placeholderTextColor="#999"
-                          secureTextEntry
-                          value={newPassword}
-                          onChangeText={setNewPassword}
-                        />
-                      </View>
-                    </View>
-
-                    <View style={styles.inputContainer}>
-                      <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>
-                        Confirm New Password<Text style={{ color: "#af0808ff" }}> *</Text>
-                      </Text>
-                      <View style={styles.inputWrapper}>
-                        <Ionicons name="checkmark-circle-outline" size={20} color="#404040" style={styles.inputIcon} />
-                        <TextInput
-                          style={[styles.modalInput, { fontFamily: 'Combo_400Regular' }]}
-                          placeholder="Confirm new password"
-                          placeholderTextColor="#999"
-                          secureTextEntry
-                          value={confirmPassword}
-                          onChangeText={setConfirmPassword}
-                        />
-                      </View>
-                    </View>
-
-                    <View style={styles.passwordInfo}>
-                      <View style={styles.infoRow}>
-                        <Ionicons name="information-circle" size={16} color="#404040" />
-                        <Text style={[styles.infoText, { fontFamily: 'Combo_400Regular' }]}>
-                          Password must be at least 6 characters long
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                    <View style={styles.modalButtonContainer}>
+                <View style={styles.modalButtonContainer}>
                   <TouchableOpacity
                     style={[styles.saveButton, changingPassword && styles.disabledButton]}
                     onPress={handleChangePassword}
@@ -392,9 +403,9 @@ const UserDetailScreen = ({ navigation }) => {
                   >
                     <View style={styles.buttonContent}>
                       <Ionicons 
-                        name={changingPassword ? "reload" : "save-outline"} 
+                        name={changingPassword ? "reload" : "checkmark-outline"} 
                         size={20} 
-                        color="#fff" 
+                        color="#f2f2f2" 
                       />
                       <Text style={[styles.saveButtonText, { fontFamily: 'Combo_400Regular' }]}>
                         {changingPassword ? 'Changing...' : 'Change Password'}
@@ -402,22 +413,22 @@ const UserDetailScreen = ({ navigation }) => {
                     </View>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
+                  {/*<TouchableOpacity
                     style={styles.cancelButton}
                     onPress={() => setModalVisible(false)}
                     disabled={changingPassword}
                   >
+                    <Ionicons name="close-outline" size={20} color="#fff" />
                     <Text style={[styles.cancelButtonText, { fontFamily: 'Combo_400Regular' }]}>
                       Cancel
                     </Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
-                </ScrollView>
-
-
               </View>
-            </KeyboardAvoidingView>
-          </View>
+            </View>
+            </ScrollView>
+          </SafeAreaView>
+          
         </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -427,11 +438,9 @@ const UserDetailScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
   },
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
   },
   headerGradient: {
   paddingTop: 38,
@@ -461,7 +470,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingHorizontal: 20,
     paddingVertical: 25,
-    paddingBottom: 100,
+
   },
   profileCard: {
    backgroundColor: "#f2f2f2",
@@ -497,7 +506,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 28,
-    color: "#333",
+    color: "#404040",
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -575,7 +584,7 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     fontSize: 18,
-    color: "#333",
+    color: "#404040",
     marginBottom: 4,
   },
   actionSubtitle: {
@@ -596,17 +605,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    width: '90%',
-    height: '85%',
-    backgroundColor: 'white',
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 10,
-    overflow: 'hidden',
+  scrollContainerModal: {
+    paddingBottom: 100,
   },
   modalHeaderGradient: {
     borderTopLeftRadius: 16,
@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    color: "#fff",
+    color: "#f2f2f2",
     flex: 1,
     textAlign: 'left',
   },
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   modalBody: {
-    backgroundColor: '#fff',
+    backgroundColor: '#f2f2f2a',
     flex: 1,
   },
   modalScrollContent: {
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#f2f2f2",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 15,
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
   },
   modalDivider: {
     height: 1,
-    backgroundColor: 'rgba(209, 148, 22, 0.3)',
+    backgroundColor: '#404040',
     marginBottom: 20,
     marginHorizontal: 40,
   },
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: "#333",
+    color: "#404040",
     marginBottom: 8,
     fontWeight: "600",
   },
@@ -680,15 +680,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#8C8C8C",
     borderRadius: 12,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#f2f2f2",
     paddingHorizontal: 15,
-    shadowColor: "#404040",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
   },
   inputIcon: {
     marginRight: 12,
@@ -697,7 +692,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 15,
     fontSize: 16,
-    color: "#333",
+    color: "#404040",
   },
   passwordInfo: {
     backgroundColor: "#f8f9fa",
@@ -718,22 +713,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalButtonContainer: {
-    padding: 15,
-    backgroundColor: '#f8f9fa',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 25,
+    gap: 15,
+
   },
   saveButton: {
-    backgroundColor: "#404040",
-    paddingVertical: 15,
-    borderRadius: 12,
+    backgroundColor: "#262626",
+    paddingVertical: 18,
+    borderRadius: 10,
     alignItems: "center",
-    marginBottom: 15,
-    shadowColor: "#404040",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    flex: 1,
   },
   disabledButton: {
     opacity: 0.6,
@@ -749,21 +740,23 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: "#631b1bff",
-    paddingVertical: 15,
-    borderRadius: 12,
+    paddingVertical: 18,
+    borderRadius: 10,
     alignItems: "center",
-    marginBottom: 15,
-    shadowColor: "#631b1bff",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    flex: 1,
   },
   cancelButtonText: {
     color: 'white',
     fontSize: 16,
     fontFamily: 'Combo_400Regular',
   },
+  fullscreenModal: {
+    flex: 1,
+    backgroundColor: '#f2f2f2',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  
 });
 
 export default UserDetailScreen;

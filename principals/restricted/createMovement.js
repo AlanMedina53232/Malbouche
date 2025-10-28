@@ -177,40 +177,42 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
+        behavior="padding"        
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        keyboardVerticalOffset={0}
       >
+      <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
         <LinearGradient
-          colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.headerGradient}
-        >
+          colors={['#8C8C8C', '#3A3A3B', '#2E2E2E']}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ flex: 1 }}
+        />
+      </View>
+      
+        <View style={styles.headerGradient}>
           <View style={styles.headerContent}>
             <TouchableOpacity
               style={styles.arrowButton}
               onPress={() => navigation.goBack()}
             >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
+              <Ionicons name="arrow-back" size={24} color="#f2f2f2" />
             </TouchableOpacity>
             <View style={styles.titleContainer}>
-              <Text style={[styles.titleGradient, { fontFamily: 'Montserrat_700Bold' }]}>CREATE MOVEMENT</Text>
+              <Text style={[styles.titleGradient, { fontFamily: 'Combo_400Regular' }]}>CREATE MOVEMENT</Text>
             </View>
           </View>
-        </LinearGradient>
-
-        {/* Reloj estático fuera del scroll */}
-        <View style={styles.fixedClockSection}>
-          <View style={[styles.fixedClockContainer, { height: clockSize }]}>
-            <AnalogClock 
-              direction={movements.find(m => m.hand === "Hour")?.type?.toLowerCase() || "left"}
-              speed={Number(movements.find(m => m.hand === "Hour")?.speed) || 50}
-              minuteDirection={movements.find(m => m.hand === "Minute")?.type?.toLowerCase() || "right"}
-              minuteSpeed={Number(movements.find(m => m.hand === "Minute")?.speed) || 50}
-            />
+              <View style={[styles.fixedClockContainer, { height: clockSize }]}>
+                <View style={styles.clockScaleWrapper}>
+                  <AnalogClock
+                    size={clockSize}
+                    direction={movements.find(m => m.hand === "Hour")?.type?.toLowerCase() || "left"}
+                    speed={Number(movements.find(m => m.hand === "Hour")?.speed) || 50}
+                    minuteDirection={movements.find(m => m.hand === "Minute")?.type?.toLowerCase() || "right"}
+                    minuteSpeed={Number(movements.find(m => m.hand === "Minute")?.speed) || 50}
+                />
+              </View>
           </View>
-          
         </View>
         
         <ScrollView 
@@ -220,18 +222,18 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
         >
           <View >
             <View style={styles.inputContainer}>
-              <Text style={[styles.fixedSectionTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+              <Text style={[styles.fixedSectionTitle, { fontFamily: 'Combo_400Regular' }]}>
                 Configure Movement Settings
               </Text>
-              <Text style={[styles.inputLabel, { fontFamily: 'Montserrat_500Medium' }]}>
-                Movement Name<Text style={{ color: "#af0808ff" }}> *</Text>
+              <Text style={[styles.inputLabel, { fontFamily: 'Combo_400Regular' }]}>
+                Movement Name<Text style={{ color: "#631b1bff" }}> *</Text>
               </Text>
               <View style={styles.inputWrapper}>
-                <Ionicons name="time-outline" size={20} color="#660154" style={styles.inputIcon} />
+                <Ionicons name="time-outline" size={20} color="#404040" style={styles.inputIcon} />
                 <TextInput
-                  style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
+                  style={[styles.input, { fontFamily: 'Combo_400Regular' }]}
                   placeholder="Enter movement name"
-                  placeholderTextColor="#999"
+                  placeholderTextColor="#bfbfbfbf"
                   value={moveName}
                   onChangeText={setMoveName}
                 />
@@ -245,14 +247,14 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
                     <Ionicons 
                       name={movement.hand === 'Hour' ? 'time-outline' : 'time-outline'} 
                       size={24} 
-                      color="#660154" 
+                      color="#404040" 
                     />
                   </View>
                   <View style={styles.movementTitleContainer}>
-                    <Text style={[styles.movementTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    <Text style={[styles.movementTitle, { fontFamily: 'Combo_400Regular' }]}>
                       {movement.hand} Hand Configuration
                     </Text>
-                    <Text style={[styles.movementSubtitle, { fontFamily: 'Montserrat_400Regular' }]}>
+                    <Text style={[styles.movementSubtitle, { fontFamily: 'Combo_400Regular' }]}>
                       Set direction, speed and angle
                     </Text>
                   </View>
@@ -260,7 +262,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
 
                 <View style={styles.movementControls}>
                   <View style={styles.controlSection}>
-                    <Text style={[styles.controlLabel, { fontFamily: 'Montserrat_500Medium' }]}>Direction</Text>
+                    <Text style={[styles.controlLabel, { fontFamily: 'Combo_400Regular' }]}>Direction</Text>
                     <View style={styles.dropdownContainer}>
                       <TouchableOpacity
                         style={styles.dropdown}
@@ -270,14 +272,14 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
                           <Ionicons 
                             name={movement.type === 'Left' ? 'arrow-back' : 'arrow-forward'} 
                             size={16} 
-                            color="#660154" 
+                            color="#404040" 
                             style={styles.dropdownIcon}
                           />
-                          <Text style={[styles.dropdownText, { fontFamily: 'Montserrat_400Regular' }]}>
+                          <Text style={[styles.dropdownText, { fontFamily: 'Combo_400Regular' }]}>
                             {MOVE_TYPES.find((t) => t.value === movement.type)?.label || movement.type}
                           </Text>
                         </View>
-                        <Ionicons name={movement.showDropdown ? "chevron-up" : "chevron-down"} size={20} color="#660154" />
+                        <Ionicons name={movement.showDropdown ? "chevron-up" : "chevron-down"} size={20} color="#404040" />
                       </TouchableOpacity>
                       {movement.showDropdown && (
                         <View style={styles.dropdownList}>
@@ -296,10 +298,10 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
                               <Ionicons 
                                 name={type.value === 'Left' ? 'arrow-back' : 'arrow-forward'} 
                                 size={16} 
-                                color="#660154" 
+                                color="#404040" 
                                 style={{ marginRight: 8 }}
                               />
-                              <Text style={[styles.dropdownItemText, { fontFamily: 'Montserrat_400Regular' }]}>
+                              <Text style={[styles.dropdownItemText, { fontFamily: 'Combo_400Regular' }]}>
                                 {type.label}
                               </Text>
                             </TouchableOpacity>
@@ -310,7 +312,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
                   </View>
 
                   <View style={styles.controlSection}>
-                    <Text style={[styles.controlLabel, { fontFamily: 'Montserrat_500Medium' }]}>Speed</Text>
+                    <Text style={[styles.controlLabel, { fontFamily: 'Combo_400Regular' }]}>Speed</Text>
                     <View style={styles.sliderContainer}>
                       <Slider
                         style={styles.slider}
@@ -319,12 +321,12 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
                         step={1}
                         value={movement.speed ? Number(movement.speed) : 1}
                         onSlidingComplete={(value) => updateMovement(index, "speed", String(value))}
-                        minimumTrackTintColor="#660154"
-                        maximumTrackTintColor="#ddd"
-                        thumbTintColor="#660154"
+                        minimumTrackTintColor="#404040"
+                        maximumTrackTintColor="#f2f2f2"
+                        thumbTintColor="#2e2e2e"
                       />
                       <View style={styles.sliderValueContainer}>
-                        <Text style={[styles.sliderValue, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                        <Text style={[styles.sliderValue, { fontFamily: 'Combo_400Regular' }]}>
                           {movement.speed || 1}
                         </Text>
                       </View>
@@ -332,7 +334,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
                   </View>
 
                   <View style={styles.controlSection}>
-                    <Text style={[styles.controlLabel, { fontFamily: 'Montserrat_500Medium' }]}>Angle (degrees)</Text>
+                    <Text style={[styles.controlLabel, { fontFamily: 'Combo_400Regular' }]}>Angle (degrees)</Text>
                     <View style={styles.sliderContainer}>
                       <Slider
                         style={styles.slider}
@@ -341,17 +343,17 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
                         step={0.1}
                         value={movement.angulo ? Number(movement.angulo) : 360}
                         onSlidingComplete={(value) => updateMovement(index, "angulo", String(value))}
-                        minimumTrackTintColor="#660154"
-                        maximumTrackTintColor="#ddd"
-                        thumbTintColor="#660154"
+                        minimumTrackTintColor="#404040"
+                        maximumTrackTintColor="#f2f2f2"
+                        thumbTintColor="#2e2e2e"
                       />
                       <View style={styles.sliderValueContainer}>
-                        <Text style={[styles.sliderValue, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                        <Text style={[styles.sliderValue, { fontFamily: 'Combo_400Regular' }]}>
                           {movement.angulo || 360}°
                         </Text>
                       </View>
                     </View>
-                    <Text style={[styles.angleDescription, { fontFamily: 'Montserrat_400Regular' }]}>
+                    <Text style={[styles.angleDescription, { fontFamily: 'Combo_400Regular' }]}>
                       {movement.angulo == 360 ? "Full rotation" : 
                        movement.angulo == 180 ? "Half rotation" : 
                        movement.angulo == 90 ? "Quarter rotation" : 
@@ -364,8 +366,8 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
 
             <TouchableOpacity style={styles.createButton} onPress={handleCreate}>
               <View style={styles.buttonContent}>
-                <Ionicons name="add-circle" size={20} color="#fff" />
-                <Text style={[styles.createButtonText, { fontFamily: 'Montserrat_700Bold' }]}>
+                <Ionicons name="checkmark-outline" size={20} color="#f2f2f2" />
+                <Text style={[styles.createButtonText, { fontFamily: 'Combo_400Regular' }]}>
                   Create Movement
                 </Text>
               </View>
@@ -373,7 +375,7 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-      <NavigationBar />
+{/*       <NavigationBar /> */}
     </SafeAreaView>
   )
 }
@@ -381,20 +383,14 @@ const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrend
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
   },
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
   },
   headerGradient: {
     paddingTop: 38,
     paddingBottom: 10,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
   },
   headerContent: {
     flexDirection: 'row',
@@ -412,23 +408,20 @@ const styles = StyleSheet.create({
     marginRight: 40,
   },
   titleGradient: {
-    fontSize: 22,
-    color: "#fff",
-    fontWeight: '700',
+    fontSize: 25,
+    color: "#f2f2f2",
   },
   scrollContainer: {
     paddingHorizontal: 20,
     paddingVertical: 20,
     paddingBottom: 120,
-    paddingTop: 300, // Espacio para el reloj fijo
   },
   fixedClockSection: {
     position: 'absolute',
-    top: 90, // Debajo del header
+    top: 90, 
     left: 0,
     right: 0,
     alignItems: 'center',
-    backgroundColor: '#f4f4f4',
     paddingVertical: 25,
     paddingHorizontal: 20,
     zIndex: 10,
@@ -437,16 +430,18 @@ const styles = StyleSheet.create({
   fixedClockContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 55,
-    marginBottom: 55,
+    paddingTop: 40,
+    marginBottom: 20,
     width: '100%',
-
+  },
+  clockScaleWrapper: {
+    transform: [{ scale: 0.85 }], // ajusta 0.7–0.95 según necesites
   },
   fixedSectionTitle: {
     fontSize: 18,
-    color: "#660154",
+    color: "#f2f2f2",
     textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: 12,
   },
   clockSection: {
     alignItems: 'center',
@@ -462,37 +457,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   formContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: "#f2f2f2a7",
     borderRadius: 15,
     padding: 25,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+ 
   },
   inputContainer: {
-    marginBottom: 25,
+      marginBottom: 25,
   },
   inputLabel: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: 18,
+    color: "#bfbfbf",
     marginBottom: 8,
-    fontWeight: "600",
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    backgroundColor: "#f2f2f2e7",
     paddingHorizontal: 15,
-    shadowColor: "#660154",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+  
   },
   inputIcon: {
     marginRight: 12,
@@ -501,17 +485,13 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 15,
     fontSize: 16,
-    color: "#333",
+    color: "#404040",
   },
   movementCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#f2f2f2a7",
     borderRadius: 12,
-    borderColor: "rgba(209, 148, 22, 0.4)",
-    borderWidth: 1,
     padding: 20,
     marginBottom: 20,
-    shadowColor: "rgba(102, 1, 84,0.8)",
-    elevation: 3,
   },
   movementHeader: {
     flexDirection: "row",
@@ -522,7 +502,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'rgba(102, 1, 84, 0.1)',
+    backgroundColor: '#8c8c8c8f',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
@@ -531,14 +511,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   movementTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "600",
-    color: "#333",
+    color: "#404040",
     marginBottom: 4,
   },
   movementSubtitle: {
     fontSize: 14,
-    color: "#666",
+    color: "#404040",
   },
   movementControls: {
     gap: 20,
@@ -548,9 +528,8 @@ const styles = StyleSheet.create({
   },
   controlLabel: {
     fontSize: 16,
-    color: "#333",
+    color: "#404040",
     marginBottom: 12,
-    fontWeight: "600",
   },
   dropdownContainer: {
     position: 'relative',
@@ -559,17 +538,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 15,
     paddingVertical: 15,
-    backgroundColor: "#f9f9f9",
-    shadowColor: "#660154",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: "#f2f2f2d3",
+
   },
   dropdownContent: {
     flexDirection: 'row',
@@ -581,40 +554,34 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 16,
-    color: "#333",
+    color: "#404040",
   },
   dropdownList: {
     position: 'absolute',
     top: '100%',
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: "#f2f2f2",
+    borderRadius: 10,
     marginTop: 5,
     maxHeight: 120,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     zIndex: 1000,
   },
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    backgroundColor: "#fff",
+    borderRadius: 10,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#8c8c8c",
+    backgroundColor: "#f2f2f2",
   },
   dropdownItemLast: {
     borderBottomWidth: 0,
   },
   dropdownItemText: {
     fontSize: 16,
-    color: "#333",
+    color: "#404040",
   },
   sliderContainer: {
     flexDirection: "row",
@@ -629,46 +596,39 @@ const styles = StyleSheet.create({
     minWidth: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(102, 1, 84, 0.1)',
+    backgroundColor: '#8c8c8c8f',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   sliderValue: {
     fontSize: 16,
-    color: "#660154",
+    color: "#404040",
     textAlign: "center",
   },
   angleDescription: {
     fontSize: 12,
-    color: "#666",
-    fontStyle: "italic",
+    color: "#404040",
     marginTop: 8,
     textAlign: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f2f2f2",
     padding: 8,
     borderRadius: 8,
   },
   createButton: {
-    backgroundColor: "#660154",
+    backgroundColor: "#262626",
     paddingVertical: 18,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: "center",
     marginTop: 10,
-    shadowColor: "#660154",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   createButtonText: {
-    color: "#fff",
+    color: "#f2f2f2",
     fontSize: 18,
-    fontWeight: "700",
     marginLeft: 8,
   },
 })

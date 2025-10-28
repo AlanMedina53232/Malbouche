@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList, SafeAreaView, Alert, Image } from "react-native"
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList, SafeAreaView, Alert, Image, KeyboardAvoidingView, Keyboard, Platform, ScrollView } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -26,6 +26,8 @@ const UsersScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRoleFilter, setSelectedRoleFilter] = useState(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
 
 
   const currentUser = {
@@ -73,7 +75,11 @@ const filteredUsers = useMemo(() => {
   });
 }, [users, searchTerm, selectedRoleFilter]);
 
-
+ useEffect(() => {
+    const s = Keyboard.addListener('keyboardDidShow', () => { setKeyboardVisible(true); setShowRoleDropdown(false) })
+    const h = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false))
+    return () => { s.remove(); h.remove() }
+  }, [])
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -313,14 +319,14 @@ const renderItem = ({ item }) => {
       <TextInput
         style={styles.searchInput}
         placeholder="Search users..."
-        placeholderTextColor="#999"
+        placeholderTextColor="#bfbfbf"
         value={searchTerm}
         onChangeText={setSearchTerm}
         clearButtonMode="while-editing"
       />
       {searchTerm ? (
         <TouchableOpacity onPress={() => setSearchTerm('')} style={styles.clearButton}>
-          <Ionicons name="close-circle" size={20} color="#999" />
+          <Ionicons name="close-circle" size={20} color="#bfbfbf" />
         </TouchableOpacity>
       ) : null}
       {/* Solo el icono de filtro aquí */}
@@ -379,37 +385,24 @@ const renderItem = ({ item }) => {
         style={styles.fixedHeaderImage}
         resizeMode='cover'
       />        
-                <View style={styles.fadeOverlays} pointerEvents="none">
-                {/* Left */}
-      {/*           <LinearGradient
-                  colors={['#F2F2F2', 'transparent']}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={[styles.fadeSide, { left: 0 }]}
-                /> */}
-                {/* Right */}
-      {/*           <LinearGradient
-                  colors={['transparent', '#F2F2F2']}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={[styles.fadeSide, { right: 0 }]}
-                /> */}
-                 {/* Top */}
-                  <LinearGradient
-                    colors={['#b5b4b4ff', 'transparent']}
-                    start={{ x: 0.5, y: 0 }}
-                    end={{ x: 0.5, y: 1 }}
-                    style={[styles.fadeSide, { top: 0 }]}
-                  />
-                {/* Bottom */}
-                  <LinearGradient
-                    colors={['transparent', '#717171']}
-                    start={{ x: 0.5, y: 0 }}
-                    end={{ x: 0.5, y: 1 }}
-                    style={[styles.fadeTopBottom, { bottom: 0 }]}
-                  />
-                </View>
-              </View>
+        <View style={styles.fadeOverlays} pointerEvents="none">
+          {/* Top Degradado */}
+            <LinearGradient
+              colors={['#b5b4b4ff', 'transparent']}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={[styles.fadeSide, { top: 0 }]}
+            />
+            {/* Bottom  degradado*/}
+            <LinearGradient
+              colors={['transparent', '#717171']}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={[styles.fadeTopBottom, { bottom: 0 }]}
+            />
+        </View>
+      </View>
+
     <FlatList
       data={filteredUsers}
           renderItem={renderItem}
@@ -458,10 +451,8 @@ const renderItem = ({ item }) => {
           <Ionicons name="add" size={28} color="white" />
         </TouchableOpacity>
 
-
-
   
-        {/* Modal de Visualización */}
+        {/* Modal de User details */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -476,19 +467,19 @@ const renderItem = ({ item }) => {
             <View style={styles.viewModalContent}>
               {/* Header con gradiente */}
               <LinearGradient
-                colors={['#a6a6a6', '#a6a6a6']}
+                colors={['#404040', '#404040']}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+                end={{ x: 0, y: 1 }}
                 style={styles.modalHeaderGradient}
               >
-                <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>
+                <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular'  }]}>
                   User Details
                 </Text>
                 <TouchableOpacity 
                   onPress={() => setViewModalVisible(false)}
                   style={styles.closeButtonModal}
                 >
-                  <Ionicons name="close" size={24} color="#fff" />
+                  <Ionicons name="close" size={24} color="#f2f2f2" />
                 </TouchableOpacity>
               </LinearGradient>
               
@@ -496,16 +487,21 @@ const renderItem = ({ item }) => {
                 {/* Avatar y nombre */}
                 <View style={styles.avatarNameSection}>
                   <View style={styles.avatarLargeImproved}>
-                    <View style={styles.avatarInner}>
-                      <Ionicons name="person" size={50} color="#660154" />
-                    </View>
+                    <LinearGradient
+                      colors={['#bfbfbf', '#404040']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.avatarGradient}
+                    >
+                     <Ionicons name="person" size={40} color="#f2f2f2" />
+                    </LinearGradient>
                   </View>
                   <Text style={[styles.fullNameText, { fontFamily: 'Combo_400Regular' }]}>
                     {`${selectedUser?.nombre || selectedUser?.name || ''} ${selectedUser?.apellidos || ''}`}
                   </Text>
                     {/* Badge del rol */}
                     <View style={[styles.roleBadgeLarge, { backgroundColor: getRoleInfo(selectedUser?.rol || selectedUser?.Rol).bg }]}>
-                      <Text style={[styles.roleBadgeText, { color: getRoleInfo(selectedUser?.rol || selectedUser?.Rol).text, fontFamily: 'Montserrat_600SemiBold' }]}>
+                      <Text style={[styles.roleBadgeText, { color: getRoleInfo(selectedUser?.rol || selectedUser?.Rol).text, fontFamily: 'Combo_400Regular' }]}>
                         {getRoleInfo(selectedUser?.rol || selectedUser?.Rol).label}
                       </Text>
                     </View>
@@ -515,17 +511,17 @@ const renderItem = ({ item }) => {
 
                   {/* Información de contacto */}
                   <View style={styles.infoSection}>
-                    <Text style={[styles.sectionTitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    <Text style={[styles.sectionTitle, { fontFamily: 'Combo_400Regular' }]}>
                       Contact Information
                     </Text>
                     
                     <View style={styles.infoCard}>
                       <View style={styles.infoRowImproved}>
                         <View style={styles.iconContainer}>
-                    <Ionicons name="mail" size={20} color="#660154" />
+                    <Ionicons name="mail" size={20} color="#404040" />
                       </View>
                       <View style={styles.infoTextContainer}>
-                        <Text style={[styles.infoLabelImproved, { fontFamily: 'Montserrat_500Medium' }]}>
+                        <Text style={[styles.infoLabelImproved, { fontFamily: 'Combo_400Regular' }]}>
                           Email
                         </Text>
                         <Text style={[styles.infoValueImproved, { fontFamily: 'Combo_400Regular' }]}>
@@ -543,28 +539,35 @@ const renderItem = ({ item }) => {
                     onPress={openEditModal}
                   >
                     <LinearGradient
-                      colors={['#660154', '#a5639bff']}
+                      colors={['#8c8c8c', '#8c8c8c']}
                       start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
+                      end={{ x: 0, y: 1 }}
                       style={styles.buttonGradient}
                     >
                       <Ionicons name="create-outline" size={20} color="white" />
-                      <Text style={[styles.buttonTextImproved, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                      <Text style={[styles.buttonTextImproved, { fontFamily: 'Combo_400Regular' }]}>
                         Edit User
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
 
                   <TouchableOpacity 
-                    style={styles.deleteButtonImproved}
+                    style={styles.editButtonImproved}
                     onPress={handleDelete}
                   >
-                    <View style={styles.deleteButtonInner}>
-                      <Ionicons name="trash-outline" size={20} color="#dc2626" />
-                      <Text style={[styles.deleteButtonText, { fontFamily: 'Montserrat_600SemiBold' }]}>
+                    <LinearGradient
+                      colors={['#262626', '#262626']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={styles.buttonGradient}
+                    >
+                      <Ionicons name="trash-outline" size={20} color="#f2f2f2" />
+                      <Text style={[styles.deleteButtonText, { fontFamily: 'Combo_400Regular' }]}>
                         Delete User
                       </Text>
-                    </View>
+                    
+                    </LinearGradient>
+
                   </TouchableOpacity>
                 </View>
               </View>
@@ -576,163 +579,183 @@ const renderItem = ({ item }) => {
         <Modal
           animationType="slide"
           transparent={true}
+          presentationStyle="fullScreen"
           visible={editModalVisible}
           onRequestClose={() => setEditModalVisible(false)}
         >
-          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setEditModalVisible(false)}>
-            <TouchableOpacity style={styles.viewModalContent} activeOpacity={1} onPress={() => {}}>
-              {/* Header con gradiente - reutiliza modalHeaderGradient */}
+          <SafeAreaView style={styles.fullscreenModal}>
+            <KeyboardAvoidingView
+              style={{ flex: 1 }}
+              behavior={undefined}           // Android: deja que la ventana haga resize
+              keyboardVerticalOffset={0}
+            >
               <LinearGradient
-                colors={['#660154', '#a5639bff']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.modalHeaderGradient}
-              >
-                <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>
-                  Edit User
-                </Text>
-                <TouchableOpacity 
-                  onPress={() => setEditModalVisible(false)}
-                  style={styles.closeButtonModal}
-                >
-                  <Ionicons name="close" size={24} color="#fff" />
-                </TouchableOpacity>
-              </LinearGradient>
-
-              <View style={styles.modalBody}>
-                {/* Avatar y título - reutiliza avatarNameSection */}
-                <View style={[styles.avatarNameSection, { paddingBottom: 5 }]}>
-                  <View style={styles.avatarLargeImproved}>
-                    <View style={styles.avatarInner}>
-                      <Ionicons name="person" size={40} color="#660154" />
-                    </View>
-                  </View>
-                  <Text style={[styles.editSubtitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
-                    Edit User Details
-                  </Text>
-                </View>
-
-                {/* Divisor - reutiliza dividerModal */}
-                <View style={[styles.dividerModal, { marginVertical: 15, marginHorizontal: 20 }]} />
-
-                {/* Campos del formulario */}
-                <View style={styles.editFormContainer}>
-                  <View style={styles.inputContainer}>
-                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Name<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
-                    <View style={[styles.searchContainer, styles.editInputWrapper]}>
-                      <Ionicons name="person-outline" size={20} color="#660154" style={styles.searchIcon} />
-                      <TextInput
-                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Combo_400Regular' }]}
-                        value={editedName}
-                        onChangeText={setEditedName}
-                        placeholder="Enter name"
-                        placeholderTextColor="#999"
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.inputContainer}>
-                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Last Name<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
-                    <View style={[styles.searchContainer, styles.editInputWrapper]}>
-                      <Ionicons name="person-outline" size={20} color="#660154" style={styles.searchIcon} />
-                      <TextInput
-                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Combo_400Regular' }]}
-                        value={editedApellidos}
-                        onChangeText={setEditedApellidos}
-                        placeholder="Enter last name"
-                        placeholderTextColor="#999"
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.inputContainer}>
-                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Email<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
-                    <View style={[styles.searchContainer, styles.editInputWrapper]}>
-                      <Ionicons name="mail-outline" size={20} color="#660154" style={styles.searchIcon} />
-                      <TextInput
-                        style={[styles.searchInput, styles.editInput, { fontFamily: 'Combo_400Regular' }]}
-                        value={editedEmail}
-                        onChangeText={setEditedEmail}
-                        placeholder="example@mail.com"
-                        placeholderTextColor="#999"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.inputContainer}>
-                    <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Role</Text>
-                    <TouchableOpacity 
-                      style={[styles.searchContainer, styles.editDropdown]}
-                      onPress={() => setShowRoleDropdown(!showRoleDropdown)} 
-                      activeOpacity={0.8}
-                    >
-                      
-                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                        {editedRol ? (
-                          <View style={[styles.roleDot, { backgroundColor: getRoleInfo(editedRol).bg }]} />
-                        ) : null}
-                        <Text style={[styles.searchInput, styles.editDropdownText, { fontFamily: 'Combo_400Regular', marginLeft: 8 }]}>
-                          {ROLE_OPTIONS.find(r => r.value === editedRol)?.label || "Seleccionar rol"}
-                        </Text>
-                      </View>
-                      <Ionicons 
-                        name={showRoleDropdown ? "chevron-up" : "chevron-down"} 
-                        size={20} 
-                        color="#660154" 
-                        style={{ marginLeft: 8 }}
-                      />
-                    </TouchableOpacity>
-                    
-                    {showRoleDropdown && (
-                      <View style={[styles.dropdownOptionsSearch, styles.editDropdownList]}>
-                        {ROLE_OPTIONS.map((role, index) => (
-                          <TouchableOpacity
-                            key={role.value}
-                            style={[
-                              styles.dropdownOption,
-                              index === ROLE_OPTIONS.length - 1 && { borderBottomWidth: 0 }
-                            ]}
-                            onPress={() => {
-                              setEditedRol(role.value);
-                              setShowRoleDropdown(false);
-                            }}
-                          >
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                              <View style={[styles.roleDot, { backgroundColor: getRoleInfo(role.value).bg }]} />
-                              <Text style={[styles.dropdownOptionText, { fontFamily: 'Combo_400Regular', marginLeft: 8 }]}>
-                                {role.label}
-                              </Text>
-                            </View>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Botón de guardar*/}
+              colors={['#404040', '#404040']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.modalHeaderGradient}
+            >
+              <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>
+                Edit User
+              </Text>
                   <TouchableOpacity 
-                    style={[styles.editButtonImproved, { marginTop: 20 }]}
-                    onPress={handleSave} 
-                    activeOpacity={0.85}
+                    onPress={() => setEditModalVisible(false)}
+                    style={styles.closeButtonModal}
                   >
-                    <LinearGradient
-                      colors={['#660154', '#a5639bff']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.buttonGradient}
-                    >
-                      <Ionicons name="checkmark-outline" size={20} color="white" />
-                      <Text style={[styles.buttonTextImproved, { fontFamily: 'Combo_400Regular' }]}>
-                        Save Changes
-                      </Text>
-                    </LinearGradient>
+                    <Ionicons name="close" size={24} color="#f2f2f2" />
                   </TouchableOpacity>
+            </LinearGradient>
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={[styles.modalBodyScroll, { paddingBottom: keyboardVisible ? 24 : 100 }]}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.modalBody}>
+                  <View style={[styles.avatarNameSection, { paddingBottom: 5 }]}>
+                    <View style={styles.avatarLargeImproved}>
+                      <LinearGradient
+                        colors={['#bfbfbf', '#404040']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.avatarGradient}
+                      >
+                      <Ionicons name="person" size={40} color="#f2f2f2" />
+                      </LinearGradient>
+                    </View>
+                    <Text style={[styles.editSubtitle, { fontFamily: 'Combo_400Regular' }]}>
+                      Edit User Details
+                    </Text>
+                  </View>
+
+                  {/* Divisor - reutiliza dividerModal */}
+                  <View style={[styles.dividerModal, { marginVertical: 15, marginHorizontal: 20 }]} />
+
+                  {/* Campos del formulario */}
+                  <View style={styles.editFormContainer}>
+                    <View style={styles.inputContainer}>
+                      <Text style={[ styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Name<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
+                      <View style={[styles.editModalInput, styles.editInputWrapper]}>
+                        <Ionicons name="person-outline" size={20} color="#8c8c8c" style={styles.searchIcon} />
+                        <TextInput
+                          style={[styles.searchInput, styles.editInput, { fontFamily: 'Combo_400Regular' }]}
+                            value={editedName}
+                            onChangeText={setEditedName}
+                            placeholder="Enter name"
+                            placeholderTextColor="#bfbfbf"
+                            onFocus={() => setShowRoleDropdown(false)}   // cierra dropdown
+                        />
+                      </View>
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                      <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Last Name<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
+                      <View style={[styles.editModalInput, styles.editInputWrapper]}>
+                        <Ionicons name="person-outline" size={20} color="#8c8c8c" style={styles.searchIcon} />
+                        <TextInput
+                          style={[styles.searchInput, styles.editInput, { fontFamily: 'Combo_400Regular' }]}
+                          value={editedApellidos}
+                          onChangeText={setEditedApellidos}
+                          placeholder="Enter last name"
+                          placeholderTextColor="#bfbfbf"
+                          onFocus={() => setShowRoleDropdown(false)}   // cierra dropdown
+                        />
+                      </View>
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                      <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Email<Text style={{ color: "#af0808ff" }}> *</Text> </Text>
+                      <View style={[styles.editModalInput, styles.editInputWrapper]}>
+                        <Ionicons name="mail-outline" size={20} color="#8c8c8c" style={styles.searchIcon} />
+                        <TextInput
+                          style={[styles.searchInput, styles.editInput, { fontFamily: 'Combo_400Regular' }]}
+                          value={editedEmail}
+                          onChangeText={setEditedEmail}
+                          placeholder="example@mail.com"
+                          placeholderTextColor="#bfbfbf"
+                          keyboardType="email-address"
+                          autoCapitalize="none"
+                          onFocus={() => setShowRoleDropdown(false)}   // cierra dropdown
+                        />
+                      </View>
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                      <Text style={[styles.label, styles.editLabel, { fontFamily: 'Combo_400Regular' }]}>Role</Text>
+                      <TouchableOpacity 
+                        style={[styles.editModalInput, styles.editDropdown]}
+                        onPress={() => setShowRoleDropdown(!showRoleDropdown)} 
+                        activeOpacity={0.8}
+                      >
+                        
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                          {editedRol ? (
+                            <View style={[styles.roleDot, { backgroundColor: getRoleInfo(editedRol).bg }]} />
+                          ) : null}
+                          <Text style={[styles.searchInput, styles.editDropdownText, { fontFamily: 'Combo_400Regular', marginLeft: 8 }]}>
+                            {ROLE_OPTIONS.find(r => r.value === editedRol)?.label || "Seleccionar rol"}
+                          </Text>
+                        </View>
+                        <Ionicons 
+                          name={showRoleDropdown ? "chevron-up" : "chevron-down"} 
+                          size={20} 
+                          color="#404040" 
+                          style={{ marginLeft: 8 }}
+                        />
+                      </TouchableOpacity>
+                      
+                      {showRoleDropdown && (
+                        <View style={[styles.dropdownOptionsSearch, styles.editDropdownList]}>
+                          {ROLE_OPTIONS.map((role, index) => (
+                            <TouchableOpacity
+                              key={role.value}
+                              style={[
+                                styles.dropdownOption,
+                                index === ROLE_OPTIONS.length - 1 && { borderBottomWidth: 0 }
+                              ]}
+                              onPress={() => {
+                                setEditedRol(role.value);
+                                setShowRoleDropdown(false);
+                              }}
+                            >
+                              <View style={{ flexDirection: 'row', alignItems: 'center'}}>
+                                <View style={[styles.roleDot, { backgroundColor: getRoleInfo(role.value).bg }]} />
+                                <Text style={[styles.dropdownOptionText, { fontFamily: 'Combo_400Regular', marginLeft: 8 }]}>
+                                  {role.label}
+                                </Text>
+                              </View>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Botón de guardar*/}
+                    <TouchableOpacity 
+                      style={[styles.editButtonImproved, { marginTop: 20 }]}
+                      onPress={handleSave} 
+                      activeOpacity={0.85}
+                    >
+                      <LinearGradient
+                        colors={['#404040', '#404040']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={styles.buttonGradient}
+                      >
+                        <Ionicons name="checkmark-outline" size={20} color="#f2f2f2" />
+                        <Text style={[styles.buttonTextImproved, { fontFamily: 'Combo_400Regular' }]}>
+                          Save Changes
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          </TouchableOpacity>
+            </ScrollView>
+
+            </KeyboardAvoidingView>
+
+          </SafeAreaView>
         </Modal>
 
         <NavigationBar />
@@ -783,21 +806,20 @@ fadeOverlays: {
     position: 'absolute',
     inset: 0,
   },
-  fadeSide: {
+fadeSide: {
     position: 'absolute',
     left: 0,
     right: 0,
     height: 30, // alto del difuminado superior/inferior
   },
-    fadeTopBottom: {
+fadeTopBottom: {
     position: 'absolute',
     left: 0,
     right: 0,
     height: 50, // alto del difuminado superior/inferior
   },
-  subtitle: {
+subtitle: {
     fontSize: 30,
-    fontWeight: "600",
     textAlign: "left",
     marginTop: 10,
     marginBottom: 10,
@@ -829,7 +851,6 @@ titleGradient: {
   },
   title: {
     fontSize: 22,
-    fontWeight: "700",
     color: "#333",
 
   },
@@ -879,7 +900,7 @@ titleGradient: {
     marginLeft: 5,
   },
   listContainer: {
-    flex: 1,
+    flex: 1, 
   },
   listContent: {
     paddingHorizontal: 15,
@@ -897,7 +918,6 @@ titleGradient: {
   },
   userName: {
     fontSize: 22,
-    fontWeight: "600",
     color: "#333",
     marginBottom: 4,
   },
@@ -908,7 +928,6 @@ titleGradient: {
   },
   userRol: {
   fontSize: 16,
-  fontWeight: "500",
   marginLeft: 4,
   },
 roleContainer: {
@@ -924,7 +943,6 @@ roleContainer: {
   },
   rolePillText: {
     fontSize: 12,
-    fontWeight: '600',
   },
 
   roleDot: {
@@ -933,6 +951,7 @@ roleContainer: {
     borderRadius: 7,
     marginLeft: 4,
   },
+  //////////////////////////// Modal Styles ////////////////////////////
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -942,7 +961,7 @@ roleContainer: {
   modalContent: {
     width: "90%",
     maxWidth: 400,
-    backgroundColor: "#f4f4f4",
+    backgroundColor: "#f2f2f2",
     borderRadius: 20,
     shadowColor: "#000",
     shadowOffset: {
@@ -964,7 +983,7 @@ roleContainer: {
     borderColor: "#660154",
   },
   modalBody: {
-    padding: 20,
+    padding: 10,
   },
   modalTitle: {
     fontSize: 20,
@@ -987,10 +1006,9 @@ roleContainer: {
     fontSize: 14,
     color: "#666",
     marginBottom: 5,
-    fontWeight: "500",
   },
   inputContainer: {
-    marginBottom: 8,
+    marginBottom: 5,
   },
     input: { 
     borderWidth: 1,
@@ -1053,7 +1071,6 @@ roleContainer: {
   },
   saveButtonText: {
     color: "#fff",
-    fontWeight: "600",
   },
   fab: {
     position: "absolute",
@@ -1091,6 +1108,8 @@ roleContainer: {
     paddingHorizontal: 20,
     paddingVertical: 20,
     paddingTop: 25,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   
   closeButtonModal: {
@@ -1102,21 +1121,24 @@ roleContainer: {
   avatarNameSection: {
     alignItems: 'center',
     paddingTop: 5,
-    paddingBottom: 10,
+    paddingBottom: 5,
   },
   
   avatarLargeImproved: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#f0f0f0",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 15,
-    borderWidth: 3,
-    borderColor: "#660154",
+    marginBottom: 20,
+    shadowColor: "#404040",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  
+  avatarGradient: {
+    width: 90,
+    height: 90,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   avatarInner: {
     width: 90,
     height: 90,
@@ -1141,11 +1163,7 @@ roleContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    shadowColor: "#404040",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+
   },
   roleBadgeText: {
     marginLeft: 0,
@@ -1154,11 +1172,10 @@ roleContainer: {
   
   dividerModal: {
     height: 1,
-    backgroundColor: 'rgba(209, 148, 22, 0.3)',
-    marginVertical: 20,
+    backgroundColor: '#404040',
+    marginVertical: 10,
     marginHorizontal: 30,
   },
-  
   infoSection: {
     paddingHorizontal: 20,
     marginBottom: 20,
@@ -1166,7 +1183,7 @@ roleContainer: {
   
   sectionTitle: {
     fontSize: 16,
-    color: '#660154',
+    color: '#404040',
     marginBottom: 15,
     textAlign: 'center',
   },
@@ -1176,7 +1193,7 @@ roleContainer: {
     borderRadius: 12,
     padding: 15,
     borderLeftWidth: 4,
-    borderLeftColor: '#660154',
+    borderLeftColor: '#404040',
   },
   
   infoRowImproved: {
@@ -1206,7 +1223,7 @@ roleContainer: {
   
   infoValueImproved: {
     fontSize: 16,
-    color: '#333',
+    color: '#404040',
   },
   
   actionButtonsContainer: {
@@ -1216,13 +1233,8 @@ roleContainer: {
   },
   
   editButtonImproved: {
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
-    shadowColor: "#660154",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
   },
   
   buttonGradient: {
@@ -1240,22 +1252,20 @@ roleContainer: {
   },
   
   deleteButtonImproved: {
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#dc2626',
-    backgroundColor: '#fff',
+    borderRadius: 10,
+    backgroundColor: '#631b1bff',
   },
   
   deleteButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 20,
   },
   
   deleteButtonText: {
-    color: '#dc2626',
+    color: '#f2f2f2',
     marginLeft: 8,
     fontSize: 16,
   },
@@ -1267,7 +1277,7 @@ roleContainer: {
     alignItems: 'center',
   },
   infoLabel: {
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Combo_400Regular',
     color: '#666',
     fontSize: 16,
     paddingRight: 10,
@@ -1291,22 +1301,10 @@ roleContainer: {
     elevation: 3
 
   },
-  deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#dc2626',
-    paddingVertical: 12,
-    marginHorizontal:20,
-    borderRadius: 8,
-    marginTop: 15,
-    shadowColor: '#dc2626',
-    elevation: 3
-  },
   buttonText: {
     color: 'white',
     marginLeft: 8,
-    fontFamily: 'Montserrat_600SemiBold',
+    fontFamily: 'Combo_400Regular',
   },
 roleBadge: {
   width: 28,
@@ -1325,7 +1323,7 @@ filterIconContainer: {
 },
 dropdownOverlay: {
   position: 'absolute',
-  top: 200, // ajusta según la altura de tu header + searchContainer
+  top: 245, // ajusta según la altura de tu header + searchContainer
   right: 15,
   zIndex: 1,
   elevation: 20,
@@ -1336,10 +1334,9 @@ dropdownOptionsSearch: {
   minWidth: 150,
 },
 editSubtitle: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: 'center',
-    marginTop: 5,
+    fontSize: 18,
+    color: "#404040",
+
   },
 
   editFormContainer: {
@@ -1351,36 +1348,57 @@ editSubtitle: {
     fontSize: 16,
     color: "#333",
     marginBottom: 8,
-    fontWeight: "600",
+  },
+  editModalInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    height: 50,
   },
 
   editInputWrapper: {
     marginHorizontal: 0, // quita el margin del searchContainer original
-    marginVertical: 0,   // quita el margin del searchContainer original
-    marginBottom: 15,    // solo bottom margin para separar inputs
+    marginVertical: 0,
+    marginBottom: 10,    // solo bottom margin para separar inputs
+    borderWidth: 1,
+    borderColor: "#bfbfbf",
+    borderRadius: 10,
+    backgroundColor: "#f2f2f2",
   },
-
   editInput: {
-    fontSize: 16, // sobrescribe el fontSize del searchInput si es necesario
+    fontSize: 16, 
   },
-
   editDropdown: {
     marginHorizontal: 0,
     marginVertical: 0,
     marginBottom: 5,
     paddingRight: 10, // espacio para la flecha
+    borderWidth: 1,
+    borderColor: "#bfbfbf",
+    borderRadius: 10,
+    backgroundColor: "#f2f2f2",
   },
 
   editDropdownText: {
-    color: "#333", // sobrescribe el color del searchInput
+    color: "#404040",
   },
 
   editDropdownList: {
-    position: 'relative', // cambia de absolute a relative
-    top: 0,               // resetea el top
-    right: 0,             // resetea el right
-    marginTop: 8,
+    position: 'relative',
+    top: 0,            
+    right: 0,             
     zIndex: 1000,
+    borderWidth: 1,
+    borderColor: "#bfbfbf",
+  },
+    modalBodyScroll: {
+    flexGrow: 1, // permite desbordar y hacer scroll al reducirse por el teclado
+  },
+    fullscreenModal: {
+    flex: 1,
+    backgroundColor: '#f2f2f2',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   
 })

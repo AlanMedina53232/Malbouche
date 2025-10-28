@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -9,7 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
-  ScrollView
+  ScrollView, 
+  Keyboard
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import NavigationBar from "../../components/NavigationBar"
@@ -24,30 +25,16 @@ const ROLE_OPTIONS = [
 ]
 
 const getRoleInfo = (role) => {
-  const roleLower = role?.toLowerCase();
-  switch(roleLower) {
-    case 'vip': 
-      return {
-        color: '#fbb42a',
-        icon: 'diamond',
-        label: 'VIP'
-      };
-    case 'admin': 
-      return {
-        color: '#660154',
-        icon: 'settings',
-        label: 'Admin'
-      };
-    default: 
-      return {
-        color: '#666',
-        icon: 'person',
-        label: role || 'User'
-      };
+  const r = (role || '').toLowerCase();
+  switch (r) {
+    case 'vip':
+      return { bg: '#404040', text: '#f2f2f2', label: 'VIP' };
+    case 'admin':
+      return { bg: '#8C8C8C', text: '#f2f2f2', label: 'Admin' };
+    default:
+      return { bg: '#0b2b70ff', text: '#f2f2f2', label: role || 'Usuario' };
   }
 }
-
-
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://malbouche-backend.onrender.com/api' // Fallback if env not set
 
@@ -56,9 +43,9 @@ const CreateUsers = ({ navigation }) => {
   const [apellidos, setApellidos] = useState("")
   const [correo, setCorreo] = useState("")
   const [rol, setRol] = useState("vip") // default "vip"
-
-
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false)
+
 
  const handleCreateUser = async () => {
     // Validaciones del frontend que coinciden con el backend
@@ -142,15 +129,22 @@ const CreateUsers = ({ navigation }) => {
     }
   }
 
+ useEffect(() => {
+    const s = Keyboard.addListener('keyboardDidShow', () => { setKeyboardVisible(true); setShowRoleDropdown(false) })
+    const h = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false))
+    return () => { s.remove(); h.remove() }
+  }, [])
+
+
   return (
   <SafeAreaView style={styles.safeArea}>
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      behavior="padding"
+      keyboardVerticalOffset={0}
     >
     <LinearGradient
-        colors={['#33002A', 'rgba(102, 1, 84, 0.8)']}
+        colors={['#404040', '#404040']}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={styles.headerGradient}
@@ -160,25 +154,37 @@ const CreateUsers = ({ navigation }) => {
             style={styles.arrowButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons name="arrow-back" size={24} color="#f2f2f2" />
           </TouchableOpacity>
           <View style={styles.titleContainer}>
-            <Text style={[styles.titleGradient, { fontFamily: 'Cinzel_700Bold' }]}>CREATE USER</Text>
+            <Text style={[styles.titleGradient, { fontFamily: 'Combo_400Regular' }]}>CREATE USER</Text>
           </View>
         </View>
       </LinearGradient>
 
       <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
+        style={{ flex: 1 }}                                   // <-- ocupa el alto
+        contentContainerStyle={[
+          styles.scrollContainer,
+          { flexGrow: 1, paddingBottom: keyboardVisible ? 24 : 100 } // <-- padding dinámico
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
         <View style={styles.formContainer}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatarLarge}>
-              <Ionicons name="person-add" size={50} color="#660154" />
+                    <LinearGradient
+                      colors={['#bfbfbf', '#404040']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.avatarGradient}
+                    >
+                     <Ionicons name="person" size={40} color="#f2f2f2" />
+                    </LinearGradient>
             </View>
-            <Text style={[styles.subtitle, { fontFamily: 'Montserrat_600SemiBold' }]}>
+            <Text style={[styles.subtitle, { fontFamily: 'Combo_400Regular' }]}>
               Enter the user details below
             </Text>
           </View>
@@ -186,74 +192,74 @@ const CreateUsers = ({ navigation }) => {
           <View style={styles.divider} />
 
           <View style={styles.inputContainer}>
-            <Text style={[styles.label, { fontFamily: 'Montserrat_500Medium' }]}>Name<Text style={{ color: "#af0808ff" }}> *</Text></Text>
+            <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>Name<Text style={{ color: "#631b1bff" }}> *</Text></Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="person-outline" size={20} color="#660154" style={styles.inputIcon} />
+              <Ionicons name="person-outline" size={20} color="#8c8c8c" style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
+                style={[styles.input, { fontFamily: 'Combo_400Regular' }]}
                 placeholder="Enter name"
-                placeholderTextColor="#999"
+                placeholderTextColor="#bfbfbfbf"
                 value={nombre}
                 onChangeText={setNombre}
                 autoCapitalize="words"
+                onFocus={() => setShowRoleDropdown(false)}
               />
             </View>
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={[styles.label, { fontFamily: 'Montserrat_500Medium' }]}>Last Name<Text style={{ color: "#af0808ff" }}> *</Text></Text>
+            <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>Last Name<Text style={{ color: "#631b1bff" }}> *</Text></Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="person-outline" size={20} color="#660154" style={styles.inputIcon} />
+              <Ionicons name="person-outline" size={20} color="#8c8c8c" style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
+                style={[styles.input, { fontFamily: 'Combo_400Regular' }]}
                 placeholder="Enter last name"
-                placeholderTextColor="#999"
+                placeholderTextColor="#bfbfbfbf"
                 value={apellidos}
                 onChangeText={setApellidos}
                 autoCapitalize="words"
+                onFocus={() => setShowRoleDropdown(false)}
               />
             </View>
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={[styles.label, { fontFamily: 'Montserrat_500Medium' }]}>Email <Text style={{ color: "#af0808ff" }}>*</Text></Text>
+            <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>Email <Text style={{ color: "#631b1bff" }}>*</Text></Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="mail-outline" size={20} color="#660154" style={styles.inputIcon} />
+              <Ionicons name="mail-outline" size={20} color="#8c8c8c" style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, { fontFamily: 'Montserrat_400Regular' }]}
+                style={[styles.input, { fontFamily: 'Combo_400Regular' }]}
                 placeholder="example@example.com"
-                placeholderTextColor="#999"
+                placeholderTextColor="#bfbfbfbf"
                 value={correo}
                 onChangeText={setCorreo}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                onFocus={() => setShowRoleDropdown(false)}
               />
             </View>
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={[styles.label, { fontFamily: 'Montserrat_500Medium' }]}>Role</Text>
+            <Text style={[styles.label, { fontFamily: 'Combo_400Regular' }]}>Role</Text>
             <TouchableOpacity
               style={styles.dropdown}
               onPress={() => setShowRoleDropdown(!showRoleDropdown)}
             >
               <View style={styles.dropdownContent}>
-                
                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                   {rol ? (
-                    <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(rol).color }]}>
-                      <Ionicons name={getRoleInfo(rol).icon} size={14} color="white" />
-                    </View>
+                    <View style={[styles.roleDot, { backgroundColor: getRoleInfo(rol).bg }]} />
                   ) : null}
-                  <Text style={[styles.dropdownText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>
-                    {ROLE_OPTIONS.find(r => r.value === rol)?.label || "Admin"} 
+                  <Text style={[styles.dropdownText, { fontFamily: 'Combo_400Regular', marginLeft: 8 }]}>
+                    {ROLE_OPTIONS.find(r => r.value === rol)?.label || getRoleInfo(rol).label}
                   </Text>
                 </View>
               </View>
               <Ionicons 
                 name={showRoleDropdown ? "chevron-up" : "chevron-down"} 
                 size={20} 
-                color="#660154" 
+                color="#404040" 
               />
             </TouchableOpacity>
             {showRoleDropdown && (
@@ -271,10 +277,8 @@ const CreateUsers = ({ navigation }) => {
                     }}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <View style={[styles.roleBadge, { backgroundColor: getRoleInfo(option.value).color }]}>
-                        <Ionicons name={getRoleInfo(option.value).icon} size={14} color="white" />
-                      </View>
-                      <Text style={[styles.dropdownText, { fontFamily: 'Montserrat_400Regular', marginLeft: 8 }]}>
+                      <View style={[styles.roleDot, { backgroundColor: getRoleInfo(option.value).bg }]} />
+                      <Text style={[styles.dropdownText, { fontFamily: 'Combo_400Regular', marginLeft: 8 }]}>
                         {option.label}
                       </Text>
                     </View>
@@ -287,25 +291,33 @@ const CreateUsers = ({ navigation }) => {
 
           <View style={styles.passwordInfo}>
             <View style={styles.infoRow}>
-              <Ionicons name="information-circle" size={16} color="#660154" />
-              <Text style={[styles.infoText, { fontFamily: 'Montserrat_400Regular' }]}>
-                Default password: <Text style={{ fontWeight: '600' }}>Malbouche2025!</Text>
+              <Ionicons name="information-circle" size={16} color="#404040" />
+              <Text style={[styles.infoText, { fontFamily: 'Combo_400Regular' }]}>
+                Default password: <Text style={{ borderBottomWidth: 1, color: '#262626' }}>Malbouche2025!</Text>
               </Text>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.createButton} onPress={handleCreateUser}>
-            <View style={styles.buttonContent}>
-              <Ionicons name="person-add" size={20} color="#fff" />
-              <Text style={[styles.createButtonText, { fontFamily: 'Montserrat_700Bold' }]}>
+          <TouchableOpacity 
+            style={styles.createButton} 
+            onPress={handleCreateUser}
+          >
+            <LinearGradient
+              colors={['#404040', '#404040']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.buttonGradient}
+            >
+              <Ionicons name="person-add" size={20} color="#f2f2f2" />
+              <Text style={[styles.createButtonText, { fontFamily: 'Combo_400Regular' }]}>
                 Create User
               </Text>
-            </View>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-    <NavigationBar />
+ {/*    <NavigationBar /> */}
   </SafeAreaView>
 )
 }
@@ -313,32 +325,15 @@ const CreateUsers = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
   },
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   arrowButton: {
     marginRight: 15,
     padding: 8,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F2F2F2',
   },
   iconSmall: {
     width: 40,
@@ -352,50 +347,41 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "700",
-    color: "#660154",
+    color: "#404040",
     textAlign: 'center',
     marginRight: 50,
   },
   scrollContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
     paddingBottom: 100,
   },
   formContainer: {
-    backgroundColor: "#fff",
     borderRadius: 15,
     padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+
   },
   avatarContainer: {
     alignItems: 'center',
     marginBottom: 20,
   },
   avatarLarge: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#f0f0f0",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: "#660154",
+    marginBottom: 20,
+  },
+  avatarGradient: {
+    width: 90,
+    height: 90,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: "#666",
+    color: "#8C8C8C",
     textAlign: 'center',
     marginTop: 5,
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(209, 148, 22, 0.3)',
+    backgroundColor: '#404040',
     marginBottom: 25,
     marginHorizontal: 20,
   },
@@ -404,24 +390,17 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: "#333",
+    color: "#404040",
     marginBottom: 8,
-    fontWeight: "600",
-    
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: "#f4f4f4",
+    borderColor: "#8c8c8c",
     borderRadius: 12,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#f2f2f2",
     paddingHorizontal: 15,
-    shadowColor: "#893279ff",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
   },
   inputIcon: {
     marginRight: 12,
@@ -430,23 +409,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 15,
     fontSize: 16,
-    color: "#333",
+    color: "#404040",
   },
   dropdown: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#8c8c8c",
     borderRadius: 12,
     paddingHorizontal: 15,
     paddingVertical: 15,
-    backgroundColor: "#f9f9f9",
-    shadowColor: "#660154",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: "#f2f2f2",
   },
   dropdownContent: {
     flexDirection: 'row',
@@ -455,32 +429,27 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 16,
-    color: "#333",
+    color: "#404040",
   },
   dropdownList: {
-    backgroundColor: "#fff",
+    backgroundColor: "#f2f2f2",
     borderRadius: 12,
-    marginTop: 8,
+    marginTop: 1,
     borderWidth: 1,
-    borderColor: "#ddd",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: "#bfbfbf",
   },
   dropdownItem: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#bfbfbf",
   },
   passwordInfo: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#bfbfbf22",
     borderRadius: 10,
     padding: 15,
     marginVertical: 10,
     borderLeftWidth: 4,
-    borderLeftColor: "#660154",
+    borderLeftColor: "#404040",
   },
   infoRow: {
     flexDirection: 'row',
@@ -488,41 +457,36 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    color: "#666",
     marginLeft: 8,
     flex: 1,
   },
   createButton: {
-    backgroundColor: "#660154",
-    paddingVertical: 18,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 25,
-    shadowColor: "#660154",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginTop: 20,
   },
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
+
   },
   createButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
+    color:'#f2f2f2',
     marginLeft: 8,
+    fontSize: 16,
+  },
+    buttonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
   
   headerGradient: {
     paddingTop: 38,
     paddingBottom: 10,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
   },
   
   headerContent: {
@@ -545,16 +509,13 @@ const styles = StyleSheet.create({
   
   titleGradient: {
     fontSize: 22,
-    color: "#fff",
-    fontWeight: '700',
+    color: "#f2f2f2",
   },
-    roleBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 2,
+  roleDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 4,
   },
   
 })

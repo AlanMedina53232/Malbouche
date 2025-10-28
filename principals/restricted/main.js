@@ -980,7 +980,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   style={styles.closeButton}
                   onPress={() => setCustomModalVisible(false)}
                 >
-                  <Ionicons name="close" size={24} color="#666" />
+                  <Ionicons name="close" size={24} color="#f2f2f2" />
                 </TouchableOpacity>
               </View>
 
@@ -1041,7 +1041,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   style={styles.closeButton}
                   onPress={() => setIpModalVisible(false)}
                 >
-                  <Ionicons name="close" size={24} color="#666" />
+                  <Ionicons name="close" size={24} color="#f2f2f2f2" />
                 </TouchableOpacity>
               </View>
               <View style={styles.ipModalBody}>
@@ -1053,7 +1053,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                   onChangeText={setIpInput}
                   keyboardType="numeric"
                   autoFocus
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor="#bfbfbf"
                 />
                 <Text style={[styles.ipHelpText, { fontFamily: 'Combo_400Regular' }]}>
                   Ensure that your device and watch are on the same Wi-Fi network.
@@ -1171,8 +1171,6 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           </View>
         </Modal>
 
-        {/* El modal para seleccionar dispositivo ha sido eliminado */}
-
         {/* Modal to view active events list */}
         <Modal
           animationType="slide"
@@ -1195,14 +1193,14 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                         navigation.navigate('Events');
                       }}
                     >
-                      <Ionicons name="settings-outline" size={20} color="#660154" />
+                      <Ionicons name="settings-outline" size={20} color="#f2f2f2" />
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={() => setEventsModalVisible(false)}
                   >
-                    <Ionicons name="close" size={24} color="#666" />
+                    <Ionicons name="close" size={24} color="#f2f2f2" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1214,7 +1212,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                 
                 {getAllEvents().filter(event => event.activo).length === 0 ? (
                   <View style={styles.emptyEventsContainer}>
-                    <Ionicons name="calendar-outline" size={64} color="#660154" />
+                    <Ionicons name="calendar-outline" size={64} color="#f2f2f2f2" />
                     <Text style={[styles.emptyEventsText, { fontFamily: 'Combo_400Regular' }]}>
                       No active events scheduled
                     </Text>
@@ -1229,7 +1227,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                         navigation.navigate('Events');
                       }}
                     >
-                      <Ionicons name="add-circle" size={20} color="#fff" />
+                      <Ionicons name="add-circle" size={20} color="#f2f2f2f2" />
                       <Text style={[styles.createEventButtonText, { fontFamily: 'Combo_400Regular' }]}>
                         Create First Event
                       </Text>
@@ -1335,7 +1333,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
-    backgroundColor: '#fafafa',
+    backgroundColor: '#404040',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
@@ -1343,7 +1341,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingTop: 18,
     paddingBottom: 24,
-    backgroundColor: 'white',
+    backgroundColor: '#f2f2f2f2',
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 18,
     alignItems: 'stretch',
@@ -1612,10 +1610,11 @@ activeButton: {
   },
   modalTitle: {
     fontSize: 18,
-    color: '#333',
+    color: '#f2f2f2',
   },
   closeButton: {
     padding: 5,
+    borderRadius: 25,
   },
   modalBody: {
     flex: 1,
@@ -1724,27 +1723,6 @@ activeButton: {
     alignItems: 'center',
     marginBottom: 12,
   },
-  scanButtonFast: {
-    backgroundColor: '#28a745',
-  },
-  scanButtonComplete: {
-    backgroundColor: '#007bff',
-  },
-  scanButtonDisabled: {
-    backgroundColor: '#6c757d',
-    opacity: 0.7,
-  },
-  scanButtonText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  scanButtonSubtext: {
-    color: '#fff',
-    fontSize: 10,
-    opacity: 0.8,
-  },
   saveButton: {
     backgroundColor: '#404040',
     borderRadius: 8,
@@ -1753,99 +1731,10 @@ activeButton: {
     marginTop: 8,
   },
   saveButtonText: {
-    color: '#fff',
+    color: '#f2f2f2f2',
     fontSize: 16,
   },
   // Estilos para el modal de selección de dispositivos
-  deviceModalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 20,
-    margin: 20,
-    maxHeight: '80%',
-  },
-  deviceModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  deviceModalBody: {
-    flex: 1,
-  },
-  deviceModalSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 15,
-  },
-  scanInfoContainer: {
-    backgroundColor: '#e7f3ff',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007bff',
-  },
-  scanInfoText: {
-    fontSize: 12,
-    color: '#0056b3',
-    lineHeight: 16,
-  },
-  devicesList: {
-    flex: 1,
-    marginBottom: 15,
-  },
-  devicesListContent: {
-    paddingBottom: 10,
-  },
-  deviceItem: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  deviceItemRecommended: {
-    backgroundColor: '#f0f8ff',
-    borderColor: '#660154',
-    borderWidth: 2,
-  },
-  deviceInfo: {
-    flex: 1,
-  },
-  deviceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  deviceIP: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  deviceIPRecommended: {
-    color: '#660154',
-  },
-  recommendedBadge: {
-    backgroundColor: '#660154',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  recommendedText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  deviceDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
   deviceStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1864,7 +1753,7 @@ activeButton: {
     alignItems: 'center',
   },
   manualButtonText: {
-    color: '#fff',
+    color: '#f2f2f2f2',
     fontSize: 14,
   },
   deviceTypeContainer: {
@@ -1901,7 +1790,7 @@ activeButton: {
     textAlign: 'center',
   },
   deviceTypeButtonTextActive: {
-    color: '#fff',
+    color: '#f2f2f2f2',
   },
   deviceTypeInfo: {
     fontSize: 12,
@@ -1926,10 +1815,10 @@ eventsModalContent: {
   width: '92%',
   maxWidth: 400,
   minHeight: 500,
-  backgroundColor: 'white',
+  backgroundColor: '#f2f2f2',
   borderRadius: 20,
   maxHeight: '85%',
-  shadowColor: '#000',
+  shadowColor: '#404040',
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.25,
   shadowRadius: 4,
@@ -1945,7 +1834,7 @@ eventsModalHeader: {
   borderBottomColor: '#f0f0f0',
   borderTopLeftRadius: 20,
   borderTopRightRadius: 20,
-  backgroundColor: '#fafafa',
+  backgroundColor: '#404040',
 },
 headerActions: {
   flexDirection: 'row',
@@ -1954,25 +1843,14 @@ headerActions: {
 },
 manageEventsButton: {
   padding: 8,
-  borderRadius: 20,
-  backgroundColor: '#f0f0f0',
+  borderRadius: 25,
 },
 eventsModalBody: {
   flex: 1,
   paddingHorizontal: 20,
   paddingVertical: 15,
 },
-schedulerStatusContainer: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  backgroundColor: '#f8f9fa',
-  borderRadius: 12,
-  padding: 15,
-  marginBottom: 20,
-  borderWidth: 1,
-  borderColor: '#e9ecef',
-},
+
 schedulerStatusRow: {
   flexDirection: 'row',
   alignItems: 'center',
@@ -1996,7 +1874,7 @@ stopButton: {
   backgroundColor: '#dc3545',
 },
 toggleButtonText: {
-  color: '#fff',
+  color: '#f2f2f2f2',
   fontSize: 12,
 },
 eventsListTitle: {
@@ -2040,7 +1918,7 @@ createEventButton: {
   shadowRadius: 3,
 },
 createEventButtonText: {
-  color: '#fff',
+  color: '#f2f2f2f2',
   fontSize: 16,
 },
 eventsList: {
@@ -2073,14 +1951,14 @@ eventStatusBadge: {
   borderRadius: 12,
 },
 activeBadge: {
-  backgroundColor: '#d4edda',
+  backgroundColor: '#404040',
 },
 inactiveBadge: {
-  backgroundColor: '#f8d7da',
+  backgroundColor: '#8c8c8c',
 },
 eventStatusText: {
   fontSize: 10,
-  color: '#333',
+  color: '#f2f2f2f2',
 },
 eventDetails: {
   gap: 8,
@@ -2106,11 +1984,11 @@ eventDaysContainer: {
 },
 eventDaysLabel: {
   fontSize: 12,
-  color: '#666',
+  color: '#262626',
 },
 eventDays: {
   fontSize: 12,
-  color: '#660154',
+  color: '#404040',
   fontWeight: '600',
 },
 

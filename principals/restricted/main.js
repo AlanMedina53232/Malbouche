@@ -770,12 +770,12 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
         onPress={() => handleCustomMovementSelect(item)}
         disabled={loading}
       >
-        <View style={styles.customMovementInfo}>
-          <Text style={styles.customMovementName}>{item.nombre}</Text>
-          <Text style={styles.customMovementDetails}>
+        <View style={[styles.customMovementInfo, { fontFamily: 'Combo_400Regular' }]}>
+          <Text style={[styles.customMovementName, { fontFamily: 'Combo_400Regular' }]}>{item.nombre}</Text>
+          <Text style={[styles.customMovementDetails, { fontFamily: 'Combo_400Regular' }]}>
             Hour: {hourDirection} (Speed: {hourSpeed})
           </Text>
-          <Text style={styles.customMovementDetails}>
+          <Text style={[styles.customMovementDetails, { fontFamily: 'Combo_400Regular' }]}>
             Minute: {minuteDirection} (Speed: {minuteSpeed})
           </Text>
         </View>
@@ -814,157 +814,152 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
       </View>
 
       <View style={styles.container}>
-        <View style={styles.container}
-        >
-
-     <ScrollView 
-          contentContainerStyle={styles.scrollContainer} 
-          showsVerticalScrollIndicator={false} 
-        >
-          {/* Indicador de eventos programados */}
-          <TouchableOpacity
-            style={styles.eventsIndicator}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            onPress={() => setEventsModalVisible(true)}
+        <View style={styles.container}>
+          <ScrollView 
+            contentContainerStyle={styles.scrollContainer} 
+            showsVerticalScrollIndicator={false} 
           >
-            <Ionicons 
-              name="time" 
-              size={20} 
-              color="#404040" 
-            />
-            <Text style={styles.eventsText}>
-              {getAllEvents().length}
-            </Text>
-          </TouchableOpacity>
+            {/* Indicador de eventos programados */}
+            <TouchableOpacity
+              style={styles.eventsIndicator}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={() => setEventsModalVisible(true)}
+            >
+              <Ionicons 
+                name="time" 
+                size={20} 
+                color="#404040" 
+              />
+              <Text style={styles.eventsText}>
+                {getAllEvents().length}
+              </Text>
+            </TouchableOpacity>
 
-          {/* Engrane en la esquina superior derecha */}
-          <TouchableOpacity
-            style={styles.gearIcon}
-            onPress={() => {
-              setIpInput(espIp);
-              setIpModalVisible(true);
-                }}
-              >
-                <Ionicons name="settings-sharp" size={28} color="#404040" />
-              </TouchableOpacity>   
+            {/* Engrane en la esquina superior derecha */}
+            <TouchableOpacity
+              style={styles.gearIcon}
+              onPress={() => {
+                setIpInput(espIp);
+                setIpModalVisible(true);
+              }}
+            >
+              <Ionicons name="settings-sharp" size={28} color="#404040" />
+            </TouchableOpacity>   
 
-          <View style={styles.clockFrame}>
-              {/*<ImageBackground
-                source={FrameImage}
-                style={styles.clockImageFrame}
-                resizeMode="contain"
-              > */}
- 
-              <View style={styles.clockInnerContainer}>
-                <AnalogClock {...getClockProps()} />
-              </View>
-            
-             {/*</ImageBackground> */}
-          </View>
-        <View style={styles.container2}>
-
-          <View style={styles.buttonContainer}>
-          {options.map((row, index) => (
-            <View key={index} style={styles.buttonRow}>
-              {row.map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  onPress={() => {
-                    if (item === "Custom") {
-                      setCustomModalVisible(true);
-                      fetchCustomMovements();
-                      setSelectedOption(item);
-                    } else {
-                      handlePresetSelect(item);
-                      handleOptionSelect(item);
-                    }
-                  }}
-                  disabled={loading}
-                  activeOpacity={0.8}
-                  style={{ flex: 1 }}
-                >
-                  <LinearGradient
-                    colors={
-                      selectedOption === item
-                        ? ['#8C8C8C', '#404040']
-                        : ['#F2F2F2', '#F2F2F2']
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={[
-                      styles.button,
-                      selectedOption === item && styles.activeButton,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        [styles.buttonText, { fontFamily: 'Combo_400Regular' }],
-                        selectedOption === item && { color: "white" },
-                      ]}
-                    >
-                      {getDisplayLabel(item)}
-                    </Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-
-              ))}
-            </View>
-          ))}
-          </View>
-
-          <View style={styles.sliderContainer}>
-            <View style={styles.sliderBox}>
-              <Text style={[styles.sliderLabel, { fontFamily: 'Combo_400Regular' }]}>Speed</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={1}
-                  maximumValue={100}
-                  step={1}
-                  value={speed}
-                  onSlidingComplete={(val) => {
-                    setSpeed(val);
-                    sendSpeed(val);
-                    sendSpeedUpdate(val); // Update speed in the database
-                  }}
-                  minimumTrackTintColor="#2E2E2E"
-                  maximumTrackTintColor="#8C8C8C"
-                  thumbTintColor="#404040"
-                />
-            </View> 
-          </View>
-
-          {loading && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#2e2e2e" />
+            <View style={styles.clockFrame}>
+                {/*<ImageBackground
+                  source={FrameImage}
+                  style={styles.clockImageFrame}
+                  resizeMode="contain"
+                > */}
+  
+                <View style={styles.clockInnerContainer}>
+                  <AnalogClock {...getClockProps()} />
+                </View>
               
+              {/*</ImageBackground> */}
             </View>
-          )}
-          {alertMessage !== '' && (
-            <View
-              style={[
-                styles.alertContainer,
-                null
-              ]}
-            >
-            <Text
-              style={[
-                styles.alertText,
-                alertType === 'error' && { color: '#dd4e5cff' },
-                alertType === 'success' && { color: '#5a8d66ff' }
-              ]}
-            >
-              {alertMessage}
-            </Text>
+            <View style={styles.container2}>
+              <View style={styles.buttonContainer}>
+                {options.map((row, index) => (
+                  <View key={index} style={styles.buttonRow}>
+                    {row.map((item) => (
+                      <TouchableOpacity
+                        key={item}
+                        onPress={() => {
+                          if (item === "Custom") {
+                            setCustomModalVisible(true);
+                            fetchCustomMovements();
+                            setSelectedOption(item);
+                          } else {
+                            handlePresetSelect(item);
+                            handleOptionSelect(item);
+                          }
+                        }}
+                        disabled={loading}
+                        activeOpacity={0.8}
+                        style={{ flex: 1 }}
+                      >
+                        <LinearGradient
+                          colors={
+                            selectedOption === item
+                              ? ['#8C8C8C', '#404040']
+                              : ['#F2F2F2', '#F2F2F2']
+                          }
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 0, y: 1 }}
+                          style={[
+                            styles.button,
+                            selectedOption === item && styles.activeButton,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              [styles.buttonText, { fontFamily: 'Combo_400Regular' }],
+                              selectedOption === item && { color: "white" },
+                            ]}
+                          >
+                            {getDisplayLabel(item)}
+                          </Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ))}
+              </View>
 
-            </View>
-          )}
-        </View>       
+              <View style={styles.sliderContainer}>
+                <View style={styles.sliderBox}>
+                  <Text style={[styles.sliderLabel, { fontFamily: 'Combo_400Regular' }]}>Speed</Text>
+                    <Slider
+                      style={styles.slider}
+                      minimumValue={1}
+                      maximumValue={100}
+                      step={1}
+                      value={speed}
+                      onSlidingComplete={(val) => {
+                        setSpeed(val);
+                        sendSpeed(val);
+                        sendSpeedUpdate(val); // Update speed in the database
+                      }}
+                      minimumTrackTintColor="#2E2E2E"
+                      maximumTrackTintColor="#8C8C8C"
+                      thumbTintColor="#404040"
+                    />
+                </View> 
+              </View>
+
+              {loading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#2e2e2e" />
+                  
+                </View>
+              )}
+              {alertMessage !== '' && (
+                <View
+                  style={[
+                    styles.alertContainer,
+                    null
+                  ]}
+                >
+                <Text
+                  style={[
+                    styles.alertText,
+                    alertType === 'error' && { color: '#dd4e5cff' },
+                    alertType === 'success' && { color: '#5a8d66ff' }
+                  ]}
+                >
+                  {alertMessage}
+                </Text>
+
+                </View>
+              )}
+            </View>       
                
-      </ScrollView>
-    </View>   
+          </ScrollView>
+        </View>   
 
-     
         {/* Custom Movements Modal */}
         <Modal
           animationType="slide"
@@ -975,7 +970,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Select Custom Movement</Text>
+                <Text style={[styles.modalTitle, { fontFamily: 'Combo_400Regular' }]}>Select Custom Movement</Text>
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setCustomModalVisible(false)}
@@ -987,21 +982,21 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
               <View style={styles.modalBody}>
                 {loadingMovements ? (
                   <View style={styles.modalLoadingContainer}>
-                    <ActivityIndicator size="large" color="#660154" />
-                    <Text style={styles.modalLoadingText}>Loading movements...</Text>
+                    <ActivityIndicator size="large" color="#404040" />
+                    <Text style={[styles.modalLoadingText, { fontFamily: 'Combo_400Regular' }]}>Loading movements...</Text>
                   </View>
                 ) : customMovements.length === 0 ? (
                   <View style={styles.emptyStateContainer}>
                     <Ionicons name="folder-open-outline" size={48} color="#ccc" />
-                    <Text style={styles.emptyStateText}>No custom movements found</Text>
-                    <Text style={styles.emptyStateSubtext}>
+                    <Text style={[styles.emptyStateText, { fontFamily: 'Combo_400Regular' }]}>No custom movements found</Text>
+                    <Text style={[styles.emptyStateSubtext, { fontFamily: 'Combo_400Regular' }]}>
                       Create custom movements in the Movements section
                     </Text>
                     <TouchableOpacity 
                       style={styles.refreshButton}
                       onPress={fetchCustomMovements}
                     >
-                      <Text style={styles.refreshButtonText}>Refresh</Text>
+                      <Text style={[styles.refreshButtonText, { fontFamily: 'Combo_400Regular' }]}>Refresh</Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -1010,12 +1005,12 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                     renderItem={renderCustomMovementItem}
                     keyExtractor={(item) => item.id || item.nombre || Math.random().toString()}
                     showsVerticalScrollIndicator={true}
-                    style={styles.customMovementsList}
+                    style={[styles.customMovementsList, { fontFamily: 'Combo_400Regular' }]}
                     contentContainerStyle={{paddingBottom: 20}}
                     ListEmptyComponent={
                       <View style={styles.emptyStateContainer}>
                         <Ionicons name="folder-open-outline" size={48} color="#ccc" />
-                        <Text style={styles.emptyStateText}>No custom movements found</Text>
+                        <Text style={[styles.emptyStateText, { fontFamily: 'Combo_400Regular' }]}>No custom movements found</Text>
                       </View>
                     }
                   />
@@ -1058,9 +1053,7 @@ const [alertType, setAlertType] = useState(''); // 'error', 'success', etc.
                 <Text style={[styles.ipHelpText, { fontFamily: 'Combo_400Regular' }]}>
                   Ensure that your device and watch are on the same Wi-Fi network.
                 </Text>
-                
-                {/* Los botones de escaneo han sido eliminados */}
-                
+                                
                 {/* Selección de tipo de dispositivo */}
                 <View style={styles.deviceTypeContainer}>
                   <Text style={[styles.deviceTypeLabel, { fontFamily: 'Combo_400Regular' }]}>
@@ -1307,7 +1300,7 @@ function debounce(func, wait) {
 }
 
 const styles = StyleSheet.create({
-  // Modal especial para la IP, más pequeño y centrado
+  // Modal para IP
   ipModalContent: {
     width: '92%',
     maxWidth: 380,
@@ -1435,7 +1428,6 @@ titleGradient: {
   },
   title: {
     fontSize: 22,
-    fontWeight: "700",
     color: "#333",
 
   },
@@ -1487,7 +1479,6 @@ titleGradient: {
   },
   eventsText: {
     fontSize: 12,
-    fontWeight: '600',
     color: '#404040',
     minWidth: 12,
     textAlign: 'center',
@@ -1552,7 +1543,6 @@ activeButton: {
   sliderLabel: {
     marginTop: 10,
     fontSize: 16,
-    fontWeight: "600",
     textAlign: "center",
     marginBottom: 10,
   },
@@ -1574,7 +1564,6 @@ activeButton: {
   },
   loadingText: {
     color: "#BFBFBF",
-    fontWeight: "600",
   },
   // Modal styles
   modalOverlay: {
@@ -1604,9 +1593,14 @@ activeButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 10,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    backgroundColor: '#404040',
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#eee',
   },
   modalTitle: {
     fontSize: 18,
@@ -1640,7 +1634,6 @@ activeButton: {
   },
   emptyStateText: {
     fontSize: 18,
-    fontWeight: '600',
     color: '#666',
     marginTop: 15,
     textAlign: 'center',
@@ -1656,12 +1649,11 @@ activeButton: {
     marginTop: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '#660154',
+    backgroundColor: '#404040',
     borderRadius: 8,
   },
   refreshButtonText: {
     color: 'white',
-    fontWeight: 'bold',
   },
   customMovementsList: {
     flex: 1,
@@ -1683,7 +1675,6 @@ activeButton: {
   },
   customMovementName: {
     fontSize: 16,
-    fontWeight: '600',
     color: '#333',
     marginBottom: 4,
   },
@@ -1734,28 +1725,8 @@ activeButton: {
     color: '#f2f2f2f2',
     fontSize: 16,
   },
+  
   // Estilos para el modal de selección de dispositivos
-  deviceStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  deviceStat: {
-    fontSize: 12,
-    color: '#888',
-  },
-  deviceAction: {
-    padding: 10,
-  },
-  manualButton: {
-    backgroundColor: '#6c757d',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  manualButtonText: {
-    color: '#f2f2f2f2',
-    fontSize: 14,
-  },
   deviceTypeContainer: {
     marginTop: 20,
     marginBottom: 20,
@@ -1850,33 +1821,6 @@ eventsModalBody: {
   paddingHorizontal: 20,
   paddingVertical: 15,
 },
-
-schedulerStatusRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 8,
-},
-schedulerStatusText: {
-  fontSize: 14,
-  color: '#333',
-},
-toggleButton: {
-  paddingHorizontal: 16,
-  paddingVertical: 8,
-  borderRadius: 20,
-  minWidth: 80,
-  alignItems: 'center',
-},
-startButton: {
-  backgroundColor: '#28a745',
-},
-stopButton: {
-  backgroundColor: '#dc3545',
-},
-toggleButtonText: {
-  color: '#f2f2f2f2',
-  fontSize: 12,
-},
 eventsListTitle: {
   fontSize: 16,
   color: '#333',
@@ -1906,7 +1850,7 @@ emptyEventsSubtext: {
 createEventButton: {
   flexDirection: 'row',
   alignItems: 'center',
-  backgroundColor: '#660154',
+  backgroundColor: '#404040',
   paddingHorizontal: 20,
   paddingVertical: 12,
   borderRadius: 25,
@@ -1989,7 +1933,6 @@ eventDaysLabel: {
 eventDays: {
   fontSize: 12,
   color: '#404040',
-  fontWeight: '600',
 },
 
 

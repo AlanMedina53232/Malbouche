@@ -385,7 +385,7 @@ const toggleEventStatus = async (eventId) => {
               trackColor={{ false: "#8c8c8c", true: "#3A3A3B" }}
               thumbColor={item.enabled ? "#ffffff" : "#3A3A3B"}
               ios_backgroundColor="#BFBFBF"
-              disabled={isUpdating} // Disable switch while updating
+              disabled={isUpdating} 
               style={[
                 styles.switch,
                 isUpdating && styles.switchDisabled

@@ -4,33 +4,30 @@
     "slug": "Malbouche",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/LogoBlancopng.png",
+    "icon": "./assets/logotito.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/icono.png",
+      "image": "./assets/logotito.png",
       "resizeMode": "cover",
-      "backgroundColor": "#660154"
+      "backgroundColor": "#2e2e2e"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo432.png",
-        "backgroundColor": "#660154"
+        "foregroundImage": "./assets/logotito.png",
+        "backgroundColor": "#2e2e2e"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.tuempresa.malbouche",
-      "usesCleartextTraffic": true,
-      "targetSdkVersion": 34,
-      "compileSdkVersion": 34,
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "WAKE_LOCK"
       ],
-      "networkSecurityConfig": "res/xml/network_security_config.xml"
+      "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -4,11 +4,11 @@
     "slug": "Malbouche",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logotito.png",
+    "icon": "./assets/logopi.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/logotito.png",
+      "image": "./assets/logopi.png",
       "resizeMode": "cover",
       "backgroundColor": "#2e2e2e"
     },
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logotito.png",
+        "foregroundImage": "./assets/logopi.png",
         "backgroundColor": "#2e2e2e"
       },
       "edgeToEdgeEnabled": true,
